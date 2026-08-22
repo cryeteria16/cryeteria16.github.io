@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Home Base</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #FAF9F6;
+    --surface: #FFFFFF;
+    --text: #1C1B19;
+    --text-soft: #6B6558;
+    --accent: #2A5DB0;
+    --border: #E4E1D8;
+    --display-font: 'Fraunces', serif;
+    --body-font: 'Inter', sans-serif;
+    --mono-font: 'IBM Plex Mono', monospace;
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body-font);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    transition: background .25s ease, color .25s ease;
+  }
+
+  .wrap{
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 64px 24px 48px;
+  }
+
+  header{
+    margin-bottom: 48px;
+  }
+
+  .eyebrow{
+    font-family: var(--mono-font);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+
+  h1{
+    font-family: var(--display-font);
+    font-weight: 600;
+    font-size: clamp(32px, 6vw, 48px);
+    line-height: 1.05;
+    margin: 0 0 12px;
+    letter-spacing: -0.01em;
+  }
+
+  .tagline{
+    color: var(--text-soft);
+    font-size: 16px;
+    margin: 0;
+    max-width: 46ch;
+  }
+
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 16px;
+  }
+
+  .card{
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 18px 20px;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+    overflow: hidden;
+  }
+
+  .card::before{
+    content: attr(data-tag);
+    position: absolute;
+    top: 0;
+    left: 18px;
+    font-family: var(--mono-font);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #fff;
+    background: var(--accent);
+    padding: 3px 8px 4px;
+    border-radius: 0 0 6px 6px;
+  }
+
+  .card:hover{
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: 0 8px 24px -12px rgba(0,0,0,0.25);
+  }
+
+  .card:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+  }
+
+  .card-top{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 14px;
+  }
+
+  .icon{
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .card-label{
+    font-family: var(--display-font);
+    font-weight: 600;
+    font-size: 18px;
+    line-height: 1.25;
+  }
+
+  .empty{
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    text-align: center;
+    color: var(--text-soft);
+    font-size: 14px;
+  }
+
+  footer{
+    margin-top: 56px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono-font);
+    font-size: 11px;
+    color: var(--text-soft);
+    letter-spacing: 0.02em;
+  }
+
+  footer a{
+    color: var(--text-soft);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1px;
+  }
+  footer a:hover{ color: var(--accent); border-color: var(--accent); }
+
+  @media (prefers-reduced-motion: reduce){
+    .card{ transition: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="eyebrow" id="eyebrow">Home Base</p>
+      <h1 id="title">Loading…</h1>
+      <p class="tagline" id="tagline"></p>
+    </header>
+
+    <div class="grid" id="grid"></div>
+
+    <footer>
+      <span id="updated"></span>
+      <a href="admin.html">Admin</a>
+    </footer>
+  </div>
+
+<script>
+  const FONT_PRESETS = {
+    editorial: { display: "'Fraunces', serif", body: "'Inter', sans-serif" },
+    mono:      { display: "'Space Grotesk', sans-serif", body: "'IBM Plex Mono', monospace" },
+    clean:     { display: "'Public Sans', sans-serif", body: "'Public Sans', sans-serif" }
+  };
+
+  const MODES = {
+    light: { bg:"#FAF9F6", surface:"#FFFFFF", text:"#1C1B19", textSoft:"#6B6558", border:"#E4E1D8" },
+    dark:  { bg:"#14171C", surface:"#1C2027", text:"#F1EEE6", textSoft:"#9A968C", border:"#2A2E36" }
+  };
+
+  function applyTheme(theme){
+    const root = document.documentElement.style;
+    const mode = MODES[theme.mode] || MODES.light;
+    const fonts = FONT_PRESETS[theme.font] || FONT_PRESETS.editorial;
+    root.setProperty('--bg', mode.bg);
+    root.setProperty('--surface', mode.surface);
+    root.setProperty('--text', mode.text);
+    root.setProperty('--text-soft', mode.textSoft);
+    root.setProperty('--border', mode.border);
+    root.setProperty('--accent', theme.accent || '#2A5DB0');
+    root.setProperty('--display-font', fonts.display);
+    root.setProperty('--body-font', fonts.body);
+  }
+
+  function renderLinks(links){
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    if(!links || links.length === 0){
+      grid.innerHTML = '<div class="empty">No links yet — add some from the admin page.</div>';
+      return;
+    }
+    links.forEach(link => {
+      const a = document.createElement('a');
+      a.href = link.url;
+      a.className = 'card';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.setAttribute('data-tag', link.tag || '');
+      a.innerHTML = `
+        <div class="card-top">
+          <span class="icon">${link.icon || '🔗'}</span>
+        </div>
+        <span class="card-label">${link.label || 'Untitled'}</span>
+      `;
+      grid.appendChild(a);
+    });
+  }
+
+  function formatUpdated(iso){
+    if(!iso) return '';
+    try{
+      const d = new Date(iso);
+      return 'Updated ' + d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
+    }catch(e){ return ''; }
+  }
+
+  fetch('config.json', { cache: 'no-store' })
+    .then(r => r.json())
+    .then(cfg => {
+      document.getElementById('eyebrow').textContent = 'Home Base';
+      document.getElementById('title').textContent = cfg.title || 'Home Base';
+      document.getElementById('tagline').textContent = cfg.tagline || '';
+      document.getElementById('updated').textContent = formatUpdated(cfg.lastUpdated);
+      document.title = cfg.title || 'Home Base';
+      applyTheme(cfg.theme || {});
+      renderLinks(cfg.links || []);
+    })
+    .catch(() => {
+      document.getElementById('title').textContent = 'Couldn\'t load config.json';
+      document.getElementById('tagline').textContent = 'Make sure config.json is in the same folder as this page.';
+    });
+</script>
+</body>
+</html>

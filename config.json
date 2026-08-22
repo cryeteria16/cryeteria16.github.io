@@ -1,0 +1,30 @@
+{
+  "title": "Home Base",
+  "tagline": "Everything I reach for, in one place.",
+  "theme": {
+    "mode": "light",
+    "accent": "#2A5DB0",
+    "font": "editorial"
+  },
+  "links": [
+    {
+      "label": "Budget Sheet",
+      "url": "https://docs.google.com/spreadsheets/",
+      "tag": "Finance",
+      "icon": "📊"
+    },
+    {
+      "label": "Reading List",
+      "url": "https://docs.google.com/document/",
+      "tag": "Notes",
+      "icon": "📚"
+    },
+    {
+      "label": "Calendar",
+      "url": "https://calendar.google.com/",
+      "tag": "Schedule",
+      "icon": "🗓️"
+    }
+  ],
+  "lastUpdated": null
+}
