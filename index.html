@@ -7,6 +7,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore-compat.js"></script>
 <style>
   :root{
     --bg: #FAF9F6;
@@ -68,11 +71,141 @@
     max-width: 46ch;
   }
 
+  .calendar-box{
+    display: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 20px;
+    background: var(--surface);
+  }
+
+  .calendar-label{
+    font-family: var(--mono-font);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .calendar-box iframe{
+    display: block;
+    width: 100%;
+    height: 480px;
+    border: none;
+  }
+
   .grid{
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
     gap: 16px;
   }
+
+  .tracker-box{
+    display: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 20px;
+    background: var(--surface);
+  }
+
+  .tracker-body{ padding: 16px; }
+
+  .tracker-form{
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+
+  .tracker-form input[type=text]{
+    flex: 1;
+    min-width: 100px;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--body-font);
+    font-size: 14px;
+    background: transparent;
+    color: var(--text);
+  }
+
+  .tracker-name-input{ max-width: 110px; flex: 0 0 110px !important; }
+
+  .tracker-form select{
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: var(--body-font);
+    font-size: 14px;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  .tracker-form button{
+    padding: 9px 16px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  .tracker-list{ display: flex; flex-direction: column; gap: 8px; }
+
+  .tracker-item{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+  }
+
+  .tracker-item-main{ display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .tracker-item-main span:last-child{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .tracker-item-status{
+    font-family: var(--mono-font);
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 3px 7px;
+    border-radius: 5px;
+    background: var(--accent);
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .tracker-item-status.watched{ background: var(--text-soft); }
+
+  .tracker-item-by{
+    font-family: var(--mono-font);
+    font-size: 11px;
+    color: var(--text-soft);
+    flex-shrink: 0;
+  }
+
+  .tracker-item-remove{
+    background: none;
+    border: none;
+    color: var(--text-soft);
+    cursor: pointer;
+    font-size: 17px;
+    line-height: 1;
+    padding: 2px 4px;
+    flex-shrink: 0;
+  }
+  .tracker-item-remove:hover{ color: #C0442E; }
+
+  .tracker-empty{ color: var(--text-soft); font-size: 13px; padding: 6px 0; }
 
   .card{
     position: relative;
@@ -175,11 +308,31 @@
       <p class="tagline" id="tagline"></p>
     </header>
 
+    <div class="calendar-box" id="calendar-box">
+      <p class="calendar-label">Shared Calendar</p>
+      <iframe id="calendar-iframe" src="" loading="lazy" title="Shared calendar"></iframe>
+    </div>
+
+    <div class="tracker-box" id="movies-box">
+      <p class="calendar-label">Movies &amp; Shows</p>
+      <div class="tracker-body">
+        <form id="movie-form" class="tracker-form">
+          <input type="text" id="movie-name-input" placeholder="Your name" class="tracker-name-input">
+          <input type="text" id="movie-title-input" placeholder="Title" required>
+          <select id="movie-status-input">
+            <option value="watchlist">Want to watch</option>
+            <option value="watched">Watched</option>
+          </select>
+          <button type="submit">Add</button>
+        </form>
+        <div id="movie-list" class="tracker-list"></div>
+      </div>
+    </div>
+
     <div class="grid" id="grid"></div>
 
     <footer>
       <span id="updated"></span>
-      <a href="admin.html">Admin</a>
     </footer>
   </div>
 
@@ -233,6 +386,18 @@
     });
   }
 
+  function renderCalendar(cal){
+    const box = document.getElementById('calendar-box');
+    const iframe = document.getElementById('calendar-iframe');
+    if(cal && cal.enabled && cal.embedUrl){
+      iframe.src = cal.embedUrl;
+      box.style.display = 'block';
+    }else{
+      box.style.display = 'none';
+      iframe.src = '';
+    }
+  }
+
   function formatUpdated(iso){
     if(!iso) return '';
     try{
@@ -240,6 +405,73 @@
       return 'Updated ' + d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
     }catch(e){ return ''; }
   }
+
+  // ---------- shared movies & shows tracker (Firebase Firestore) ----------
+  let db = null;
+
+  function escapeHtml(str){
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  }
+
+  function initFirebase(fbConfig){
+    if(!fbConfig || !fbConfig.apiKey || !fbConfig.projectId) return;
+    try{
+      firebase.initializeApp(fbConfig);
+      firebase.auth().signInAnonymously().catch(err => console.error('Anonymous sign-in failed', err));
+      db = firebase.firestore();
+      document.getElementById('movies-box').style.display = 'block';
+      listenMovies();
+    }catch(e){
+      console.error('Firebase init failed', e);
+    }
+  }
+
+  function listenMovies(){
+    db.collection('movies').orderBy('createdAt', 'desc').onSnapshot(snap => {
+      const list = document.getElementById('movie-list');
+      list.innerHTML = '';
+      if(snap.empty){
+        list.innerHTML = '<div class="tracker-empty">Nothing added yet — be the first.</div>';
+        return;
+      }
+      snap.forEach(doc => {
+        const d = doc.data();
+        const row = document.createElement('div');
+        row.className = 'tracker-item';
+        row.innerHTML = `
+          <div class="tracker-item-main">
+            <span class="tracker-item-status ${d.status === 'watched' ? 'watched' : ''}">${d.status === 'watched' ? 'Watched' : 'Watchlist'}</span>
+            <span>${escapeHtml(d.title || '')}</span>
+          </div>
+          <div class="tracker-item-main">
+            <span class="tracker-item-by">${escapeHtml(d.addedBy || '')}</span>
+            <button class="tracker-item-remove" title="Remove">×</button>
+          </div>`;
+        row.querySelector('.tracker-item-remove').addEventListener('click', () => {
+          db.collection('movies').doc(doc.id).delete().catch(err => console.error('Delete failed', err));
+        });
+        list.appendChild(row);
+      });
+    }, err => console.error('Movie list sync failed', err));
+  }
+
+  document.getElementById('movie-name-input').value = localStorage.getItem('lifehub_visitor_name') || '';
+
+  document.getElementById('movie-form').addEventListener('submit', e => {
+    e.preventDefault();
+    if(!db) return;
+    const name = document.getElementById('movie-name-input').value.trim() || 'Someone';
+    const title = document.getElementById('movie-title-input').value.trim();
+    const status = document.getElementById('movie-status-input').value;
+    if(!title) return;
+    localStorage.setItem('lifehub_visitor_name', name);
+    db.collection('movies').add({
+      title, status, addedBy: name,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(err => console.error('Add failed', err));
+    document.getElementById('movie-title-input').value = '';
+    document.getElementById('movie-title-input').focus();
+  });
 
   fetch('config.json', { cache: 'no-store' })
     .then(r => r.json())
@@ -250,7 +482,9 @@
       document.getElementById('updated').textContent = formatUpdated(cfg.lastUpdated);
       document.title = cfg.title || 'Home Base';
       applyTheme(cfg.theme || {});
+      renderCalendar(cfg.calendar || {});
       renderLinks(cfg.links || []);
+      initFirebase(cfg.firebase || null);
     })
     .catch(() => {
       document.getElementById('title').textContent = 'Couldn\'t load config.json';
