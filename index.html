@@ -3,493 +3,266 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Home Base</title>
+<title>Tandem</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg: #FAF9F6;
-    --surface: #FFFFFF;
-    --text: #1C1B19;
-    --text-soft: #6B6558;
-    --accent: #2A5DB0;
-    --border: #E4E1D8;
-    --display-font: 'Fraunces', serif;
-    --body-font: 'Inter', sans-serif;
-    --mono-font: 'IBM Plex Mono', monospace;
-    --radius: 14px;
+    --bg:#FAFAF6;
+    --bg-card:#FFFFFF;
+    --ink:#21201C;
+    --ink-soft:#6B6862;
+    --ink-faint:#A8A49B;
+    --line:#E5E2D9;
+
+    --a:#4B6B53;
+    --b:#55708F;
+    --accent:#4B6B53;
+
+    --err:#9E4B3F;
+    --err-soft:#F7EAE8;
+
+    --font-display:'Fraunces', serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
   }
 
-  * { box-sizing: border-box; }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{-webkit-text-size-adjust:100%;}
 
   body{
-    margin:0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: var(--body-font);
-    -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
-    transition: background .25s ease, color .25s ease;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    min-height:100vh;
+    min-height:100dvh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
   }
 
-  .wrap{
-    max-width: 880px;
-    margin: 0 auto;
-    padding: 64px 24px 48px;
+  .shell{width:100%; max-width:380px;}
+
+  .mark{display:flex; justify-content:center; margin-bottom:20px;}
+
+  .head{text-align:center; margin-bottom:28px;}
+  .head h1{
+    font-family:var(--font-display); font-weight:600;
+    font-size:28px; letter-spacing:-0.01em;
   }
-
-  header{
-    margin-bottom: 48px;
-  }
-
-  .eyebrow{
-    font-family: var(--mono-font);
-    font-size: 12px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin: 0 0 10px;
-  }
-
-  h1{
-    font-family: var(--display-font);
-    font-weight: 600;
-    font-size: clamp(32px, 6vw, 48px);
-    line-height: 1.05;
-    margin: 0 0 12px;
-    letter-spacing: -0.01em;
-  }
-
-  .tagline{
-    color: var(--text-soft);
-    font-size: 16px;
-    margin: 0;
-    max-width: 46ch;
-  }
-
-  .calendar-box{
-    display: none;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    margin-bottom: 20px;
-    background: var(--surface);
-  }
-
-  .calendar-label{
-    font-family: var(--mono-font);
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin: 0;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .calendar-box iframe{
-    display: block;
-    width: 100%;
-    height: 480px;
-    border: none;
-  }
-
-  .grid{
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-    gap: 16px;
-  }
-
-  .tracker-box{
-    display: none;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    overflow: hidden;
-    margin-bottom: 20px;
-    background: var(--surface);
-  }
-
-  .tracker-body{ padding: 16px; }
-
-  .tracker-form{
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-bottom: 14px;
-  }
-
-  .tracker-form input[type=text]{
-    flex: 1;
-    min-width: 100px;
-    padding: 9px 10px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-family: var(--body-font);
-    font-size: 14px;
-    background: transparent;
-    color: var(--text);
-  }
-
-  .tracker-name-input{ max-width: 110px; flex: 0 0 110px !important; }
-
-  .tracker-form select{
-    padding: 9px 10px;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-family: var(--body-font);
-    font-size: 14px;
-    background: var(--bg);
-    color: var(--text);
-  }
-
-  .tracker-form button{
-    padding: 9px 16px;
-    border: none;
-    border-radius: 8px;
-    background: var(--accent);
-    color: #fff;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-  }
-
-  .tracker-list{ display: flex; flex-direction: column; gap: 8px; }
-
-  .tracker-item{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    font-size: 14px;
-  }
-
-  .tracker-item-main{ display: flex; align-items: center; gap: 10px; min-width: 0; }
-  .tracker-item-main span:last-child{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-  .tracker-item-status{
-    font-family: var(--mono-font);
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    padding: 3px 7px;
-    border-radius: 5px;
-    background: var(--accent);
-    color: #fff;
-    flex-shrink: 0;
-  }
-  .tracker-item-status.watched{ background: var(--text-soft); }
-
-  .tracker-item-by{
-    font-family: var(--mono-font);
-    font-size: 11px;
-    color: var(--text-soft);
-    flex-shrink: 0;
-  }
-
-  .tracker-item-remove{
-    background: none;
-    border: none;
-    color: var(--text-soft);
-    cursor: pointer;
-    font-size: 17px;
-    line-height: 1;
-    padding: 2px 4px;
-    flex-shrink: 0;
-  }
-  .tracker-item-remove:hover{ color: #C0442E; }
-
-  .tracker-empty{ color: var(--text-soft); font-size: 13px; padding: 6px 0; }
+  .head p{font-size:14px; color:var(--ink-soft); margin-top:6px;}
 
   .card{
-    position: relative;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 22px 18px 20px;
-    text-decoration: none;
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
-    overflow: hidden;
+    background:var(--bg-card);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:24px;
   }
 
-  .card::before{
-    content: attr(data-tag);
-    position: absolute;
-    top: 0;
-    left: 18px;
-    font-family: var(--mono-font);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: #fff;
-    background: var(--accent);
-    padding: 3px 8px 4px;
-    border-radius: 0 0 6px 6px;
+  .field{margin-bottom:16px;}
+  label{
+    display:block;
+    font-family:var(--font-mono); font-size:11px;
+    letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:7px;
+  }
+  input{
+    width:100%;
+    font-family:var(--font-body); font-size:15px;
+    color:var(--ink);
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:12px 14px;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus{
+    outline:none;
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+  input::placeholder{color:var(--ink-faint);}
+
+  button.submit{
+    width:100%;
+    font-family:var(--font-body); font-size:15px; font-weight:500;
+    color:#fff; background:var(--accent);
+    border:none; border-radius:10px;
+    padding:13px;
+    cursor:pointer;
+    margin-top:4px;
+    transition:opacity .15s, background .25s;
+  }
+  button.submit:hover{opacity:.9;}
+  button.submit:disabled{opacity:.55; cursor:default;}
+
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  .msg{
+    display:none;
+    background:var(--err-soft); color:var(--err);
+    font-size:13px; line-height:1.45;
+    border-radius:10px; padding:11px 13px;
+    margin-bottom:16px;
+  }
+  .msg.show{display:block;}
+
+  .foot{
+    text-align:center; margin-top:20px;
+    font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);
   }
 
-  .card:hover{
-    transform: translateY(-3px);
-    border-color: var(--accent);
-    box-shadow: 0 8px 24px -12px rgba(0,0,0,0.25);
-  }
-
-  .card:focus-visible{
-    outline: 2px solid var(--accent);
-    outline-offset: 3px;
-  }
-
-  .card-top{
-    display:flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-top: 14px;
-  }
-
-  .icon{
-    font-size: 22px;
-    line-height: 1;
-  }
-
-  .card-label{
-    font-family: var(--display-font);
-    font-weight: 600;
-    font-size: 18px;
-    line-height: 1.25;
-  }
-
-  .empty{
-    border: 1px dashed var(--border);
-    border-radius: var(--radius);
-    padding: 32px;
-    text-align: center;
-    color: var(--text-soft);
-    font-size: 14px;
-  }
-
-  footer{
-    margin-top: 56px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-family: var(--mono-font);
-    font-size: 11px;
-    color: var(--text-soft);
-    letter-spacing: 0.02em;
-  }
-
-  footer a{
-    color: var(--text-soft);
-    text-decoration: none;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 1px;
-  }
-  footer a:hover{ color: var(--accent); border-color: var(--accent); }
-
-  @media (prefers-reduced-motion: reduce){
-    .card{ transition: none; }
-  }
+  @media (prefers-reduced-motion:reduce){ *{transition:none !important;} }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <p class="eyebrow" id="eyebrow">Home Base</p>
-      <h1 id="title">Loading…</h1>
-      <p class="tagline" id="tagline"></p>
-    </header>
 
-    <div class="calendar-box" id="calendar-box">
-      <p class="calendar-label">Shared Calendar</p>
-      <iframe id="calendar-iframe" src="" loading="lazy" title="Shared calendar"></iframe>
+  <div class="shell">
+
+    <div class="mark">
+      <svg width="44" height="44" viewBox="0 0 26 26" aria-hidden="true">
+        <circle cx="10" cy="13" r="8" fill="#4B6B53" opacity="0.85"/>
+        <circle cx="16" cy="13" r="8" fill="#55708F" opacity="0.85" style="mix-blend-mode:multiply"/>
+      </svg>
     </div>
 
-    <div class="tracker-box" id="movies-box">
-      <p class="calendar-label">Movies &amp; Shows</p>
-      <div class="tracker-body">
-        <form id="movie-form" class="tracker-form">
-          <input type="text" id="movie-name-input" placeholder="Your name" class="tracker-name-input">
-          <input type="text" id="movie-title-input" placeholder="Title" required>
-          <select id="movie-status-input">
-            <option value="watchlist">Want to watch</option>
-            <option value="watched">Watched</option>
-          </select>
-          <button type="submit">Add</button>
-        </form>
-        <div id="movie-list" class="tracker-list"></div>
+    <div class="head">
+      <h1>Tandem</h1>
+      <p>Sign in to pick up where you left off.</p>
+    </div>
+
+    <div class="card">
+      <div class="msg" id="msg" role="alert"></div>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input id="username" type="text" autocomplete="username"
+               autocapitalize="none" spellcheck="false" placeholder="Con or Cryeteria">
       </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+
+      <button class="submit" id="submit">Sign in</button>
     </div>
 
-    <div class="grid" id="grid"></div>
+    <p class="foot">Private hub · two people only</p>
 
-    <footer>
-      <span id="updated"></span>
-    </footer>
   </div>
 
-<script>
-  const FONT_PRESETS = {
-    editorial: { display: "'Fraunces', serif", body: "'Inter', sans-serif" },
-    mono:      { display: "'Space Grotesk', sans-serif", body: "'IBM Plex Mono', monospace" },
-    clean:     { display: "'Public Sans', sans-serif", body: "'Public Sans', sans-serif" }
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    setPersistence,
+    browserLocalPersistence
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  /* ---------------------------------------------------------
+     YOUR FIREBASE PROJECT
+     Read from the console screenshot — double-check the apiKey
+     against Project Settings if sign-in throws a config error.
+  --------------------------------------------------------- */
+  const firebaseConfig = {
+    apiKey: "AIzaSySbfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4",
+    authDomain: "cryeterialoginpage.firebaseapp.com",
+    projectId: "cryeterialoginpage",
+    storageBucket: "cryeterialoginpage.firebasestorage.app",
+    messagingSenderId: "1012254851251",
+    appId: "1:1012254851251:web:8f3d4aa32504922c9ff0c6"
   };
 
-  const MODES = {
-    light: { bg:"#FAF9F6", surface:"#FFFFFF", text:"#1C1B19", textSoft:"#6B6558", border:"#E4E1D8" },
-    dark:  { bg:"#14171C", surface:"#1C2027", text:"#F1EEE6", textSoft:"#9A968C", border:"#2A2E36" }
+  /* ---------------------------------------------------------
+     USERNAME → ACCOUNT
+     Left side is what you type. Right side is the account it
+     signs into. Add or rename people here.
+  --------------------------------------------------------- */
+  const USERS = {
+    "con":       { email: "justibadx@gmail.com",     name: "Con",       color: "#4B6B53" },
+    "cryeteria": { email: "theibadhasan@gmail.com",  name: "Cryeteria", color: "#55708F" }
   };
 
-  function applyTheme(theme){
-    const root = document.documentElement.style;
-    const mode = MODES[theme.mode] || MODES.light;
-    const fonts = FONT_PRESETS[theme.font] || FONT_PRESETS.editorial;
-    root.setProperty('--bg', mode.bg);
-    root.setProperty('--surface', mode.surface);
-    root.setProperty('--text', mode.text);
-    root.setProperty('--text-soft', mode.textSoft);
-    root.setProperty('--border', mode.border);
-    root.setProperty('--accent', theme.accent || '#2A5DB0');
-    root.setProperty('--display-font', fonts.display);
-    root.setProperty('--body-font', fonts.body);
-  }
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
 
-  function renderLinks(links){
-    const grid = document.getElementById('grid');
-    grid.innerHTML = '';
-    if(!links || links.length === 0){
-      grid.innerHTML = '<div class="empty">No links yet — add some from the admin page.</div>';
-      return;
-    }
-    links.forEach(link => {
-      const a = document.createElement('a');
-      a.href = link.url;
-      a.className = 'card';
-      a.target = '_blank';
-      a.rel = 'noopener noreferrer';
-      a.setAttribute('data-tag', link.tag || '');
-      a.innerHTML = `
-        <div class="card-top">
-          <span class="icon">${link.icon || '🔗'}</span>
-        </div>
-        <span class="card-label">${link.label || 'Untitled'}</span>
-      `;
-      grid.appendChild(a);
-    });
-  }
+  const $user = document.getElementById("username");
+  const $pass = document.getElementById("password");
+  const $btn  = document.getElementById("submit");
+  const $msg  = document.getElementById("msg");
 
-  function renderCalendar(cal){
-    const box = document.getElementById('calendar-box');
-    const iframe = document.getElementById('calendar-iframe');
-    if(cal && cal.enabled && cal.embedUrl){
-      iframe.src = cal.embedUrl;
-      box.style.display = 'block';
-    }else{
-      box.style.display = 'none';
-      iframe.src = '';
-    }
-  }
+  const showError = (text) => {
+    $msg.textContent = text;
+    $msg.classList.add("show");
+  };
+  const clearError = () => $msg.classList.remove("show");
 
-  function formatUpdated(iso){
-    if(!iso) return '';
-    try{
-      const d = new Date(iso);
-      return 'Updated ' + d.toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' });
-    }catch(e){ return ''; }
-  }
-
-  // ---------- shared movies & shows tracker (Firebase Firestore) ----------
-  let db = null;
-
-  function escapeHtml(str){
-    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-  }
-
-  function initFirebase(fbConfig){
-    if(!fbConfig || !fbConfig.apiKey || !fbConfig.projectId) return;
-    try{
-      firebase.initializeApp(fbConfig);
-      firebase.auth().signInAnonymously().catch(err => console.error('Anonymous sign-in failed', err));
-      db = firebase.firestore();
-      document.getElementById('movies-box').style.display = 'block';
-      listenMovies();
-    }catch(e){
-      console.error('Firebase init failed', e);
-    }
-  }
-
-  function listenMovies(){
-    db.collection('movies').orderBy('createdAt', 'desc').onSnapshot(snap => {
-      const list = document.getElementById('movie-list');
-      list.innerHTML = '';
-      if(snap.empty){
-        list.innerHTML = '<div class="tracker-empty">Nothing added yet — be the first.</div>';
-        return;
-      }
-      snap.forEach(doc => {
-        const d = doc.data();
-        const row = document.createElement('div');
-        row.className = 'tracker-item';
-        row.innerHTML = `
-          <div class="tracker-item-main">
-            <span class="tracker-item-status ${d.status === 'watched' ? 'watched' : ''}">${d.status === 'watched' ? 'Watched' : 'Watchlist'}</span>
-            <span>${escapeHtml(d.title || '')}</span>
-          </div>
-          <div class="tracker-item-main">
-            <span class="tracker-item-by">${escapeHtml(d.addedBy || '')}</span>
-            <button class="tracker-item-remove" title="Remove">×</button>
-          </div>`;
-        row.querySelector('.tracker-item-remove').addEventListener('click', () => {
-          db.collection('movies').doc(doc.id).delete().catch(err => console.error('Delete failed', err));
-        });
-        list.appendChild(row);
-      });
-    }, err => console.error('Movie list sync failed', err));
-  }
-
-  document.getElementById('movie-name-input').value = localStorage.getItem('lifehub_visitor_name') || '';
-
-  document.getElementById('movie-form').addEventListener('submit', e => {
-    e.preventDefault();
-    if(!db) return;
-    const name = document.getElementById('movie-name-input').value.trim() || 'Someone';
-    const title = document.getElementById('movie-title-input').value.trim();
-    const status = document.getElementById('movie-status-input').value;
-    if(!title) return;
-    localStorage.setItem('lifehub_visitor_name', name);
-    db.collection('movies').add({
-      title, status, addedBy: name,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    }).catch(err => console.error('Add failed', err));
-    document.getElementById('movie-title-input').value = '';
-    document.getElementById('movie-title-input').focus();
+  // Tint the form with whoever is signing in
+  $user.addEventListener("input", () => {
+    const person = USERS[$user.value.trim().toLowerCase()];
+    document.documentElement.style.setProperty("--accent", person ? person.color : "#4B6B53");
   });
 
-  fetch('config.json', { cache: 'no-store' })
-    .then(r => r.json())
-    .then(cfg => {
-      document.getElementById('eyebrow').textContent = 'Home Base';
-      document.getElementById('title').textContent = cfg.title || 'Home Base';
-      document.getElementById('tagline').textContent = cfg.tagline || '';
-      document.getElementById('updated').textContent = formatUpdated(cfg.lastUpdated);
-      document.title = cfg.title || 'Home Base';
-      applyTheme(cfg.theme || {});
-      renderCalendar(cfg.calendar || {});
-      renderLinks(cfg.links || []);
-      initFirebase(cfg.firebase || null);
-    })
-    .catch(() => {
-      document.getElementById('title').textContent = 'Couldn\'t load config.json';
-      document.getElementById('tagline').textContent = 'Make sure config.json is in the same folder as this page.';
-    });
+  // Already signed in? Go straight through.
+  onAuthStateChanged(auth, (user) => {
+    if (user) window.location.replace("app.html");
+  });
+
+  async function signIn(){
+    clearError();
+
+    const key = $user.value.trim().toLowerCase();
+    const pass = $pass.value;
+
+    if (!key || !pass) {
+      showError("Enter both a username and a password.");
+      return;
+    }
+
+    const person = USERS[key];
+    if (!person) {
+      showError("That username or password isn't right.");
+      return;
+    }
+
+    $btn.disabled = true;
+    $btn.textContent = "Signing in…";
+
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      await signInWithEmailAndPassword(auth, person.email, pass);
+      localStorage.setItem("tandem.name", person.name);
+      window.location.replace("app.html");
+    } catch (err) {
+      const code = err.code || "";
+      if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") {
+        showError("That username or password isn't right.");
+      } else if (code === "auth/too-many-requests") {
+        showError("Too many attempts. Wait a few minutes and try again.");
+      } else if (code === "auth/network-request-failed") {
+        showError("Can't reach Firebase. Check your connection and try again.");
+      } else if (code === "auth/unauthorized-domain") {
+        showError("This domain isn't allowlisted in Firebase yet. Add it under Authentication → Settings → Authorized domains.");
+      } else if (code === "auth/api-key-not-valid" || code === "auth/invalid-api-key") {
+        showError("The Firebase API key in this page is wrong. Recopy it from Project Settings.");
+      } else {
+        showError("Sign-in failed: " + (err.message || code));
+      }
+      $btn.disabled = false;
+      $btn.textContent = "Sign in";
+    }
+  }
+
+  $btn.addEventListener("click", signIn);
+  [$user, $pass].forEach(el =>
+    el.addEventListener("keydown", e => { if (e.key === "Enter") signIn(); })
+  );
 </script>
+
 </body>
 </html>
