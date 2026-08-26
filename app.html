@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tandem — Dashboard</title>
+<title>The Lair — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -193,7 +193,7 @@
         <circle cx="10" cy="13" r="8" fill="#4B6B53" opacity="0.85"/>
         <circle cx="16" cy="13" r="8" fill="#55708F" opacity="0.85" style="mix-blend-mode:multiply"/>
       </svg>
-      <span class="brand-name">Tandem</span>
+      <span class="brand-name">The Lair</span>
     </div>
     <nav class="nav-desktop">
       <a class="active">Dashboard</a>
@@ -222,7 +222,7 @@
       </div>
       <div class="heatmap-scroll"><div class="heatmap" id="heatmap"></div></div>
       <div class="legend">
-        <span class="dot dot-a"></span>Con
+        <span class="dot dot-a"></span>Confusicus
         <span class="dot dot-b"></span>Cryeteria
       </div>
     </section>
@@ -231,7 +231,7 @@
       <div class="card-head">
         <h2>Today</h2>
         <div class="tabs">
-          <button class="tab active">Con</button>
+          <button class="tab active">Confusicus</button>
           <button class="tab">Cryeteria</button>
         </div>
       </div>
@@ -267,9 +267,9 @@
     <section class="card">
       <div class="card-head"><h2>Activity</h2><span class="meta">today</span></div>
       <ul class="feed">
-        <li><span class="dot dot-a"></span><div><p><strong>Con</strong> logged dinner — grilled salmon &amp; greens</p><time>2h ago</time></div></li>
+        <li><span class="dot dot-a"></span><div><p><strong>Confusicus</strong> logged dinner — grilled salmon &amp; greens</p><time>2h ago</time></div></li>
         <li><span class="dot dot-b"></span><div><p><strong>Cryeteria</strong> moved <em>Poor Things</em> to Watching</p><time>4h ago</time></div></li>
-        <li><span class="dot dot-a"></span><div><p><strong>Con</strong> added a note — "Book the campsite for Sept"</p><time>6h ago</time></div></li>
+        <li><span class="dot dot-a"></span><div><p><strong>Confusicus</strong> added a note — "Book the campsite for Sept"</p><time>6h ago</time></div></li>
         <li><span class="dot dot-b"></span><div><p><strong>Cryeteria</strong> rated <em>Oldboy</em> — 9/10</p><time>Yesterday</time></div></li>
       </ul>
     </section>
@@ -338,8 +338,8 @@
 
   // Who is who, looked up by the account they signed in with
   const PEOPLE = {
-    "justibadx@gmail.com":    { name: "Con",       color: "#4B6B53", partner: "Cryeteria" },
-    "theibadhasan@gmail.com": { name: "Cryeteria", color: "#55708F", partner: "Con" }
+    "justibadx@gmail.com":    { name: "Confusicus", color: "#4B6B53", partner: "Cryeteria"  },
+    "theibadhasan@gmail.com": { name: "Cryeteria",  color: "#55708F", partner: "Confusicus" }
   };
 
   const app  = initializeApp(firebaseConfig);

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tandem</title>
+<title>The Lair</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -129,7 +129,7 @@
     </div>
 
     <div class="head">
-      <h1>Tandem</h1>
+      <h1>The Lair</h1>
       <p>Sign in to pick up where you left off.</p>
     </div>
 
@@ -139,7 +139,7 @@
       <div class="field">
         <label for="username">Username</label>
         <input id="username" type="text" autocomplete="username"
-               autocapitalize="none" spellcheck="false" placeholder="Con or Cryeteria">
+               autocapitalize="none" spellcheck="false" placeholder="Confusicus or Cryeteria">
       </div>
 
       <div class="field">
@@ -150,7 +150,7 @@
       <button class="submit" id="submit">Sign in</button>
     </div>
 
-    <p class="foot">Private hub · two people only</p>
+    <p class="foot">The Lair · two people only</p>
 
   </div>
 
@@ -184,8 +184,9 @@
      signs into. Add or rename people here.
   --------------------------------------------------------- */
   const USERS = {
-    "con":       { email: "justibadx@gmail.com",     name: "Con",       color: "#4B6B53" },
-    "cryeteria": { email: "theibadhasan@gmail.com",  name: "Cryeteria", color: "#55708F" }
+    "confusicus": { email: "justibadx@gmail.com",    name: "Confusicus", color: "#4B6B53" },
+    "con":        { email: "justibadx@gmail.com",    name: "Confusicus", color: "#4B6B53" },
+    "cryeteria":  { email: "theibadhasan@gmail.com", name: "Cryeteria",  color: "#55708F" }
   };
 
   const app  = initializeApp(firebaseConfig);
@@ -236,7 +237,7 @@
     try {
       await setPersistence(auth, browserLocalPersistence);
       await signInWithEmailAndPassword(auth, person.email, pass);
-      localStorage.setItem("tandem.name", person.name);
+      localStorage.setItem("lair.name", person.name);
       window.location.replace("app.html");
     } catch (err) {
       const code = err.code || "";
