@@ -71,21 +71,34 @@
     <p id="error-msg">Incorrect username or password.</p>
   </div>
 
-<script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+  const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
   const USERS = {
     "con": { pass: "confusicus", email: "justibadx@gmail.com" },
     "cryeteria": { pass: "cryeteria", email: "theibadhasan@gmail.com" }
   };
 
-  document.getElementById("login-btn").addEventListener("click", () => {
+  document.getElementById("login-btn").addEventListener("click", async () => {
     const userVal = document.getElementById("username").value.trim().toLowerCase();
     const passVal = document.getElementById("password").value;
     
     if (USERS[userVal] && USERS[userVal].pass === passVal) {
-      // Save session info to browser local storage so app.html knows who is logged in
-      localStorage.setItem("lair_user", USERS[userVal].email);
-      window.location.replace("app.html");
+      try {
+        // Authenticate directly with Firebase Authentication using mapped email
+        await signInWithEmailAndPassword(auth, USERS[userVal].email, passVal);
+        window.location.replace("app.html");
+      } catch (err) {
+        document.getElementById("error-msg").textContent = "Firebase Auth Error: " + err.message;
+        document.getElementById("error-msg").style.display = "block";
+      }
     } else {
+      document.getElementById("error-msg").textContent = "Incorrect username or password.";
       document.getElementById("error-msg").style.display = "block";
     }
   });
