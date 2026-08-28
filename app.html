@@ -9,22 +9,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#FAFAF6;
-    --bg-card:#FFFFFF;
-    --ink:#21201C;
-    --ink-soft:#6B6862;
-    --ink-faint:#A8A49B;
-    --line:#E5E2D9;
+    /* The Lair Dark Mode - Matches Discord PFPs */
+    --bg: #0A0A0A;
+    --bg-card: #121212;
+    --ink: #EDEDED;
+    --ink-soft: #A3A3A3;
+    --ink-faint: #525252;
+    --line: #262626;
 
-    --a:#4B6B53;
-    --a-soft:#E4EBE3;
-    --a-softer:#F0F4EF;
+    /* Accent Colors Adjusted for Dark Mode */
+    --a: #70947A; 
+    --a-soft: rgba(75, 107, 83, 0.2);
+    --a-softer: rgba(75, 107, 83, 0.1);
 
-    --b:#55708F;
-    --b-soft:#E4EAF0;
+    --b: #7A9BC2; 
+    --b-soft: rgba(85, 112, 143, 0.2);
 
     --warn:#A9803F;
-    --warn-soft:#F4EDE0;
+    --warn-soft: rgba(169, 128, 63, 0.15);
 
     --radius:16px;
     --radius-sm:10px;
@@ -38,13 +40,9 @@
   html{-webkit-text-size-adjust:100%;}
 
   body{
-    background:var(--bg);
-    color:var(--ink);
-    font-family:var(--font-body);
-    line-height:1.5;
-    padding-bottom:84px;
-    opacity:0;
-    transition:opacity .2s;
+    background:var(--bg); color:var(--ink);
+    font-family:var(--font-body); line-height:1.5;
+    padding-bottom:84px; opacity:0; transition:opacity .2s;
   }
   body.ready{opacity:1;}
 
@@ -53,36 +51,36 @@
   button{font-family:inherit; border:none; background:none; cursor:pointer; color:inherit;}
   
   input, select {
-    font-family:var(--font-body); font-size:15px; color:var(--ink);
+    font-family:var(--font-body); font-size:14px; color:var(--ink);
     background:var(--bg); border:1px solid var(--line);
-    border-radius:10px; padding:12px 14px;
-    transition:border-color .15s, box-shadow .15s;
-    width: 100%;
+    border-radius:8px; padding:10px 12px;
+    transition:border-color .15s; width: 100%;
   }
   input:focus, select:focus { outline:none; border-color:var(--a); }
-  
   :focus-visible{outline:2px solid var(--a); outline-offset:2px;}
 
   /* Top Navigation */
   .topbar{
     display:flex; align-items:center; justify-content:space-between;
     padding:18px 20px; border-bottom:1px solid var(--line);
-    max-width:1040px; margin:0 auto;
+    max-width:1040px; margin:0 auto; background:var(--bg);
   }
   .brand{display:flex; align-items:center; gap:10px;}
   .brand-name{font-family:var(--font-display); font-size:20px; font-weight:600; letter-spacing:-0.01em;}
   .nav-desktop{display:flex; gap:28px; font-size:14px; color:var(--ink-soft);}
   .nav-desktop a.active{color:var(--ink); font-weight:500;}
-  .top-right{display:flex; align-items:center; gap:10px;}
+  .top-right{display:flex; align-items:center; gap:12px;}
   .chip{
     display:flex; align-items:center; gap:6px;
     font-family:var(--font-mono); font-size:12px;
-    padding:5px 10px; border-radius:20px; border:1px solid var(--line);
-    color:var(--ink-soft);
+    padding:5px 10px; border-radius:20px; border:1px solid var(--line); color:var(--ink-soft);
   }
   .signout{font-size:12px; color:var(--ink-faint); font-family:var(--font-mono);}
   .signout:hover{color:var(--ink);}
   .dot{width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0;}
+  
+  .settings-btn { font-size: 16px; color: var(--ink-soft); cursor: pointer; }
+  .settings-btn:hover { color: var(--ink); }
 
   @media (max-width:720px){ .nav-desktop{display:none;} }
 
@@ -90,24 +88,23 @@
     padding:32px 20px 8px; max-width:1040px; margin:0 auto;
     display:flex; justify-content:space-between; align-items:flex-end;
   }
-  .eyebrow{
-    font-family:var(--font-mono); font-size:12px; letter-spacing:0.06em;
-    text-transform:uppercase; color:var(--ink-faint);
-  }
-  .greeting h1{
-    font-family:var(--font-display); font-weight:500;
-    font-size:32px; margin-top:6px; letter-spacing:-0.01em;
-  }
+  .eyebrow{font-family:var(--font-mono); font-size:12px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-faint);}
+  .greeting h1{font-family:var(--font-display); font-weight:500; font-size:32px; margin-top:6px; letter-spacing:-0.01em;}
   .greeting .sub{color:var(--ink-soft); font-size:14px; margin-top:4px;}
   
   .btn-primary{
-    background:var(--ink); color:var(--bg-card);
+    background:var(--ink); color:var(--bg);
     padding:10px 16px; border-radius:var(--radius-sm);
-    font-size:13px; font-weight:500; transition:opacity .15s;
+    font-size:13px; font-weight:600; transition:opacity .15s;
     cursor:pointer; text-align:center;
   }
   .btn-primary:hover{opacity:0.85;}
   .btn-primary:disabled{opacity:0.5; cursor:default;}
+  
+  .btn-secondary{
+    background:var(--bg); color:var(--ink); border: 1px solid var(--line);
+    padding:10px 16px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; cursor:pointer;
+  }
 
   /* SPA View Architecture */
   .view-container { display: none; }
@@ -116,7 +113,7 @@
 
   main{padding:8px 20px 40px; max-width:1040px; margin:0 auto; display:flex; flex-direction:column; gap:16px;}
 
-  /* Shared Card Styles */
+  /* Cards */
   .card{background:var(--bg-card); border:1px solid var(--line); border-radius:var(--radius); padding:20px;}
   .card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
   .card-head h2{font-family:var(--font-display); font-size:17px; font-weight:600;}
@@ -125,36 +122,29 @@
   /* Modals */
   .modal-overlay{
     position:fixed; top:0; left:0; right:0; bottom:0;
-    background:rgba(0,0,0,0.3); backdrop-filter:blur(3px);
-    display:none; align-items:center; justify-content:center; z-index:100;
-    padding:20px;
+    background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
   }
   .modal-overlay.active{display:flex;}
   .modal-content{
-    background:var(--bg-card); border-radius:var(--radius);
-    padding:24px; width:100%; max-width:400px;
-    box-shadow:0 10px 30px rgba(0,0,0,0.1);
+    background:var(--bg-card); border:1px solid var(--line); border-radius:var(--radius);
+    padding:24px; width:100%; max-width:400px; box-shadow:0 10px 40px rgba(0,0,0,0.5);
   }
   .modal-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
   .modal-head h2{font-family:var(--font-display); font-size:20px;}
   .close-modal{font-size:24px; color:var(--ink-faint); line-height:1;}
-  .field-label{
-    display:block; font-family:var(--font-mono); font-size:11px;
-    letter-spacing:0.06em; text-transform:uppercase;
-    color:var(--ink-faint); margin-bottom:7px;
-  }
+  .field-label{display:block; font-family:var(--font-mono); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:7px;}
 
   /* Dashboard specifics */
-  .tabs{display:flex; gap:4px; background:var(--a-softer); padding:3px; border-radius:20px;}
+  .tabs{display:flex; gap:4px; background:var(--bg); border:1px solid var(--line); padding:3px; border-radius:20px;}
   .tab{font-size:12px; padding:6px 14px; border-radius:16px; color:var(--ink-soft); font-weight:500;}
-  .tab.active{background:var(--bg-card); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,0.06);}
-  .stat-grid{display:grid; grid-template-columns:repeat(5, 1fr); gap:10px;}
-  @media (max-width:720px){ .stat-grid{grid-template-columns:repeat(2, 1fr);} }
-  .stat{display:flex; flex-direction:column; align-items:center; text-align:center; padding:16px 8px; border-radius:var(--radius-sm); background:var(--a-softer);}
-  .ring{width:52px; height:52px; border-radius:50%; background:conic-gradient(var(--a) calc(var(--pct)*1%), var(--line) 0); display:flex; align-items:center; justify-content:center; margin-bottom:10px;}
-  .ring-inner{width:38px; height:38px; border-radius:50%; background:var(--bg-card); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:11px; color:var(--ink);}
-  .stat-label{font-size:12px; color:var(--ink-soft); margin-bottom:2px;}
-  .stat-value{font-family:var(--font-mono); font-size:12px; color:var(--ink);}
+  .tab.active{background:var(--line); color:var(--ink);}
+  
+  .stat-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(80px, 1fr)); gap:10px;}
+  .stat{display:flex; flex-direction:column; align-items:center; text-align:center; padding:16px 8px; border-radius:var(--radius-sm); background:var(--bg); border:1px solid var(--line);}
+  .stat-value{font-family:var(--font-mono); font-size:14px; color:var(--ink); font-weight:500; margin-bottom:4px;}
+  .stat-label{font-size:11px; color:var(--ink-soft); text-transform: uppercase; letter-spacing: 0.05em;}
+  
   .feed{display:flex; flex-direction:column; gap:14px;}
   .feed li{display:flex; gap:10px; align-items:flex-start;}
   .feed li .dot{margin-top:7px;}
@@ -163,18 +153,39 @@
 
   /* Watchlist specifics */
   .scroll-row{display:flex; gap:14px; overflow-x:auto; padding-bottom:12px; -webkit-overflow-scrolling:touch;}
-  .title-card{flex:0 0 140px; display:flex; flex-direction:column;}
+  .title-card{flex:0 0 140px; display:flex; flex-direction:column; cursor: pointer; transition: transform 0.1s;}
+  .title-card:hover{transform: scale(1.02);}
   .poster{
-    height:190px; border-radius:var(--radius-sm); margin-bottom:8px;
-    background:linear-gradient(135deg, var(--a-soft), var(--b-soft));
-    background-position: center;
+    height:200px; border-radius:var(--radius-sm); margin-bottom:10px;
+    background:var(--line); background-position: center; background-size: cover;
     display:flex; align-items:center; justify-content:center;
     font-family:var(--font-display); font-size:13px; color:var(--ink-soft);
-    text-align:center; padding:10px; box-shadow:0 2px 8px rgba(0,0,0,0.05);
+    text-align:center; padding:10px; border:1px solid var(--line);
   }
-  .title-name{font-size:13px; font-weight:500; margin-bottom:8px; line-height: 1.3;}
+  .title-name{font-size:13px; font-weight:500; margin-bottom:4px; line-height: 1.3;}
+  .pill{display:inline-block; font-family:var(--font-mono); font-size:10px; padding:3px 8px; border-radius:10px; width: max-content; margin-bottom: 6px;}
+  .pill.Want{background:var(--bg); color:var(--ink-soft); border:1px solid var(--line);}
+  .pill.Watching{background:var(--b-soft); color:var(--b);}
+  .pill.Watched{background:var(--a-soft); color:var(--a);}
+  .sub-meta{font-size:11px; color:var(--ink-faint); font-family:var(--font-mono);}
 
-  /* Bottom Navigation */
+  /* Boards specifics */
+  .boards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .board { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; }
+  .board-title { font-family: var(--font-display); font-size: 16px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;}
+  .delete-board { color: var(--warn); font-size: 18px; cursor: pointer; }
+  .board-items { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .board-item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+  .board-item input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; }
+  .board-item.done span { text-decoration: line-through; color: var(--ink-faint); }
+  .add-item-form { display: flex; gap: 6px; }
+
+  /* Calendar specifics */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+  .cal-header { font-family: var(--font-mono); font-size: 10px; color: var(--ink-faint); text-transform: uppercase; padding-bottom: 8px;}
+  .cal-day { background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 12px 4px; font-size: 13px; min-height: 40px; display: flex; align-items: center; justify-content: center;}
+  .cal-day.today { border-color: var(--a); color: var(--a); font-weight: 600; }
+  
   .bottom-nav{
     display:none; position:fixed; bottom:0; left:0; right:0;
     background:var(--bg-card); border-top:1px solid var(--line);
@@ -192,20 +203,21 @@
   <header class="topbar">
     <div class="brand">
       <svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
-        <circle cx="10" cy="13" r="8" fill="#4B6B53" opacity="0.85"/>
-        <circle cx="16" cy="13" r="8" fill="#55708F" opacity="0.85" style="mix-blend-mode:multiply"/>
+        <circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/>
+        <circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/>
       </svg>
       <span class="brand-name">The Lair</span>
     </div>
     <nav class="nav-desktop">
       <a data-target="dashboard" class="nav-link active">Dashboard</a>
       <a data-target="watchlist" class="nav-link">Watchlist</a>
-      <a data-target="notes" class="nav-link">Notes</a>
+      <a data-target="notes" class="nav-link">Boards</a>
       <a data-target="calendar" class="nav-link">Calendar</a>
     </nav>
     <div class="top-right">
       <span class="chip"><span class="dot" id="me-dot"></span><span id="me-name">…</span></span>
-      <button class="signout" id="signout">Sign out</button>
+      <span class="settings-btn" id="btn-settings">⚙️</span>
+      <button class="signout" id="signout">Exit</button>
     </div>
   </header>
 
@@ -213,7 +225,6 @@
     <div>
       <p class="eyebrow" id="today-label">—</p>
       <h1 id="hello">Welcome back</h1>
-      <p class="sub" id="partner-line">—</p>
     </div>
     <button class="btn-primary" id="btn-checkin">Daily Check-in</button>
   </div>
@@ -223,117 +234,153 @@
     <section id="view-dashboard" class="view-container active">
       <section class="card">
         <div class="card-head">
-          <h2>Today's Habits</h2>
+          <h2>Habits</h2>
           <div class="tabs">
             <button class="tab active" id="tab-me">Me</button>
             <button class="tab" id="tab-partner">Partner</button>
           </div>
         </div>
         <div class="stat-grid" id="habit-grid">
-          <div class="stat" style="opacity: 0.5; grid-column: span 5;">Waiting for data...</div>
+          <div style="font-size:12px; color:var(--ink-soft); grid-column:1/-1;">Loading habits...</div>
         </div>
       </section>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <section class="card" style="grid-column: span 1;">
+          <div class="card-head"><h2>Activity Feed</h2></div>
+          <ul class="feed" id="activity-feed"></ul>
+        </section>
 
-      <section class="card">
-        <div class="card-head"><h2>Activity Feed</h2><span class="meta">Live</span></div>
-        <ul class="feed" id="activity-feed">
-          <li style="color:var(--ink-soft); font-size:13px;">No recent activity.</li>
-        </ul>
-      </section>
+        <section class="card" style="grid-column: span 1;">
+          <div class="card-head"><h2>Calendar</h2></div>
+          <div id="dash-calendar-container"></div>
+        </section>
+      </div>
     </section>
 
     <!-- VIEW: WATCHLIST -->
     <section id="view-watchlist" class="view-container">
-      
-      <!-- Search TMDB -->
       <section class="card" style="margin-bottom: 16px;">
-        <div class="card-head">
-          <h2>Find a Movie or Show</h2>
-        </div>
+        <div class="card-head"><h2>Search TMDB</h2></div>
         <div style="display:flex; gap:10px; margin-bottom: 16px;">
-          <input type="text" id="tmdb-search-input" placeholder="e.g., Dune, The Bear..." style="flex:1;">
+          <input type="text" id="tmdb-search-input" placeholder="Search a movie or show..." autocomplete="off">
           <button class="btn-primary" id="btn-search-tmdb">Search</button>
         </div>
-        <div id="tmdb-results" class="scroll-row">
-          <!-- Live TMDB Search results will appear here -->
-        </div>
+        <div id="tmdb-results" class="scroll-row"></div>
       </section>
 
-      <!-- Saved Shared Watchlist -->
       <section class="card">
-        <div class="card-head">
-          <h2>The Lair Watchlist</h2>
-        </div>
-        <div id="shared-watchlist" class="scroll-row">
-          <p style="color:var(--ink-soft); font-size: 13px;">Saved items will appear here soon.</p>
-        </div>
+        <div class="card-head"><h2>The Lair Watchlist</h2></div>
+        <div id="shared-watchlist" class="scroll-row" style="flex-wrap: wrap;"></div>
       </section>
-
     </section>
 
-    <!-- VIEW: NOTES -->
+    <!-- VIEW: NOTES (BOARDS) -->
     <section id="view-notes" class="view-container">
       <section class="card">
         <div class="card-head">
-          <h2>Collaborative Notes</h2>
-          <button class="btn-primary" id="btn-add-note">+ New List</button>
+          <h2>Collaborative Boards</h2>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="new-board-input" placeholder="New board name..." style="width: 200px; padding: 8px;">
+            <button class="btn-primary" id="btn-add-board">Create</button>
+          </div>
         </div>
-        <p style="color:var(--ink-soft); font-size: 14px;">Multi-category notes architecture will render here.</p>
+        <div class="boards-grid" id="boards-container"></div>
       </section>
     </section>
 
     <!-- VIEW: CALENDAR -->
     <section id="view-calendar" class="view-container">
       <section class="card">
-        <div class="card-head"><h2>Shared Calendar</h2></div>
-        <p style="color:var(--ink-soft); font-size: 14px;">Event grids and upcoming dates will render here.</p>
+        <div class="card-head"><h2 id="full-cal-month">Calendar</h2></div>
+        <div id="full-calendar-container"></div>
       </section>
     </section>
   </main>
 
-  <!-- Check-in Modal Overlay -->
+  <!-- Modals -->
+
+  <!-- 1. Settings / Custom Habits Modal -->
+  <div class="modal-overlay" id="modal-settings">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h2>Habit Settings</h2>
+        <button class="close-modal" id="close-settings">&times;</button>
+      </div>
+      <p class="field-label">Current Habits to Track</p>
+      <ul id="settings-habits-list" style="margin-bottom: 16px; display:flex; flex-direction:column; gap:8px;"></ul>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="new-habit-input" placeholder="e.g. Gym, Reading">
+        <button class="btn-secondary" id="btn-add-habit">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Check-in Modal -->
   <div class="modal-overlay" id="modal-checkin">
     <div class="modal-content">
       <div class="modal-head">
         <h2>Daily Check-in</h2>
         <button class="close-modal" id="close-checkin">&times;</button>
       </div>
-      
       <div id="checkin-form" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
-        <div>
-          <label class="field-label" for="habit-water">Water (Liters)</label>
-          <input type="number" id="habit-water" step="0.1" min="0" placeholder="e.g., 1.5">
-        </div>
-        <div>
-          <label class="field-label" for="habit-sleep">Sleep (Hours)</label>
-          <input type="number" id="habit-sleep" step="0.5" min="0" placeholder="e.g., 7.5">
-        </div>
-        <div>
-          <label class="field-label" for="habit-mood">Mood</label>
-          <select id="habit-mood">
-            <option value="Great">Great</option>
-            <option value="Steady" selected>Steady</option>
-            <option value="Tired">Tired</option>
-            <option value="Off">Off</option>
-          </select>
-        </div>
+        <!-- Dynamically populated based on settings -->
       </div>
-
       <button class="btn-primary" style="width: 100%;" id="save-checkin">Save to Dashboard</button>
     </div>
   </div>
 
+  <!-- 3. Edit Watchlist Item Modal -->
+  <div class="modal-overlay" id="modal-edit-watch">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h2 id="edit-watch-title">Edit Movie</h2>
+        <button class="close-modal" id="close-edit-watch">&times;</button>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+        <input type="hidden" id="edit-watch-id">
+        <input type="hidden" id="edit-watch-type">
+        
+        <div>
+          <label class="field-label">Status</label>
+          <select id="edit-watch-status">
+            <option value="Want to Watch">Want to Watch</option>
+            <option value="Watching">Watching</option>
+            <option value="Watched">Watched</option>
+          </select>
+        </div>
+
+        <div id="watching-meta-fields" style="display:none; gap:10px;">
+          <div style="flex:1;" id="ep-field-container">
+            <label class="field-label">Episode</label>
+            <input type="text" id="edit-watch-ep" placeholder="e.g. S02E04">
+          </div>
+          <div style="flex:1;">
+            <label class="field-label">Timestamp</label>
+            <input type="text" id="edit-watch-time" placeholder="e.g. 1:24:00">
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:10px;">
+        <button class="btn-secondary" style="flex:1; color:var(--warn); border-color:var(--warn-soft);" id="btn-delete-watch">Delete</button>
+        <button class="btn-primary" style="flex:2;" id="btn-save-watch">Save Update</button>
+      </div>
+    </div>
+  </div>
+
   <nav class="bottom-nav">
-    <a data-target="dashboard" class="nav-link active"><span>Dash</span></a>
-    <a data-target="watchlist" class="nav-link"><span>Watch</span></a>
-    <a data-target="notes" class="nav-link"><span>Notes</span></a>
-    <a data-target="calendar" class="nav-link"><span>Cal</span></a>
+    <a data-target="dashboard" class="nav-link active">Dash</a>
+    <a data-target="watchlist" class="nav-link">Watch</a>
+    <a data-target="notes" class="nav-link">Boards</a>
+    <a data-target="calendar" class="nav-link">Cal</a>
   </nav>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, collection, onSnapshot, query, orderBy, limit, setDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, collection, onSnapshot, query, orderBy, limit, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4",
@@ -343,10 +390,11 @@
     messagingSenderId: "1012254851251",
     appId: "1:1012254851251:web:8f3d4aa32504922c9ff0c6"
   };
+  const TMDB_API_KEY = "eecc2609dbfe92b8fcb518848aa112be"; 
 
   const PEOPLE = {
-    "justibadx@gmail.com":    { name: "Con",       id: "con",       color: "#4B6B53", partner: "Cryeteria" },
-    "theibadhasan@gmail.com": { name: "Cryeteria", id: "cryeteria", color: "#55708F", partner: "Con" }
+    "justibadx@gmail.com":    { name: "Con",       id: "con",       color: "#70947A", partner: "Cryeteria" },
+    "theibadhasan@gmail.com": { name: "Cryeteria", id: "cryeteria", color: "#7A9BC2", partner: "Con" }
   };
 
   const app = initializeApp(firebaseConfig);
@@ -354,190 +402,353 @@
   const db = getFirestore(app);
 
   let currentUser = null;
+  let customHabitsList = ["Water", "Sleep", "Mood"]; // Default fallback
+  let viewingTarget = 'me'; // UI toggle for habits
 
-  // --- SPA ROUTING ENGINE ---
+  // --- SPA ROUTING ---
   const navLinks = document.querySelectorAll('.nav-link');
   const views = document.querySelectorAll('.view-container');
-
   navLinks.forEach(link => {
     link.addEventListener('click', (e) => {
       const target = e.currentTarget.getAttribute('data-target');
-      
       navLinks.forEach(l => l.classList.remove('active'));
       document.querySelectorAll(`.nav-link[data-target="${target}"]`).forEach(l => l.classList.add('active'));
-      
       views.forEach(v => v.classList.remove('active'));
       document.getElementById(`view-${target}`).classList.add('active');
     });
   });
 
-  // --- MODAL HANDLING ---
-  const modalCheckin = document.getElementById('modal-checkin');
-  document.getElementById('btn-checkin').addEventListener('click', () => modalCheckin.classList.add('active'));
-  document.getElementById('close-checkin').addEventListener('click', () => modalCheckin.classList.remove('active'));
-  
+  // --- UI MODALS SETUP ---
+  const toggleModal = (id, show) => document.getElementById(id).classList.toggle('active', show);
+  document.getElementById('btn-settings').addEventListener('click', () => toggleModal('modal-settings', true));
+  document.getElementById('close-settings').addEventListener('click', () => toggleModal('modal-settings', false));
+  document.getElementById('btn-checkin').addEventListener('click', () => {
+    buildCheckinForm(); toggleModal('modal-checkin', true);
+  });
+  document.getElementById('close-checkin').addEventListener('click', () => toggleModal('modal-checkin', false));
+  document.getElementById('close-edit-watch').addEventListener('click', () => toggleModal('modal-edit-watch', false));
+
   // --- AUTH GATE ---
   onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      window.location.replace("index.html");
-      return;
-    }
-    
-    currentUser = PEOPLE[user.email] || { name: "there", id: "unknown", color: "#4B6B53", partner: "your friend" };
-
+    if (!user) { window.location.replace("index.html"); return; }
+    currentUser = PEOPLE[user.email] || { name: "there", id: "unknown", color: "#70947A", partner: "friend" };
     document.getElementById("me-name").textContent = currentUser.name;
     document.getElementById("me-dot").style.background = currentUser.color;
     document.getElementById("tab-me").textContent = currentUser.name;
     document.getElementById("tab-partner").textContent = currentUser.partner;
-
-    const hour = new Date().getHours();
-    const partOfDay = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
-    document.getElementById("hello").textContent = `${partOfDay}, ${currentUser.name}.`;
-    
-    document.getElementById("today-label").textContent = 
-      new Date().toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"long" });
-
+    document.getElementById("today-label").textContent = new Date().toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"long" });
     document.body.classList.add("ready");
-    initDashboardSync();
+    
+    renderCalendar('dash-calendar-container');
+    renderCalendar('full-calendar-container');
+    initLiveSync();
   });
+  document.getElementById("signout").addEventListener("click", async () => { await signOut(auth); window.location.replace("index.html"); });
 
-  document.getElementById("signout").addEventListener("click", async () => {
-    await signOut(auth);
-    window.location.replace("index.html");
-  });
-
-  // --- REAL-TIME FIRESTORE LISTENER (DASHBOARD) ---
-  function initDashboardSync() {
+  // --- LIVE SYNC ENGINE ---
+  function initLiveSync() {
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // Listen to Activity Feed
-    const feedRef = query(collection(db, 'feed'), orderBy('timestamp', 'desc'), limit(10));
-    onSnapshot(feedRef, (snapshot) => {
-      const feedList = document.getElementById('activity-feed');
-      feedList.innerHTML = '';
-      if(snapshot.empty) {
-        feedList.innerHTML = '<li style="color:var(--ink-soft); font-size:13px;">No recent activity.</li>';
-        return;
-      }
-      snapshot.forEach(docSnap => {
-        const item = docSnap.data();
-        const li = document.createElement('li');
-        li.innerHTML = `
-          <span class="dot" style="background:${item.color}"></span>
-          <div>
-            <p><strong>${item.user}</strong> ${item.action}</p>
-            <time>Just now</time>
+    // 1. Settings (Custom Habits)
+    onSnapshot(doc(db, 'settings', 'habits'), (snap) => {
+      if(snap.exists() && snap.data().list) { customHabitsList = snap.data().list; }
+      renderSettingsHabits();
+      renderHabitGrid(); 
+    });
+
+    // 2. Today's Data
+    onSnapshot(doc(db, 'habits', todayStr), (snap) => {
+      window.todayData = snap.exists() ? snap.data() : {};
+      renderHabitGrid();
+    });
+
+    // 3. Activity Feed
+    onSnapshot(query(collection(db, 'feed'), orderBy('timestamp', 'desc'), limit(8)), (snap) => {
+      const feed = document.getElementById('activity-feed');
+      feed.innerHTML = snap.empty ? '<li style="color:var(--ink-soft); font-size:13px;">No recent activity.</li>' : '';
+      snap.forEach(d => {
+        const item = d.data();
+        feed.innerHTML += `<li><span class="dot" style="background:${item.color}"></span><div><p><strong>${item.user}</strong> ${item.action}</p></div></li>`;
+      });
+    });
+
+    // 4. Watchlist
+    onSnapshot(collection(db, 'watchlist'), (snap) => {
+      const wList = document.getElementById('shared-watchlist');
+      wList.innerHTML = snap.empty ? '<p style="color:var(--ink-soft); font-size:13px;">Nothing saved yet.</p>' : '';
+      window.watchlistData = {};
+      snap.forEach(docSnap => {
+        const data = docSnap.data();
+        window.watchlistData[docSnap.id] = data;
+        let metaHtml = '';
+        if (data.status === 'Watching') {
+          if (data.type === 'tv' && data.episode) metaHtml += `Ep: ${data.episode} `;
+          if (data.timestamp) metaHtml += `| At: ${data.timestamp}`;
+        }
+        wList.innerHTML += `
+          <div class="title-card" data-id="${docSnap.id}">
+            <div class="poster" style="${data.poster ? `background-image:url('${data.poster}')` : ''}">${!data.poster ? data.title : ''}</div>
+            <p class="title-name">${data.title}</p>
+            <span class="pill ${data.status.replace(/\s+/g, '')}">${data.status}</span>
+            ${metaHtml ? `<span class="sub-meta">${metaHtml}</span>` : ''}
           </div>
         `;
-        feedList.appendChild(li);
+      });
+    });
+
+    // 5. Boards
+    onSnapshot(collection(db, 'boards'), (snap) => {
+      const bGrid = document.getElementById('boards-container');
+      bGrid.innerHTML = '';
+      snap.forEach(docSnap => {
+        const board = docSnap.data();
+        const itemsHtml = (board.items || []).map((item, idx) => `
+          <label class="board-item ${item.done ? 'done' : ''}">
+            <input type="checkbox" data-board="${docSnap.id}" data-idx="${idx}" ${item.done ? 'checked' : ''}>
+            <span>${item.text}</span>
+          </label>
+        `).join('');
+        
+        bGrid.innerHTML += `
+          <div class="board">
+            <div class="board-title"><span>${board.name}</span> <span class="delete-board" data-id="${docSnap.id}">&times;</span></div>
+            <div class="board-items">${itemsHtml}</div>
+            <div class="add-item-form">
+              <input type="text" placeholder="Add item..." id="b-in-${docSnap.id}" style="padding:6px; font-size:13px;">
+              <button class="btn-secondary btn-add-b-item" data-id="${docSnap.id}" style="padding:6px 10px; font-size:12px;">Add</button>
+            </div>
+          </div>
+        `;
       });
     });
   }
 
-  // --- SAVE CHECK-IN LOGIC ---
-  document.getElementById('save-checkin').addEventListener('click', async () => {
-    const btn = document.getElementById('save-checkin');
-    btn.textContent = "Saving...";
-    
-    const water = document.getElementById('habit-water').value;
-    const sleep = document.getElementById('habit-sleep').value;
-    const mood = document.getElementById('habit-mood').value;
+  // --- HABITS & SETTINGS ---
+  document.getElementById('tab-me').addEventListener('click', () => { viewingTarget='me'; document.getElementById('tab-partner').classList.remove('active'); document.getElementById('tab-me').classList.add('active'); renderHabitGrid(); });
+  document.getElementById('tab-partner').addEventListener('click', () => { viewingTarget='partner'; document.getElementById('tab-me').classList.remove('active'); document.getElementById('tab-partner').classList.add('active'); renderHabitGrid(); });
 
-    const todayStr = new Date().toISOString().split('T')[0];
+  function renderHabitGrid() {
+    const grid = document.getElementById('habit-grid');
+    grid.innerHTML = '';
+    const targetId = viewingTarget === 'me' ? currentUser.id : PEOPLE[currentUser.email].partner.toLowerCase();
+    const targetData = window.todayData ? window.todayData[targetId] || {} : {};
     
-    // Save to Habits tracker
-    await setDoc(doc(db, 'habits', todayStr), {
-      [currentUser.id]: { water, sleep, mood, timestamp: serverTimestamp() }
-    }, { merge: true });
-
-    // Post to Activity Feed
-    await addDoc(collection(db, 'feed'), {
-      user: currentUser.name,
-      userId: currentUser.id,
-      color: currentUser.color,
-      action: `logged their daily check-in (Mood: ${mood}).`,
-      timestamp: serverTimestamp()
+    customHabitsList.forEach(habit => {
+      const val = targetData[habit] || '--';
+      grid.innerHTML += `<div class="stat"><div class="stat-value">${val}</div><div class="stat-label">${habit}</div></div>`;
     });
+  }
 
-    btn.textContent = "Save to Dashboard";
-    modalCheckin.classList.remove('active');
-    document.getElementById('habit-water').value = '';
-    document.getElementById('habit-sleep').value = '';
+  function renderSettingsHabits() {
+    const list = document.getElementById('settings-habits-list');
+    list.innerHTML = customHabitsList.map(h => `<li style="display:flex; justify-content:space-between; background:var(--bg); padding:8px 12px; border-radius:8px;">${h} <span style="color:var(--warn); cursor:pointer;" onclick="window.removeHabit('${h}')">&times;</span></li>`).join('');
+  }
+  
+  window.removeHabit = async (habit) => {
+    const newList = customHabitsList.filter(h => h !== habit);
+    await setDoc(doc(db, 'settings', 'habits'), { list: newList });
+  };
+  document.getElementById('btn-add-habit').addEventListener('click', async () => {
+    const val = document.getElementById('new-habit-input').value.trim();
+    if(val && !customHabitsList.includes(val)) {
+      customHabitsList.push(val);
+      await setDoc(doc(db, 'settings', 'habits'), { list: customHabitsList });
+      document.getElementById('new-habit-input').value = '';
+    }
   });
 
-  // --- WATCHLIST & TMDB LOGIC ---
-  const TMDB_API_KEY = "eecc2609dbfe92b8fcb518848aa112be"; 
+  function buildCheckinForm() {
+    const form = document.getElementById('checkin-form');
+    form.innerHTML = customHabitsList.map(habit => `
+      <div><label class="field-label">${habit}</label><input type="text" id="ci-${habit}" placeholder="Value..."></div>
+    `).join('');
+  }
 
-  // 1. Search TMDB
-  document.getElementById('btn-search-tmdb').addEventListener('click', async () => {
-    const queryStr = document.getElementById('tmdb-search-input').value.trim();
-    if (!queryStr) return;
+  document.getElementById('save-checkin').addEventListener('click', async () => {
+    const btn = document.getElementById('save-checkin'); btn.textContent = "Saving...";
+    const todayStr = new Date().toISOString().split('T')[0];
+    let payload = {};
+    customHabitsList.forEach(h => {
+      const val = document.getElementById(`ci-${h}`).value;
+      if(val) payload[h] = val;
+    });
+    payload.timestamp = serverTimestamp();
+    
+    await setDoc(doc(db, 'habits', todayStr), { [currentUser.id]: payload }, { merge: true });
+    await addDoc(collection(db, 'feed'), { user: currentUser.name, color: currentUser.color, action: `completed their check-in.`, timestamp: serverTimestamp() });
+    
+    toggleModal('modal-checkin', false); btn.textContent = "Save to Dashboard";
+  });
 
-    const btn = document.getElementById('btn-search-tmdb');
-    btn.textContent = "...";
 
+  // --- TMDB SEARCH (LIVE + ENTER) ---
+  const searchInput = document.getElementById('tmdb-search-input');
+  const searchBtn = document.getElementById('btn-search-tmdb');
+  let searchTimeout;
+
+  async function performSearch() {
+    const queryStr = searchInput.value.trim();
+    const container = document.getElementById('tmdb-results');
+    if (!queryStr) { container.innerHTML = ''; return; }
+    searchBtn.textContent = "...";
     try {
       const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(queryStr)}`);
       const data = await res.json();
-      
-      const container = document.getElementById('tmdb-results');
       container.innerHTML = '';
-      
       data.results.filter(r => r.media_type === 'movie' || r.media_type === 'tv').forEach(item => {
         const title = item.title || item.name;
         const year = (item.release_date || item.first_air_date || '').split('-')[0];
         const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '';
         
-        const card = document.createElement('div');
-        card.className = 'title-card';
-        card.innerHTML = `
-          <div class="poster" style="${posterPath ? `background-image: url('${posterPath}'); background-size: cover;` : ''}">
-            ${!posterPath ? title : ''}
+        container.innerHTML += `
+          <div class="title-card">
+            <div class="poster" style="${posterPath ? `background-image:url('${posterPath}')` : ''}">${!posterPath ? title : ''}</div>
+            <p class="title-name">${title} ${year ? `(${year})` : ''}</p>
+            <button class="btn-secondary add-to-watchlist-btn" style="width:100%; padding:6px; font-size:11px; margin-top:auto;" 
+              data-title="${title.replace(/"/g, '&quot;')}" data-poster="${posterPath}" data-type="${item.media_type}">+ Add</button>
           </div>
-          <p class="title-name">${title} ${year ? `(${year})` : ''}</p>
-          <button class="btn-primary add-to-watchlist-btn" style="width:100%; padding: 8px; font-size:12px; margin-top:auto;" 
-            data-title="${title.replace(/"/g, '&quot;')}" 
-            data-poster="${posterPath}" 
-            data-type="${item.media_type}">
-            + Add to List
-          </button>
         `;
-        container.appendChild(card);
       });
-    } catch(err) {
-      console.error("TMDB error:", err);
-    }
-    btn.textContent = "Search";
-  });
+    } catch(err) { console.error(err); }
+    searchBtn.textContent = "Search";
+  }
 
-  // 2. Save Selected Title to Firestore
+  searchInput.addEventListener('input', () => { clearTimeout(searchTimeout); searchTimeout = setTimeout(performSearch, 500); });
+  searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(searchTimeout); performSearch(); }});
+  searchBtn.addEventListener('click', () => { clearTimeout(searchTimeout); performSearch(); });
+
+  // Add to Watchlist
   document.getElementById('tmdb-results').addEventListener('click', async (e) => {
     if (e.target.classList.contains('add-to-watchlist-btn')) {
-      const btn = e.target;
-      btn.textContent = "Added!";
-      btn.disabled = true;
-
+      const btn = e.target; btn.textContent = "Added"; btn.disabled = true;
       const title = btn.getAttribute('data-title');
-      const poster = btn.getAttribute('data-poster');
-      
       await addDoc(collection(db, 'watchlist'), {
-        title,
-        poster,
-        status: 'Want to Watch',
-        addedBy: currentUser.name,
-        timestamp: serverTimestamp(),
-        ratings: { con: null, cryeteria: null }
+        title, type: btn.getAttribute('data-type'), poster: btn.getAttribute('data-poster'),
+        status: 'Want to Watch', addedBy: currentUser.name, timestamp: serverTimestamp()
       });
+      await addDoc(collection(db, 'feed'), { user: currentUser.name, color: currentUser.color, action: `added ${title}.`, timestamp: serverTimestamp() });
+    }
+  });
 
-      await addDoc(collection(db, 'feed'), {
-        user: currentUser.name,
-        userId: currentUser.id,
-        color: currentUser.color,
-        action: `added ${title} to the watchlist.`,
-        timestamp: serverTimestamp()
+
+  // --- WATCHLIST EDITING (TIMESTAMP/EPISODES) ---
+  const wStatusSel = document.getElementById('edit-watch-status');
+  const wMetaFields = document.getElementById('watching-meta-fields');
+  const wEpCont = document.getElementById('ep-field-container');
+
+  document.getElementById('shared-watchlist').addEventListener('click', (e) => {
+    const card = e.target.closest('.title-card');
+    if (!card) return;
+    const docId = card.getAttribute('data-id');
+    const data = window.watchlistData[docId];
+    
+    document.getElementById('edit-watch-id').value = docId;
+    document.getElementById('edit-watch-type').value = data.type;
+    document.getElementById('edit-watch-title').textContent = data.title;
+    wStatusSel.value = data.status;
+    document.getElementById('edit-watch-ep').value = data.episode || '';
+    document.getElementById('edit-watch-time').value = data.timestamp || '';
+    
+    toggleMetaFields(data.status, data.type);
+    toggleModal('modal-edit-watch', true);
+  });
+
+  wStatusSel.addEventListener('change', (e) => toggleMetaFields(e.target.value, document.getElementById('edit-watch-type').value));
+
+  function toggleMetaFields(status, type) {
+    if (status === 'Watching') {
+      wMetaFields.style.display = 'flex';
+      wEpCont.style.display = type === 'tv' ? 'block' : 'none';
+    } else {
+      wMetaFields.style.display = 'none';
+    }
+  }
+
+  document.getElementById('btn-save-watch').addEventListener('click', async () => {
+    const id = document.getElementById('edit-watch-id').value;
+    const status = wStatusSel.value;
+    let updateData = { status };
+    if (status === 'Watching') {
+      updateData.timestamp = document.getElementById('edit-watch-time').value;
+      if(document.getElementById('edit-watch-type').value === 'tv') updateData.episode = document.getElementById('edit-watch-ep').value;
+    }
+    await updateDoc(doc(db, 'watchlist', id), updateData);
+    toggleModal('modal-edit-watch', false);
+  });
+
+  document.getElementById('btn-delete-watch').addEventListener('click', async () => {
+    await deleteDoc(doc(db, 'watchlist', document.getElementById('edit-watch-id').value));
+    toggleModal('modal-edit-watch', false);
+  });
+
+
+  // --- BOARDS LOGIC ---
+  document.getElementById('btn-add-board').addEventListener('click', async () => {
+    const title = document.getElementById('new-board-input').value.trim();
+    if(title) {
+      await addDoc(collection(db, 'boards'), { name: title, items: [], timestamp: serverTimestamp() });
+      document.getElementById('new-board-input').value = '';
+    }
+  });
+
+  document.getElementById('boards-container').addEventListener('click', async (e) => {
+    if (e.target.classList.contains('delete-board')) {
+      await deleteDoc(doc(db, 'boards', e.target.getAttribute('data-id')));
+    }
+    if (e.target.classList.contains('btn-add-b-item')) {
+      const boardId = e.target.getAttribute('data-id');
+      const input = document.getElementById(`b-in-${boardId}`);
+      if(input.value.trim()) {
+        await updateDoc(doc(db, 'boards', boardId), { items: arrayUnion({ text: input.value.trim(), done: false }) });
+      }
+    }
+  });
+  
+  document.getElementById('boards-container').addEventListener('change', async (e) => {
+    if (e.target.type === 'checkbox') {
+      const boardId = e.target.getAttribute('data-board');
+      const idx = parseInt(e.target.getAttribute('data-idx'));
+      const boardRef = doc(db, 'boards', boardId);
+      // Firestore doesn't update arrays by index easily, so we read, mutate, rewrite
+      onSnapshot(boardRef, (snap) => {
+        let items = snap.data().items;
+        items[idx].done = e.target.checked;
+        updateDoc(boardRef, { items });
+      }, err => {}, () => {}); // execute once hack 
+      // Safe execution using fetch-once pattern
+      import("https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js").then(async ({getDoc}) => {
+         const d = await getDoc(boardRef);
+         let items = d.data().items;
+         items[idx].done = e.target.checked;
+         await updateDoc(boardRef, { items });
       });
     }
   });
+
+
+  // --- CALENDAR RENDERER ---
+  function renderCalendar(containerId) {
+    const container = document.getElementById(containerId);
+    if(!container) return;
+    const date = new Date();
+    const year = date.getFullYear(); const month = date.getMonth();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const today = date.getDate();
+    
+    if(containerId === 'full-calendar-container') {
+      document.getElementById('full-cal-month').textContent = date.toLocaleString('default', { month: 'long', year: 'numeric' });
+    }
+
+    let html = '<div class="cal-grid"><div class="cal-header">S</div><div class="cal-header">M</div><div class="cal-header">T</div><div class="cal-header">W</div><div class="cal-header">T</div><div class="cal-header">F</div><div class="cal-header">S</div>';
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    for(let i = 0; i < firstDay; i++) { html += `<div></div>`; } // empty padding
+    for(let i = 1; i <= daysInMonth; i++) {
+      html += `<div class="cal-day ${i === today ? 'today' : ''}">${i}</div>`;
+    }
+    html += '</div>';
+    container.innerHTML = html;
+  }
 
 </script>
 </body>
