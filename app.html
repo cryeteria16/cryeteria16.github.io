@@ -411,6 +411,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, collection, onSnapshot, query, orderBy, limit, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
@@ -422,15 +423,11 @@
     "theibadhasan@gmail.com": { name: "Cryeteria", id: "cryeteria", color: "#7A9BC2" }
   };
 
-  const app = initializeApp(firebaseConfig); const db = getFirestore(app);
-  
-  // Read who logged in from browser local storage
-  const userEmail = localStorage.getItem("lair_user");
-  if (!userEmail || !PEOPLE[userEmail]) {
-    window.location.replace("index.html");
-  }
+  const app = initializeApp(firebaseConfig); 
+  const auth = getAuth(app); 
+  const db = getFirestore(app);
 
-  const currentUser = PEOPLE[userEmail];
+  let currentUser = null;
   let globalStreamServer = ""; 
   let isTheaterSyncing = false; 
 
@@ -544,15 +541,19 @@
     player.pause(); 
   });
 
-  // Load User Profile UI
-  document.getElementById("me-name").textContent = currentUser.name;
-  document.getElementById("me-dot").style.background = currentUser.color;
-  document.getElementById("today-label").textContent = new Date().toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"long" });
-  document.body.classList.add("ready"); 
-  initLiveSync();
+  // Track Firebase Auth State securely
+  onAuthStateChanged(auth, (user) => {
+    if (!user) { window.location.replace("index.html"); return; }
+    currentUser = PEOPLE[user.email] || { name: "there", id: "unknown", color: "#70947A" };
+    document.getElementById("me-name").textContent = currentUser.name;
+    document.getElementById("me-dot").style.background = currentUser.color;
+    document.getElementById("today-label").textContent = new Date().toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"long" });
+    document.body.classList.add("ready"); 
+    initLiveSync();
+  });
   
-  document.getElementById("signout").addEventListener("click", () => { 
-    localStorage.removeItem("lair_user"); 
+  document.getElementById("signout").addEventListener("click", async () => { 
+    await signOut(auth); 
     window.location.replace("index.html"); 
   });
 
