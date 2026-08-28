@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tandem — Dashboard</title>
+<title>The Lair — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -51,7 +51,16 @@
   a{color:inherit; text-decoration:none; cursor:pointer;}
   ul{list-style:none;}
   button{font-family:inherit; border:none; background:none; cursor:pointer; color:inherit;}
-  input{accent-color:var(--a);}
+  
+  input, select {
+    font-family:var(--font-body); font-size:15px; color:var(--ink);
+    background:var(--bg); border:1px solid var(--line);
+    border-radius:10px; padding:12px 14px;
+    transition:border-color .15s, box-shadow .15s;
+    width: 100%;
+  }
+  input:focus, select:focus { outline:none; border-color:var(--a); }
+  
   :focus-visible{outline:2px solid var(--a); outline-offset:2px;}
 
   /* Top Navigation */
@@ -74,8 +83,6 @@
   .signout{font-size:12px; color:var(--ink-faint); font-family:var(--font-mono);}
   .signout:hover{color:var(--ink);}
   .dot{width:7px; height:7px; border-radius:50%; display:inline-block; flex-shrink:0;}
-  .dot-a{background:var(--a);}
-  .dot-b{background:var(--b);}
 
   @media (max-width:720px){ .nav-desktop{display:none;} }
 
@@ -97,8 +104,10 @@
     background:var(--ink); color:var(--bg-card);
     padding:10px 16px; border-radius:var(--radius-sm);
     font-size:13px; font-weight:500; transition:opacity .15s;
+    cursor:pointer; text-align:center;
   }
   .btn-primary:hover{opacity:0.85;}
+  .btn-primary:disabled{opacity:0.5; cursor:default;}
 
   /* SPA View Architecture */
   .view-container { display: none; }
@@ -112,7 +121,6 @@
   .card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
   .card-head h2{font-family:var(--font-display); font-size:17px; font-weight:600;}
   .meta{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);}
-  .see-all{font-size:13px; color:var(--ink-soft); cursor:pointer;}
 
   /* Modals */
   .modal-overlay{
@@ -130,6 +138,11 @@
   .modal-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
   .modal-head h2{font-family:var(--font-display); font-size:20px;}
   .close-modal{font-size:24px; color:var(--ink-faint); line-height:1;}
+  .field-label{
+    display:block; font-family:var(--font-mono); font-size:11px;
+    letter-spacing:0.06em; text-transform:uppercase;
+    color:var(--ink-faint); margin-bottom:7px;
+  }
 
   /* Dashboard specifics */
   .tabs{display:flex; gap:4px; background:var(--a-softer); padding:3px; border-radius:20px;}
@@ -147,6 +160,19 @@
   .feed li .dot{margin-top:7px;}
   .feed p{font-size:13.5px;}
   .feed time{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);}
+
+  /* Watchlist specifics */
+  .scroll-row{display:flex; gap:14px; overflow-x:auto; padding-bottom:12px; -webkit-overflow-scrolling:touch;}
+  .title-card{flex:0 0 140px; display:flex; flex-direction:column;}
+  .poster{
+    height:190px; border-radius:var(--radius-sm); margin-bottom:8px;
+    background:linear-gradient(135deg, var(--a-soft), var(--b-soft));
+    background-position: center;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--font-display); font-size:13px; color:var(--ink-soft);
+    text-align:center; padding:10px; box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  }
+  .title-name{font-size:13px; font-weight:500; margin-bottom:8px; line-height: 1.3;}
 
   /* Bottom Navigation */
   .bottom-nav{
@@ -169,7 +195,7 @@
         <circle cx="10" cy="13" r="8" fill="#4B6B53" opacity="0.85"/>
         <circle cx="16" cy="13" r="8" fill="#55708F" opacity="0.85" style="mix-blend-mode:multiply"/>
       </svg>
-      <span class="brand-name">Tandem</span>
+      <span class="brand-name">The Lair</span>
     </div>
     <nav class="nav-desktop">
       <a data-target="dashboard" class="nav-link active">Dashboard</a>
@@ -204,28 +230,45 @@
           </div>
         </div>
         <div class="stat-grid" id="habit-grid">
-          <!-- Populated by Firestore live sync -->
-          <div class="stat" style="opacity: 0.5;">Loading metrics...</div>
+          <div class="stat" style="opacity: 0.5; grid-column: span 5;">Waiting for data...</div>
         </div>
       </section>
 
       <section class="card">
         <div class="card-head"><h2>Activity Feed</h2><span class="meta">Live</span></div>
         <ul class="feed" id="activity-feed">
-          <!-- Populated by Firestore live sync -->
+          <li style="color:var(--ink-soft); font-size:13px;">No recent activity.</li>
         </ul>
       </section>
     </section>
 
     <!-- VIEW: WATCHLIST -->
     <section id="view-watchlist" class="view-container">
+      
+      <!-- Search TMDB -->
+      <section class="card" style="margin-bottom: 16px;">
+        <div class="card-head">
+          <h2>Find a Movie or Show</h2>
+        </div>
+        <div style="display:flex; gap:10px; margin-bottom: 16px;">
+          <input type="text" id="tmdb-search-input" placeholder="e.g., Dune, The Bear..." style="flex:1;">
+          <button class="btn-primary" id="btn-search-tmdb">Search</button>
+        </div>
+        <div id="tmdb-results" class="scroll-row">
+          <!-- Live TMDB Search results will appear here -->
+        </div>
+      </section>
+
+      <!-- Saved Shared Watchlist -->
       <section class="card">
         <div class="card-head">
-          <h2>Watchlist</h2>
-          <button class="btn-primary" id="btn-add-movie">+ Add Title</button>
+          <h2>The Lair Watchlist</h2>
         </div>
-        <p style="color:var(--ink-soft); font-size: 14px;">TMDB Integration and lists will render here.</p>
+        <div id="shared-watchlist" class="scroll-row">
+          <p style="color:var(--ink-soft); font-size: 13px;">Saved items will appear here soon.</p>
+        </div>
       </section>
+
     </section>
 
     <!-- VIEW: NOTES -->
@@ -255,8 +298,27 @@
         <h2>Daily Check-in</h2>
         <button class="close-modal" id="close-checkin">&times;</button>
       </div>
-      <p style="color:var(--ink-soft); font-size:14px; margin-bottom: 20px;">Log your habits. Custom habits can be managed in settings.</p>
-      <!-- Form inputs will be injected here for Water, Sleep, Mood, etc. -->
+      
+      <div id="checkin-form" style="display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px;">
+        <div>
+          <label class="field-label" for="habit-water">Water (Liters)</label>
+          <input type="number" id="habit-water" step="0.1" min="0" placeholder="e.g., 1.5">
+        </div>
+        <div>
+          <label class="field-label" for="habit-sleep">Sleep (Hours)</label>
+          <input type="number" id="habit-sleep" step="0.5" min="0" placeholder="e.g., 7.5">
+        </div>
+        <div>
+          <label class="field-label" for="habit-mood">Mood</label>
+          <select id="habit-mood">
+            <option value="Great">Great</option>
+            <option value="Steady" selected>Steady</option>
+            <option value="Tired">Tired</option>
+            <option value="Off">Off</option>
+          </select>
+        </div>
+      </div>
+
       <button class="btn-primary" style="width: 100%;" id="save-checkin">Save to Dashboard</button>
     </div>
   </div>
@@ -271,9 +333,8 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, collection, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, collection, onSnapshot, query, orderBy, limit, setDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-  // Fixed the API key (removed the 'S' typo from your original code)
   const firebaseConfig = {
     apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4",
     authDomain: "cryeterialoginpage.firebaseapp.com",
@@ -294,7 +355,7 @@
 
   let currentUser = null;
 
-  // SPA Routing Engine
+  // --- SPA ROUTING ENGINE ---
   const navLinks = document.querySelectorAll('.nav-link');
   const views = document.querySelectorAll('.view-container');
 
@@ -302,22 +363,20 @@
     link.addEventListener('click', (e) => {
       const target = e.currentTarget.getAttribute('data-target');
       
-      // Update UI active states
       navLinks.forEach(l => l.classList.remove('active'));
       document.querySelectorAll(`.nav-link[data-target="${target}"]`).forEach(l => l.classList.add('active'));
       
-      // Switch views
       views.forEach(v => v.classList.remove('active'));
       document.getElementById(`view-${target}`).classList.add('active');
     });
   });
 
-  // Modal Handling
+  // --- MODAL HANDLING ---
   const modalCheckin = document.getElementById('modal-checkin');
   document.getElementById('btn-checkin').addEventListener('click', () => modalCheckin.classList.add('active'));
   document.getElementById('close-checkin').addEventListener('click', () => modalCheckin.classList.remove('active'));
   
-  // Auth Gate
+  // --- AUTH GATE ---
   onAuthStateChanged(auth, (user) => {
     if (!user) {
       window.location.replace("index.html");
@@ -326,7 +385,6 @@
     
     currentUser = PEOPLE[user.email] || { name: "there", id: "unknown", color: "#4B6B53", partner: "your friend" };
 
-    // Set UI defaults
     document.getElementById("me-name").textContent = currentUser.name;
     document.getElementById("me-dot").style.background = currentUser.color;
     document.getElementById("tab-me").textContent = currentUser.name;
@@ -336,13 +394,10 @@
     const partOfDay = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
     document.getElementById("hello").textContent = `${partOfDay}, ${currentUser.name}.`;
     
-    // Set current date
     document.getElementById("today-label").textContent = 
       new Date().toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"long" });
 
     document.body.classList.add("ready");
-
-    // Initialize Real-Time Sync
     initDashboardSync();
   });
 
@@ -351,34 +406,138 @@
     window.location.replace("index.html");
   });
 
-  // Real-Time Firestore Engines
+  // --- REAL-TIME FIRESTORE LISTENER (DASHBOARD) ---
   function initDashboardSync() {
     const todayStr = new Date().toISOString().split('T')[0];
 
-    // 1. Listen to Today's Habits
-    const habitsDoc = doc(db, 'habits', todayStr);
-    onSnapshot(habitsDoc, (snapshot) => {
-      if (snapshot.exists()) {
-        const data = snapshot.data();
-        // TODO: Render dynamic custom habits into #habit-grid based on UI toggle (Me vs Partner)
-        console.log("Live Habit Data:", data);
-      } else {
-        document.getElementById('habit-grid').innerHTML = '<div style="grid-column: span 5; font-size:12px; color:var(--ink-soft); text-align:center;">No habits logged yet today.</div>';
-      }
-    });
-
-    // 2. Listen to Activity Feed
+    // Listen to Activity Feed
     const feedRef = query(collection(db, 'feed'), orderBy('timestamp', 'desc'), limit(10));
     onSnapshot(feedRef, (snapshot) => {
       const feedList = document.getElementById('activity-feed');
       feedList.innerHTML = '';
+      if(snapshot.empty) {
+        feedList.innerHTML = '<li style="color:var(--ink-soft); font-size:13px;">No recent activity.</li>';
+        return;
+      }
       snapshot.forEach(docSnap => {
         const item = docSnap.data();
-        // TODO: Map item data to feed HTML using currentUser and Partner colors
-        console.log("Live Feed Item:", item);
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <span class="dot" style="background:${item.color}"></span>
+          <div>
+            <p><strong>${item.user}</strong> ${item.action}</p>
+            <time>Just now</time>
+          </div>
+        `;
+        feedList.appendChild(li);
       });
     });
   }
+
+  // --- SAVE CHECK-IN LOGIC ---
+  document.getElementById('save-checkin').addEventListener('click', async () => {
+    const btn = document.getElementById('save-checkin');
+    btn.textContent = "Saving...";
+    
+    const water = document.getElementById('habit-water').value;
+    const sleep = document.getElementById('habit-sleep').value;
+    const mood = document.getElementById('habit-mood').value;
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    
+    // Save to Habits tracker
+    await setDoc(doc(db, 'habits', todayStr), {
+      [currentUser.id]: { water, sleep, mood, timestamp: serverTimestamp() }
+    }, { merge: true });
+
+    // Post to Activity Feed
+    await addDoc(collection(db, 'feed'), {
+      user: currentUser.name,
+      userId: currentUser.id,
+      color: currentUser.color,
+      action: `logged their daily check-in (Mood: ${mood}).`,
+      timestamp: serverTimestamp()
+    });
+
+    btn.textContent = "Save to Dashboard";
+    modalCheckin.classList.remove('active');
+    document.getElementById('habit-water').value = '';
+    document.getElementById('habit-sleep').value = '';
+  });
+
+  // --- WATCHLIST & TMDB LOGIC ---
+  const TMDB_API_KEY = "eecc2609dbfe92b8fcb518848aa112be"; 
+
+  // 1. Search TMDB
+  document.getElementById('btn-search-tmdb').addEventListener('click', async () => {
+    const queryStr = document.getElementById('tmdb-search-input').value.trim();
+    if (!queryStr) return;
+
+    const btn = document.getElementById('btn-search-tmdb');
+    btn.textContent = "...";
+
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(queryStr)}`);
+      const data = await res.json();
+      
+      const container = document.getElementById('tmdb-results');
+      container.innerHTML = '';
+      
+      data.results.filter(r => r.media_type === 'movie' || r.media_type === 'tv').forEach(item => {
+        const title = item.title || item.name;
+        const year = (item.release_date || item.first_air_date || '').split('-')[0];
+        const posterPath = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '';
+        
+        const card = document.createElement('div');
+        card.className = 'title-card';
+        card.innerHTML = `
+          <div class="poster" style="${posterPath ? `background-image: url('${posterPath}'); background-size: cover;` : ''}">
+            ${!posterPath ? title : ''}
+          </div>
+          <p class="title-name">${title} ${year ? `(${year})` : ''}</p>
+          <button class="btn-primary add-to-watchlist-btn" style="width:100%; padding: 8px; font-size:12px; margin-top:auto;" 
+            data-title="${title.replace(/"/g, '&quot;')}" 
+            data-poster="${posterPath}" 
+            data-type="${item.media_type}">
+            + Add to List
+          </button>
+        `;
+        container.appendChild(card);
+      });
+    } catch(err) {
+      console.error("TMDB error:", err);
+    }
+    btn.textContent = "Search";
+  });
+
+  // 2. Save Selected Title to Firestore
+  document.getElementById('tmdb-results').addEventListener('click', async (e) => {
+    if (e.target.classList.contains('add-to-watchlist-btn')) {
+      const btn = e.target;
+      btn.textContent = "Added!";
+      btn.disabled = true;
+
+      const title = btn.getAttribute('data-title');
+      const poster = btn.getAttribute('data-poster');
+      
+      await addDoc(collection(db, 'watchlist'), {
+        title,
+        poster,
+        status: 'Want to Watch',
+        addedBy: currentUser.name,
+        timestamp: serverTimestamp(),
+        ratings: { con: null, cryeteria: null }
+      });
+
+      await addDoc(collection(db, 'feed'), {
+        user: currentUser.name,
+        userId: currentUser.id,
+        color: currentUser.color,
+        action: `added ${title} to the watchlist.`,
+        timestamp: serverTimestamp()
+      });
+    }
+  });
 
 </script>
 </body>
