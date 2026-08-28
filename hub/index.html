@@ -257,7 +257,6 @@
       <section class="card" style="margin-bottom: 20px;">
         <div class="card-head"><h2>Shared Playlist</h2></div>
         <div class="music-list" id="music-playlist">
-          <!-- Sample static/dynamic items -->
           <div class="music-item">
             <div class="music-info">
               <h3>Late Night Drive (Ambient Mix)</h3>
@@ -464,7 +463,6 @@
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
 
-  // Load existing canvas drawing from Firebase
   onSnapshot(doc(db, 'system', 'doodle'), (snap) => {
     if(snap.exists() && snap.data().image) {
       const img = new Image();
@@ -536,7 +534,7 @@
       views.forEach(v => v.classList.remove('active'));
       document.getElementById(`view-${target}`).classList.add('active'); 
       window.scrollTo(0,0);
-      if(target === 'dashboard') resizeCanvas(); // Fix canvas bounds on view switch
+      if(target === 'dashboard') resizeCanvas();
     });
   });
 
@@ -589,7 +587,6 @@
           }
         }
 
-        // Dynamically update music download link if server is set
         if(globalStreamServer) {
           document.getElementById('sample-download-btn').href = `${globalStreamServer}/awalktoremember.mp4`;
           document.getElementById('sample-download-btn').setAttribute('download', '');
