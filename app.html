@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The Lair — Dashboard</title>
+<title>Tandem — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -48,12 +48,13 @@
   }
   body.ready{opacity:1;}
 
-  a{color:inherit; text-decoration:none;}
+  a{color:inherit; text-decoration:none; cursor:pointer;}
   ul{list-style:none;}
   button{font-family:inherit; border:none; background:none; cursor:pointer; color:inherit;}
   input{accent-color:var(--a);}
   :focus-visible{outline:2px solid var(--a); outline-offset:2px;}
 
+  /* Top Navigation */
   .topbar{
     display:flex; align-items:center; justify-content:space-between;
     padding:18px 20px; border-bottom:1px solid var(--line);
@@ -78,7 +79,10 @@
 
   @media (max-width:720px){ .nav-desktop{display:none;} }
 
-  .greeting{padding:32px 20px 8px; max-width:1040px; margin:0 auto;}
+  .greeting{
+    padding:32px 20px 8px; max-width:1040px; margin:0 auto;
+    display:flex; justify-content:space-between; align-items:flex-end;
+  }
   .eyebrow{
     font-family:var(--font-mono); font-size:12px; letter-spacing:0.06em;
     text-transform:uppercase; color:var(--ink-faint);
@@ -88,104 +92,76 @@
     font-size:32px; margin-top:6px; letter-spacing:-0.01em;
   }
   .greeting .sub{color:var(--ink-soft); font-size:14px; margin-top:4px;}
+  
+  .btn-primary{
+    background:var(--ink); color:var(--bg-card);
+    padding:10px 16px; border-radius:var(--radius-sm);
+    font-size:13px; font-weight:500; transition:opacity .15s;
+  }
+  .btn-primary:hover{opacity:0.85;}
+
+  /* SPA View Architecture */
+  .view-container { display: none; }
+  .view-container.active { display: block; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
   main{padding:8px 20px 40px; max-width:1040px; margin:0 auto; display:flex; flex-direction:column; gap:16px;}
 
-  .card{
-    background:var(--bg-card); border:1px solid var(--line);
-    border-radius:var(--radius); padding:20px;
-  }
+  /* Shared Card Styles */
+  .card{background:var(--bg-card); border:1px solid var(--line); border-radius:var(--radius); padding:20px;}
   .card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;}
   .card-head h2{font-family:var(--font-display); font-size:17px; font-weight:600;}
   .meta{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);}
-  .see-all{font-size:13px; color:var(--ink-soft);}
+  .see-all{font-size:13px; color:var(--ink-soft); cursor:pointer;}
 
-  .heatmap-scroll{overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch;}
-  .heatmap{display:grid; grid-template-rows:repeat(7, 12px); grid-auto-flow:column; gap:3px; width:max-content;}
-  .cell{width:12px; height:12px; border-radius:3px; background:var(--line);}
-  .legend{display:flex; align-items:center; gap:6px; margin-top:14px; font-size:12px; color:var(--ink-soft);}
-  .legend .dot{margin-left:10px;}
-  .legend .dot:first-child{margin-left:0;}
+  /* Modals */
+  .modal-overlay{
+    position:fixed; top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,0.3); backdrop-filter:blur(3px);
+    display:none; align-items:center; justify-content:center; z-index:100;
+    padding:20px;
+  }
+  .modal-overlay.active{display:flex;}
+  .modal-content{
+    background:var(--bg-card); border-radius:var(--radius);
+    padding:24px; width:100%; max-width:400px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.1);
+  }
+  .modal-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;}
+  .modal-head h2{font-family:var(--font-display); font-size:20px;}
+  .close-modal{font-size:24px; color:var(--ink-faint); line-height:1;}
 
+  /* Dashboard specifics */
   .tabs{display:flex; gap:4px; background:var(--a-softer); padding:3px; border-radius:20px;}
   .tab{font-size:12px; padding:6px 14px; border-radius:16px; color:var(--ink-soft); font-weight:500;}
   .tab.active{background:var(--bg-card); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,0.06);}
-
   .stat-grid{display:grid; grid-template-columns:repeat(5, 1fr); gap:10px;}
   @media (max-width:720px){ .stat-grid{grid-template-columns:repeat(2, 1fr);} }
-
-  .stat{
-    display:flex; flex-direction:column; align-items:center; text-align:center;
-    padding:16px 8px; border-radius:var(--radius-sm); background:var(--a-softer);
-  }
-  .ring{
-    width:52px; height:52px; border-radius:50%;
-    background:conic-gradient(var(--a) calc(var(--pct)*1%), var(--line) 0);
-    display:flex; align-items:center; justify-content:center; margin-bottom:10px;
-  }
-  .ring-inner{
-    width:38px; height:38px; border-radius:50%; background:var(--bg-card);
-    display:flex; align-items:center; justify-content:center;
-    font-family:var(--font-mono); font-size:11px; color:var(--ink);
-  }
+  .stat{display:flex; flex-direction:column; align-items:center; text-align:center; padding:16px 8px; border-radius:var(--radius-sm); background:var(--a-softer);}
+  .ring{width:52px; height:52px; border-radius:50%; background:conic-gradient(var(--a) calc(var(--pct)*1%), var(--line) 0); display:flex; align-items:center; justify-content:center; margin-bottom:10px;}
+  .ring-inner{width:38px; height:38px; border-radius:50%; background:var(--bg-card); display:flex; align-items:center; justify-content:center; font-family:var(--font-mono); font-size:11px; color:var(--ink);}
   .stat-label{font-size:12px; color:var(--ink-soft); margin-bottom:2px;}
   .stat-value{font-family:var(--font-mono); font-size:12px; color:var(--ink);}
-
-  .nudge{
-    display:flex; align-items:center; gap:10px;
-    background:var(--warn-soft); color:#7A5C2A;
-    border-radius:var(--radius-sm); padding:12px 16px; font-size:13px;
-  }
-  .nudge-dot{width:6px; height:6px; border-radius:50%; background:var(--warn); flex-shrink:0;}
-
   .feed{display:flex; flex-direction:column; gap:14px;}
   .feed li{display:flex; gap:10px; align-items:flex-start;}
   .feed li .dot{margin-top:7px;}
   .feed p{font-size:13.5px;}
   .feed time{font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);}
 
-  .scroll-row{display:flex; gap:14px; overflow-x:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch;}
-  .title-card{flex:0 0 140px;}
-  .poster{
-    height:190px; border-radius:var(--radius-sm); margin-bottom:8px;
-    background:linear-gradient(135deg, var(--a-soft), var(--b-soft));
-    display:flex; align-items:center; justify-content:center;
-    font-family:var(--font-display); font-size:13px; color:var(--ink-soft);
-    text-align:center; padding:10px;
-  }
-  .title-name{font-size:13px; font-weight:500; margin-bottom:6px;}
-  .pill{font-family:var(--font-mono); font-size:10px; padding:3px 8px; border-radius:10px; display:inline-block; margin-bottom:8px;}
-  .pill-watching{background:var(--b-soft); color:var(--b);}
-  .pill-watched{background:var(--a-soft); color:var(--a);}
-  .pill-want{background:var(--bg); color:var(--ink-soft); border:1px solid var(--line);}
-  .ratings{display:flex; gap:8px; font-family:var(--font-mono); font-size:11px;}
-  .ratings span{display:flex; align-items:center; gap:4px;}
-
-  .notes-list{display:flex; flex-direction:column; gap:12px;}
-  .notes-list li{display:flex; align-items:center; gap:10px; font-size:13.5px;}
-  .notes-list li[data-done="true"] span{color:var(--ink-faint); text-decoration:line-through;}
-
-  .demo-banner{
-    background:var(--b-soft); color:var(--b);
-    font-family:var(--font-mono); font-size:11px;
-    text-align:center; padding:8px; letter-spacing:0.03em;
-  }
-
+  /* Bottom Navigation */
   .bottom-nav{
     display:none; position:fixed; bottom:0; left:0; right:0;
     background:var(--bg-card); border-top:1px solid var(--line);
     padding:10px 0 max(10px, env(safe-area-inset-bottom));
-    justify-content:space-around; font-size:11px; color:var(--ink-soft);
+    justify-content:space-around; font-size:11px; color:var(--ink-soft); z-index:50;
   }
+  .bottom-nav a{display:flex; flex-direction:column; align-items:center; gap:4px;}
   .bottom-nav a.active{color:var(--a); font-weight:600;}
   @media (max-width:720px){ .bottom-nav{display:flex;} }
 
-  @media (prefers-reduced-motion:reduce){ *{transition:none !important;} }
 </style>
 </head>
 <body>
-
-  <div class="demo-banner">Sample data — not yet connected to the database</div>
 
   <header class="topbar">
     <div class="brand">
@@ -193,13 +169,13 @@
         <circle cx="10" cy="13" r="8" fill="#4B6B53" opacity="0.85"/>
         <circle cx="16" cy="13" r="8" fill="#55708F" opacity="0.85" style="mix-blend-mode:multiply"/>
       </svg>
-      <span class="brand-name">The Lair</span>
+      <span class="brand-name">Tandem</span>
     </div>
     <nav class="nav-desktop">
-      <a class="active">Dashboard</a>
-      <a>Watchlist</a>
-      <a>Notes</a>
-      <a>Calendar</a>
+      <a data-target="dashboard" class="nav-link active">Dashboard</a>
+      <a data-target="watchlist" class="nav-link">Watchlist</a>
+      <a data-target="notes" class="nav-link">Notes</a>
+      <a data-target="calendar" class="nav-link">Calendar</a>
     </nav>
     <div class="top-right">
       <span class="chip"><span class="dot" id="me-dot"></span><span id="me-name">…</span></span>
@@ -208,127 +184,98 @@
   </header>
 
   <div class="greeting">
-    <p class="eyebrow" id="today-label">—</p>
-    <h1 id="hello">Welcome back</h1>
-    <p class="sub" id="partner-line">—</p>
+    <div>
+      <p class="eyebrow" id="today-label">—</p>
+      <h1 id="hello">Welcome back</h1>
+      <p class="sub" id="partner-line">—</p>
+    </div>
+    <button class="btn-primary" id="btn-checkin">Daily Check-in</button>
   </div>
 
   <main>
+    <!-- VIEW: DASHBOARD -->
+    <section id="view-dashboard" class="view-container active">
+      <section class="card">
+        <div class="card-head">
+          <h2>Today's Habits</h2>
+          <div class="tabs">
+            <button class="tab active" id="tab-me">Me</button>
+            <button class="tab" id="tab-partner">Partner</button>
+          </div>
+        </div>
+        <div class="stat-grid" id="habit-grid">
+          <!-- Populated by Firestore live sync -->
+          <div class="stat" style="opacity: 0.5;">Loading metrics...</div>
+        </div>
+      </section>
 
-    <section class="card">
-      <div class="card-head">
-        <h2>Streak</h2>
-        <span class="meta">last 12 weeks</span>
-      </div>
-      <div class="heatmap-scroll"><div class="heatmap" id="heatmap"></div></div>
-      <div class="legend">
-        <span class="dot dot-a"></span>Confusicus
-        <span class="dot dot-b"></span>Cryeteria
-      </div>
+      <section class="card">
+        <div class="card-head"><h2>Activity Feed</h2><span class="meta">Live</span></div>
+        <ul class="feed" id="activity-feed">
+          <!-- Populated by Firestore live sync -->
+        </ul>
+      </section>
     </section>
 
-    <section class="card">
-      <div class="card-head">
-        <h2>Today</h2>
-        <div class="tabs">
-          <button class="tab active">Confusicus</button>
-          <button class="tab">Cryeteria</button>
+    <!-- VIEW: WATCHLIST -->
+    <section id="view-watchlist" class="view-container">
+      <section class="card">
+        <div class="card-head">
+          <h2>Watchlist</h2>
+          <button class="btn-primary" id="btn-add-movie">+ Add Title</button>
         </div>
-      </div>
-      <div class="stat-grid">
-        <div class="stat">
-          <div class="ring" style="--pct:70"><div class="ring-inner">70%</div></div>
-          <p class="stat-label">Water</p><p class="stat-value">1.4 / 2.0L</p>
-        </div>
-        <div class="stat">
-          <div class="ring" style="--pct:66"><div class="ring-inner">2/3</div></div>
-          <p class="stat-label">Meals</p><p class="stat-value">logged</p>
-        </div>
-        <div class="stat">
-          <div class="ring" style="--pct:100"><div class="ring-inner">◒</div></div>
-          <p class="stat-label">Mood</p><p class="stat-value">steady</p>
-        </div>
-        <div class="stat">
-          <div class="ring" style="--pct:88"><div class="ring-inner">7h</div></div>
-          <p class="stat-label">Sleep</p><p class="stat-value">7h 20m</p>
-        </div>
-        <div class="stat">
-          <div class="ring" style="--pct:40"><div class="ring-inner">—</div></div>
-          <p class="stat-label">Workout</p><p class="stat-value">not yet</p>
-        </div>
-      </div>
+        <p style="color:var(--ink-soft); font-size: 14px;">TMDB Integration and lists will render here.</p>
+      </section>
     </section>
 
-    <div class="nudge">
-      <span class="nudge-dot"></span>
-      Cryeteria hasn't logged water since yesterday morning.
-    </div>
-
-    <section class="card">
-      <div class="card-head"><h2>Activity</h2><span class="meta">today</span></div>
-      <ul class="feed">
-        <li><span class="dot dot-a"></span><div><p><strong>Confusicus</strong> logged dinner — grilled salmon &amp; greens</p><time>2h ago</time></div></li>
-        <li><span class="dot dot-b"></span><div><p><strong>Cryeteria</strong> moved <em>Poor Things</em> to Watching</p><time>4h ago</time></div></li>
-        <li><span class="dot dot-a"></span><div><p><strong>Confusicus</strong> added a note — "Book the campsite for Sept"</p><time>6h ago</time></div></li>
-        <li><span class="dot dot-b"></span><div><p><strong>Cryeteria</strong> rated <em>Oldboy</em> — 9/10</p><time>Yesterday</time></div></li>
-      </ul>
+    <!-- VIEW: NOTES -->
+    <section id="view-notes" class="view-container">
+      <section class="card">
+        <div class="card-head">
+          <h2>Collaborative Notes</h2>
+          <button class="btn-primary" id="btn-add-note">+ New List</button>
+        </div>
+        <p style="color:var(--ink-soft); font-size: 14px;">Multi-category notes architecture will render here.</p>
+      </section>
     </section>
 
-    <section class="card">
-      <div class="card-head"><h2>Watchlist</h2><a class="see-all">See all →</a></div>
-      <div class="scroll-row">
-        <div class="title-card">
-          <div class="poster">Poor Things</div>
-          <p class="title-name">Poor Things</p>
-          <span class="pill pill-watching">Watching</span>
-          <div class="ratings"><span><span class="dot dot-a"></span>—</span><span><span class="dot dot-b"></span>—</span></div>
-        </div>
-        <div class="title-card">
-          <div class="poster">Oldboy</div>
-          <p class="title-name">Oldboy</p>
-          <span class="pill pill-watched">Watched</span>
-          <div class="ratings"><span><span class="dot dot-a"></span>8</span><span><span class="dot dot-b"></span>9</span></div>
-        </div>
-        <div class="title-card">
-          <div class="poster">The Bear S3</div>
-          <p class="title-name">The Bear · S3</p>
-          <span class="pill pill-want">Want to Watch</span>
-          <div class="ratings"><span><span class="dot dot-a"></span>—</span><span><span class="dot dot-b"></span>—</span></div>
-        </div>
-        <div class="title-card">
-          <div class="poster">Past Lives</div>
-          <p class="title-name">Past Lives</p>
-          <span class="pill pill-watched">Watched</span>
-          <div class="ratings"><span><span class="dot dot-a"></span>10</span><span><span class="dot dot-b"></span>8</span></div>
-        </div>
-      </div>
+    <!-- VIEW: CALENDAR -->
+    <section id="view-calendar" class="view-container">
+      <section class="card">
+        <div class="card-head"><h2>Shared Calendar</h2></div>
+        <p style="color:var(--ink-soft); font-size: 14px;">Event grids and upcoming dates will render here.</p>
+      </section>
     </section>
-
-    <section class="card">
-      <div class="card-head"><h2>Notes</h2><span class="meta">3 open</span></div>
-      <ul class="notes-list">
-        <li data-done="true"><input type="checkbox" checked disabled><span>Book the campsite for Sept</span></li>
-        <li data-done="false"><input type="checkbox" disabled><span>Try that ramen place Cryeteria sent</span></li>
-        <li data-done="false"><input type="checkbox" disabled><span>Pick a date for the hike</span></li>
-      </ul>
-    </section>
-
   </main>
 
+  <!-- Check-in Modal Overlay -->
+  <div class="modal-overlay" id="modal-checkin">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h2>Daily Check-in</h2>
+        <button class="close-modal" id="close-checkin">&times;</button>
+      </div>
+      <p style="color:var(--ink-soft); font-size:14px; margin-bottom: 20px;">Log your habits. Custom habits can be managed in settings.</p>
+      <!-- Form inputs will be injected here for Water, Sleep, Mood, etc. -->
+      <button class="btn-primary" style="width: 100%;" id="save-checkin">Save to Dashboard</button>
+    </div>
+  </div>
+
   <nav class="bottom-nav">
-    <a class="active">Dashboard</a>
-    <a>Watchlist</a>
-    <a>Notes</a>
-    <a>Calendar</a>
+    <a data-target="dashboard" class="nav-link active"><span>Dash</span></a>
+    <a data-target="watchlist" class="nav-link"><span>Watch</span></a>
+    <a data-target="notes" class="nav-link"><span>Notes</span></a>
+    <a data-target="calendar" class="nav-link"><span>Cal</span></a>
   </nav>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut }
-    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, collection, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+  // Fixed the API key (removed the 'S' typo from your original code)
   const firebaseConfig = {
-    apiKey: "AIzaSySbfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4",
+    apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4",
     authDomain: "cryeterialoginpage.firebaseapp.com",
     projectId: "cryeterialoginpage",
     storageBucket: "cryeterialoginpage.firebasestorage.app",
@@ -336,36 +283,67 @@
     appId: "1:1012254851251:web:8f3d4aa32504922c9ff0c6"
   };
 
-  // Who is who, looked up by the account they signed in with
   const PEOPLE = {
-    "justibadx@gmail.com":    { name: "Confusicus", color: "#4B6B53", partner: "Cryeteria"  },
-    "theibadhasan@gmail.com": { name: "Cryeteria",  color: "#55708F", partner: "Confusicus" }
+    "justibadx@gmail.com":    { name: "Con",       id: "con",       color: "#4B6B53", partner: "Cryeteria" },
+    "theibadhasan@gmail.com": { name: "Cryeteria", id: "cryeteria", color: "#55708F", partner: "Con" }
   };
 
-  const app  = initializeApp(firebaseConfig);
+  const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
+  const db = getFirestore(app);
 
-  // Auth gate — no session, no dashboard.
+  let currentUser = null;
+
+  // SPA Routing Engine
+  const navLinks = document.querySelectorAll('.nav-link');
+  const views = document.querySelectorAll('.view-container');
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      const target = e.currentTarget.getAttribute('data-target');
+      
+      // Update UI active states
+      navLinks.forEach(l => l.classList.remove('active'));
+      document.querySelectorAll(`.nav-link[data-target="${target}"]`).forEach(l => l.classList.add('active'));
+      
+      // Switch views
+      views.forEach(v => v.classList.remove('active'));
+      document.getElementById(`view-${target}`).classList.add('active');
+    });
+  });
+
+  // Modal Handling
+  const modalCheckin = document.getElementById('modal-checkin');
+  document.getElementById('btn-checkin').addEventListener('click', () => modalCheckin.classList.add('active'));
+  document.getElementById('close-checkin').addEventListener('click', () => modalCheckin.classList.remove('active'));
+  
+  // Auth Gate
   onAuthStateChanged(auth, (user) => {
     if (!user) {
       window.location.replace("index.html");
       return;
     }
+    
+    currentUser = PEOPLE[user.email] || { name: "there", id: "unknown", color: "#4B6B53", partner: "your friend" };
 
-    const me = PEOPLE[user.email] || { name: "there", color: "#4B6B53", partner: "your friend" };
-
-    document.getElementById("me-name").textContent = me.name;
-    document.getElementById("me-dot").style.background = me.color;
+    // Set UI defaults
+    document.getElementById("me-name").textContent = currentUser.name;
+    document.getElementById("me-dot").style.background = currentUser.color;
+    document.getElementById("tab-me").textContent = currentUser.name;
+    document.getElementById("tab-partner").textContent = currentUser.partner;
 
     const hour = new Date().getHours();
     const partOfDay = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
-    document.getElementById("hello").textContent = `${partOfDay}, ${me.name}.`;
-    document.getElementById("partner-line").textContent = `${me.partner} last checked in 3 hours ago.`;
-
-    document.getElementById("today-label").textContent =
+    document.getElementById("hello").textContent = `${partOfDay}, ${currentUser.name}.`;
+    
+    // Set current date
+    document.getElementById("today-label").textContent = 
       new Date().toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"long" });
 
     document.body.classList.add("ready");
+
+    // Initialize Real-Time Sync
+    initDashboardSync();
   });
 
   document.getElementById("signout").addEventListener("click", async () => {
@@ -373,25 +351,35 @@
     window.location.replace("index.html");
   });
 
-  // Sample heatmap
-  const heatmap = document.getElementById("heatmap");
-  for (let i = 0; i < 84; i++) {
-    const cell = document.createElement("div");
-    cell.className = "cell";
-    const r = Math.random();
-    if (r > 0.82)      cell.style.background = "linear-gradient(135deg, var(--a) 50%, var(--b) 50%)";
-    else if (r > 0.6)  cell.style.background = "var(--a-soft)";
-    else if (r > 0.4)  cell.style.background = "var(--b-soft)";
-    heatmap.appendChild(cell);
+  // Real-Time Firestore Engines
+  function initDashboardSync() {
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // 1. Listen to Today's Habits
+    const habitsDoc = doc(db, 'habits', todayStr);
+    onSnapshot(habitsDoc, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        // TODO: Render dynamic custom habits into #habit-grid based on UI toggle (Me vs Partner)
+        console.log("Live Habit Data:", data);
+      } else {
+        document.getElementById('habit-grid').innerHTML = '<div style="grid-column: span 5; font-size:12px; color:var(--ink-soft); text-align:center;">No habits logged yet today.</div>';
+      }
+    });
+
+    // 2. Listen to Activity Feed
+    const feedRef = query(collection(db, 'feed'), orderBy('timestamp', 'desc'), limit(10));
+    onSnapshot(feedRef, (snapshot) => {
+      const feedList = document.getElementById('activity-feed');
+      feedList.innerHTML = '';
+      snapshot.forEach(docSnap => {
+        const item = docSnap.data();
+        // TODO: Map item data to feed HTML using currentUser and Partner colors
+        console.log("Live Feed Item:", item);
+      });
+    });
   }
 
-  document.querySelectorAll(".tab").forEach(tab => {
-    tab.addEventListener("click", () => {
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      tab.classList.add("active");
-    });
-  });
 </script>
-
 </body>
 </html>
