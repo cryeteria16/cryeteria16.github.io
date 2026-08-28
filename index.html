@@ -139,7 +139,7 @@
       <div class="field">
         <label for="username">Username</label>
         <input id="username" type="text" autocomplete="username"
-               autocapitalize="none" spellcheck="false" placeholder="Confusicus or Cryeteria">
+               autocapitalize="none" spellcheck="false" placeholder="Con or Cryeteria">
       </div>
 
       <div class="field">
@@ -164,13 +164,8 @@
     browserLocalPersistence
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-  /* ---------------------------------------------------------
-     YOUR FIREBASE PROJECT
-     Read from the console screenshot — double-check the apiKey
-     against Project Settings if sign-in throws a config error.
-  --------------------------------------------------------- */
   const firebaseConfig = {
-    apiKey: "AIzaSySbfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4",
+    apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", // Fixed API key
     authDomain: "cryeterialoginpage.firebaseapp.com",
     projectId: "cryeterialoginpage",
     storageBucket: "cryeterialoginpage.firebasestorage.app",
@@ -178,15 +173,9 @@
     appId: "1:1012254851251:web:8f3d4aa32504922c9ff0c6"
   };
 
-  /* ---------------------------------------------------------
-     USERNAME → ACCOUNT
-     Left side is what you type. Right side is the account it
-     signs into. Add or rename people here.
-  --------------------------------------------------------- */
   const USERS = {
-    "confusicus": { email: "justibadx@gmail.com",    name: "Confusicus", color: "#4B6B53" },
-    "con":        { email: "justibadx@gmail.com",    name: "Confusicus", color: "#4B6B53" },
-    "cryeteria":  { email: "theibadhasan@gmail.com", name: "Cryeteria",  color: "#55708F" }
+    "con":       { email: "justibadx@gmail.com",     name: "Con",       color: "#4B6B53" },
+    "cryeteria": { email: "theibadhasan@gmail.com",  name: "Cryeteria", color: "#55708F" }
   };
 
   const app  = initializeApp(firebaseConfig);
@@ -237,7 +226,7 @@
     try {
       await setPersistence(auth, browserLocalPersistence);
       await signInWithEmailAndPassword(auth, person.email, pass);
-      localStorage.setItem("lair.name", person.name);
+      localStorage.setItem("tandem.name", person.name);
       window.location.replace("app.html");
     } catch (err) {
       const code = err.code || "";
