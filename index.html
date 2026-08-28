@@ -2,128 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0A0A0A">
+<meta http-equiv="refresh" content="0; url=/hub/">
 <title>The Lair</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<style>
-  :root{
-    var(--bg): #0A0A0A; --bg-card: #121212; --ink: #EDEDED; --ink-soft: #A3A3A3;
-    --ink-faint: #525252; --line: #262626; --con: #70947A; --cryeteria: #7A9BC2;
-    --err: #9E4B3F; --err-soft: rgba(158, 75, 63, 0.15);
-    --font-display: 'Fraunces', serif; --font-body: 'Inter', sans-serif; --font-mono: 'IBM Plex Mono', monospace;
-  }
-  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent;}
-  body{ background:#0A0A0A; color:#EDEDED; font-family:var(--font-body); min-height:100vh; min-height:100dvh; display:flex; align-items:center; justify-content:center; padding:24px; }
-  .shell{width:100%; max-width:380px; animation: smoothFadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); }
-  @keyframes smoothFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  .mark{display:flex; justify-content:center; margin-bottom:20px;}
-  .head{text-align:center; margin-bottom:28px;}
-  .head h1{font-family:var(--font-display); font-weight:600; font-size:32px; letter-spacing:-0.01em;}
-  .head p{font-size:14px; color:var(--ink-soft); margin-top:6px;}
-  .card{background:#121212; border:1px solid #262626; border-radius:16px; padding:24px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);}
-  .field{margin-bottom:16px;}
-  label{display:block; font-family:var(--font-mono); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:7px;}
-  input{
-    appearance:none; -webkit-appearance:none; width:100%; font-family:var(--font-body); font-size:15px; color:var(--ink);
-    background:#0A0A0A; border:1px solid #262626; border-radius:10px; padding:12px 14px; transition:border-color .2s, box-shadow .2s;
-  }
-  input:focus{ outline:none; border-color:var(--con); box-shadow:0 0 0 3px rgba(112, 148, 122, 0.15); }
-  input::placeholder{color:var(--ink-faint);}
-  button.submit{
-    width:100%; font-family:var(--font-body); font-size:15px; font-weight:600; color:#0A0A0A; background:#EDEDED;
-    border:none; border-radius:10px; padding:14px; cursor:pointer; margin-top:4px; transition: transform 0.15s, opacity 0.2s;
-  }
-  button.submit:active{ transform: scale(0.96); }
-  button.submit:hover{ opacity:0.85; }
-  button.submit:disabled{ opacity:0.5; cursor:default; }
-  .msg{ display:none; background:var(--err-soft); color:var(--err); font-size:13px; line-height:1.45; border-radius:10px; padding:12px 14px; margin-bottom:16px; border: 1px solid rgba(158, 75, 63, 0.3);}
-  .msg.show{display:block;}
-  .foot{text-align:center; margin-top:24px; font-family:var(--font-mono); font-size:11px; color:var(--ink-faint);}
-</style>
+<script>
+  // Instant JavaScript redirect fallback
+  window.location.replace("/hub/");
+</script>
 </head>
 <body>
-
-  <div class="shell">
-    <div class="mark">
-      <svg width="44" height="44" viewBox="0 0 26 26" aria-hidden="true">
-        <circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/>
-        <circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/>
-      </svg>
-    </div>
-    <div class="head">
-      <h1>The Lair</h1>
-      <p>Secure connection established.</p>
-    </div>
-    <div class="card">
-      <div class="msg" id="msg" role="alert"></div>
-      <div class="field">
-        <label for="username">Access ID</label>
-        <input id="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Username">
-      </div>
-      <div class="field">
-        <label for="password">Passcode</label>
-        <input id="password" type="password" autocomplete="current-password" placeholder="••••••••">
-      </div>
-      <button class="submit" id="submit">Authenticate</button>
-    </div>
-    <p class="foot">Encrypted Hub · Two Users Only</p>
-  </div>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4",
-    authDomain: "cryeterialoginpage.firebaseapp.com",
-    projectId: "cryeterialoginpage"
-  };
-
-  const USERS = {
-    "con":       { email: "justibadx@gmail.com",     name: "Con",       color: "#70947A" },
-    "cryeteria": { email: "theibadhasan@gmail.com",  name: "Cryeteria", color: "#7A9BC2" }
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const $user = document.getElementById("username");
-  const $pass = document.getElementById("password");
-  const $btn = document.getElementById("submit");
-  const $msg = document.getElementById("msg");
-
-  const showError = (text) => { $msg.textContent = text; $msg.classList.add("show"); };
-  const clearError = () => $msg.classList.remove("show");
-
-  onAuthStateChanged(auth, (user) => { if (user) window.location.replace("app.html"); });
-
-  async function signIn(){
-    clearError();
-    const key = $user.value.trim().toLowerCase();
-    const pass = $pass.value;
-    if (!key || !pass) { showError("Enter both an Access ID and Passcode."); return; }
-    
-    const person = USERS[key];
-    if (!person) { showError("Unrecognized Access ID."); return; }
-
-    $btn.disabled = true; $btn.textContent = "Authenticating…";
-
-    try {
-      await setPersistence(auth, browserLocalPersistence);
-      await signInWithEmailAndPassword(auth, person.email, pass);
-      window.location.replace("app.html");
-    } catch (err) {
-      showError("Authentication failed. Please verify your credentials.");
-      $btn.disabled = false; $btn.textContent = "Authenticate";
-    }
-  }
-
-  $btn.addEventListener("click", signIn);
-  [$user, $pass].forEach(el => el.addEventListener("keydown", e => { if (e.key === "Enter") signIn(); }));
-</script>
+  <p style="background:#0A0A0A; color:#EDEDED; font-family:sans-serif; text-align:center; padding-top:20vh;">
+    Entering The Lair...
+  </p>
 </body>
 </html>
