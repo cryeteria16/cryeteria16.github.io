@@ -8,6 +8,10 @@
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
+<!-- PDF.js CDN for In-Browser Reader -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
+
 <style>
   :root { --bg:#0A0A0A; --bg-card:#121212; --bg-card-hover:#181818; --ink:#EDEDED; --ink-soft:#A3A3A3; --line:#262626; --con:#70947A; --cryeteria:#7A9BC2; --warn:#A9803F; --err:#D9534F; --radius:16px; --radius-sm:10px; --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; --accent:var(--con); --grain-intensity: 0.04;}
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
@@ -55,7 +59,7 @@
 
   /* Cmd+K Palette */
   #cmd-palette .modal-content { background: rgba(15,15,15,0.95); backdrop-filter: blur(24px); border: 1px solid var(--line); box-shadow: 0 40px 80px rgba(0,0,0,0.9); display:flex; flex-direction:column; padding:0; border-radius:16px; overflow:hidden;}
-  #cmd-input { background: transparent; border: none; font-size: 18px; padding: 24px; border-bottom: 1px solid var(--line); border-radius:0; color:var(--ink);}
+  #cmd-input { background: transparent; border: none; font-size: 18px; padding: 24px; border-bottom: 1px solid var(--line); border-radius:0; color:var(--ink); }
   #cmd-input:focus { box-shadow: none; }
   .cmd-item { padding: 16px 24px; display: flex; align-items:center; gap:16px; cursor: pointer; transition: background 0.2s; border-bottom:1px solid rgba(255,255,255,0.02);}
   .cmd-item:hover { background: var(--bg-card-hover); }
@@ -88,7 +92,7 @@
   .pulse-dot.active { background:var(--con); box-shadow: 0 0 8px var(--con); animation: pulse 1.5s infinite; }
   @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
 
-  /* Media UI */
+  /* Media UI & Co-Watching */
   #chat-window { height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 16px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 16px; }
   .chat-msg { max-width: 85%; display: flex; flex-direction: column; gap: 4px; }
   .chat-msg.mine { align-self: flex-end; align-items: flex-end; } .chat-msg.theirs { align-self: flex-start; align-items: flex-start; }
@@ -103,6 +107,17 @@
   .title-name { font-size: 12px; font-weight: 500; margin-bottom: 4px; line-height: 1.3; }
   .pill { display: inline-block; font-family: var(--font-mono); font-size: 10px; padding: 4px 10px; border-radius: 12px; background:var(--line); width: max-content; }
   
+  /* Co-Watch Theater Frame */
+  .theater-container { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--line); margin-bottom: 16px; }
+  .theater-container iframe, .theater-container video { width: 100%; height: 100%; border: none; display: block; }
+
+  /* PDF Reader Overlay */
+  #pdf-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(16px); z-index: 1000; display: none; flex-direction: column; }
+  #pdf-modal.active { display: flex; }
+  .pdf-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: var(--bg-card); border-bottom: 1px solid var(--line); }
+  .pdf-canvas-container { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: center; padding: 20px; }
+  #pdf-canvas { max-width: 100%; max-height: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
+
   .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .modal-overlay.active { opacity: 1; pointer-events: auto; }
   .modal-content { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 440px; transform: scale(0.95); transition: transform 0.35s; max-height: 90vh; overflow-y:auto;}
@@ -114,6 +129,7 @@
   
   <div class="film-grain"></div>
 
+  <!-- Idle Lock Screen -->
   <div class="modal-overlay" id="idle-lock-modal" style="z-index:9999; backdrop-filter: blur(24px);">
     <div class="modal-content" style="max-width:340px; text-align:center;">
       <h2 style="font-family:var(--font-display); font-size:24px; margin-bottom:6px;">Lair Secured</h2>
@@ -124,16 +140,34 @@
     </div>
   </div>
 
+  <!-- Cmd+K Palette -->
   <div class="modal-overlay" id="cmd-palette" style="z-index:200;">
     <div class="modal-content">
       <input type="text" id="cmd-input" placeholder="Type a command..." autocomplete="off">
       <div id="cmd-results" style="display:flex; flex-direction:column; max-height:300px; overflow-y:auto;">
         <div class="cmd-item" data-action="nav:dashboard"><span class="cmd-item-icon">Nav</span> <span>Go to Dashboard</span></div>
         <div class="cmd-item" data-action="nav:drop"><span class="cmd-item-icon">File</span> <span>Open Lair Drop</span></div>
+        <div class="cmd-item" data-action="nav:watchlist"><span class="cmd-item-icon">Watch</span> <span>Open Co-Watch Theater</span></div>
         <div class="cmd-item" data-action="nav:chat"><span class="cmd-item-icon">Comms</span> <span>Open Chat & Voice</span></div>
         <div class="cmd-item" data-action="link:admin.html"><span class="cmd-item-icon">CMS</span> <span>Open Admin Studio</span></div>
         <div class="cmd-item" data-action="func:signout"><span class="cmd-item-icon">Auth</span> <span>Lock Lair & Exit</span></div>
       </div>
+    </div>
+  </div>
+
+  <!-- In-Browser PDF Reader Modal -->
+  <div id="pdf-modal">
+    <div class="pdf-toolbar">
+      <div><span id="pdf-title" style="font-family:var(--font-display); font-size:16px; font-weight:600;">Reading...</span></div>
+      <div style="display:flex; gap:12px; align-items:center;">
+        <span style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft);">Page <span id="pdf-current-page">1</span> of <span id="pdf-total-pages">1</span></span>
+        <button class="btn-secondary" id="pdf-prev" style="padding:6px 12px; font-size:11px;">Prev</button>
+        <button class="btn-secondary" id="pdf-next" style="padding:6px 12px; font-size:11px;">Next</button>
+        <button class="btn-warn" id="pdf-close" style="padding:6px 12px; font-size:11px;">Close</button>
+      </div>
+    </div>
+    <div class="pdf-canvas-container">
+      <canvas id="pdf-canvas"></canvas>
     </div>
   </div>
 
@@ -230,15 +264,36 @@
       <section class="card"><div id="chat-window"></div><div style="display:flex; gap:10px;"><input type="text" id="chat-input" placeholder="Message..." autocomplete="off"><button class="btn-primary" id="btn-send-chat" style="width:auto; padding:0 24px;">Send</button></div></section>
     </section>
 
-    <!-- Standard Views -->
+    <!-- Watch / Co-Watching Theater -->
     <section id="view-watchlist" class="view-container">
+      <section class="card" style="margin-bottom:20px;">
+        <div class="card-head"><h2>Co-Watch Theater</h2><button class="btn-secondary" id="btn-sync-play" style="width:auto; padding:6px 12px; font-size:11px;">Force Sync</button></div>
+        <div class="theater-container" id="theater-frame-box">
+          <div id="theater-player-slot" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px;">Select a title below to begin co-watching</div>
+        </div>
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="cowatch-url-input" placeholder="Paste YouTube URL or R2 video file link..." autocomplete="off">
+          <button class="btn-primary" id="btn-load-cowatch" style="width:auto; padding:0 20px;">Load Media</button>
+        </div>
+      </section>
+
       <section class="card" style="margin-bottom:20px;"><div class="card-head"><h2 style="font-size:16px;">Find Titles</h2></div><input type="text" id="tmdb-search-input" placeholder="Search..." autocomplete="off"><div id="tmdb-results" class="scroll-row" style="margin-top:16px;"></div></section>
       <section class="card"><div class="card-head"><h2 style="font-size:16px;">Watchlist</h2></div><div id="shared-watchlist" class="scroll-row"></div></section>
     </section>
+
+    <!-- Books & PDF Reader -->
     <section id="view-books" class="view-container">
-      <section class="card" style="margin-bottom:20px;"><div class="card-head"><h2 style="font-size:16px;">Find Books</h2></div><div style="display:flex; gap:10px;"><input type="text" id="books-search-input" placeholder="Search..." autocomplete="off"><button class="btn-primary" id="btn-search-books" style="width:auto;">Search</button></div><div id="books-results" class="scroll-row" style="margin-top:16px;"></div></section>
-      <section class="card"><div class="card-head"><h2 style="font-size:16px;">Library</h2></div><div id="shared-library" class="scroll-row"></div></section>
+      <section class="card" style="margin-bottom:20px;">
+        <div class="card-head"><h2 style="font-size:16px;">Add PDF Book</h2></div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <input type="text" id="book-title-input" placeholder="Book Title..." autocomplete="off">
+          <input type="text" id="book-pdf-url" placeholder="Paste R2 PDF file URL..." autocomplete="off">
+          <button class="btn-primary" id="btn-add-pdf-book" style="width:auto;">Add to Library</button>
+        </div>
+      </section>
+      <section class="card"><div class="card-head"><h2 style="font-size:16px;">Library (Tap to Read)</h2></div><div id="shared-library" class="scroll-row"></div></section>
     </section>
+
     <section id="view-music" class="view-container">
       <section class="card" style="margin-bottom:20px;">
         <div class="card-head"><h2 style="font-size:16px;">Ambient Mixer</h2></div>
@@ -249,6 +304,7 @@
       </section>
       <section class="card"><div class="card-head"><h2 style="font-size:16px;">Audio Vault</h2></div><div id="shared-music-vault" style="display:flex; flex-direction:column; gap:10px;"></div></section>
     </section>
+
     <section id="view-study" class="view-container">
       <section class="card">
         <div class="card-head"><h2 style="font-size:16px;">Focus Timer</h2></div>
@@ -261,6 +317,7 @@
         <div style="text-align:center; padding-top:24px;"><p id="focus-timer" style="font-family:var(--font-mono); font-size:48px; margin-bottom:16px;">25:00</p><button class="btn-primary" id="btn-focus-toggle">Start Deep Work</button></div>
       </section>
     </section>
+
     <section id="view-games" class="view-container">
       <section class="card">
         <div class="card-head"><h2 style="font-size:16px;">Lair Chess</h2><button class="btn-secondary" id="btn-reset-chess" style="width:auto; padding:6px 12px; font-size:11px;">Reset</button></div>
@@ -276,7 +333,8 @@
   <audio id="global-audio-element" preload="none"></audio>
 
   <div class="modal-overlay" id="modal-edit-watch"><div class="modal-content"><div style="display:flex; justify-content:space-between; margin-bottom:24px;"><h2 id="edit-watch-title">Edit</h2><button class="close-modal" id="close-edit-watch" style="font-size:24px; color:var(--ink-soft);">&times;</button></div><input type="hidden" id="edit-watch-id"><div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;"><div><label class="field-label">Status</label><select id="edit-watch-status"><option>Want to Watch</option><option>Watching</option><option>Watched</option></select></div><div><label class="field-label">Stream File</label><input type="text" id="edit-watch-file" autocomplete="off"></div></div><button class="btn-primary" id="btn-save-watch">Save</button></div></div>
-  <div class="modal-overlay" id="modal-edit-book"><div class="modal-content"><div style="display:flex; justify-content:space-between; margin-bottom:24px;"><h2 id="edit-book-title">Edit</h2><button class="close-modal" id="close-edit-book" style="font-size:24px; color:var(--ink-soft);">&times;</button></div><input type="hidden" id="edit-book-id"><div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;"><div><label class="field-label">Status</label><select id="edit-book-status"><option>Want to Read</option><option>Reading</option><option>Read</option></select></div></div><button class="btn-primary" id="btn-save-book">Save</button></div></div>
+  
+  <div class="modal-overlay" id="modal-edit-book"><div class="modal-content"><div style="display:flex; justify-content:space-between; margin-bottom:24px;"><h2 id="edit-book-title">Edit</h2><button class="close-modal" id="close-edit-book" style="font-size:24px; color:var(--ink-soft);">&times;</button></div><input type="hidden" id="edit-book-id"><div style="display:flex; flex-direction:column; gap:16px; margin-bottom:24px;"><div><label class="field-label">Status</label><select id="edit-book-status"><option>Want to Read</option><option>Reading</option><option>Read</option></select></div><div><label class="field-label">PDF File URL</label><input type="text" id="edit-book-pdf" autocomplete="off"></div></div><button class="btn-primary" id="btn-save-book">Save</button></div></div>
 
 <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
@@ -287,7 +345,6 @@
   import { getFirestore, doc, collection, onSnapshot, query, orderBy, limit, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
-  const TMDB_API_KEY = "eecc2609dbfe92b8fcb518848aa112be"; 
   const WORKER_URL = "https://portfolio-uploader.theibadhasan.workers.dev/";
   const PUBLIC_R2_URL = "https://pub-3a5505322c50496598874826433f7e72.r2.dev/";
 
@@ -400,7 +457,111 @@
     else if (state === 'connected') { startBtn.style.display = 'none'; endBtn.style.display = 'block'; muteBtn.style.display = 'block'; muteBtn.textContent = 'Mute'; muteBtn.style.color='var(--ink)'; ind.classList.add('active'); ind.style.background = 'var(--con)'; }
   }
 
-  // Lair Drop
+  // ==========================================
+  // CO-WATCHING THEATER SYNC ENGINE
+  // ==========================================
+  const watchPartyDoc = doc(db, 'system', 'watch_party');
+  let localPlayer = null;
+  let isRemoteTrigger = false;
+
+  function loadMediaIntoTheater(url, type) {
+    const slot = document.getElementById('theater-player-slot');
+    slot.innerHTML = '';
+    if(type === 'youtube') {
+      const ytId = extractYouTubeId(url);
+      slot.innerHTML = `<iframe id="yt-iframe" src="https://www.youtube.com/embed/${ytId}?enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+    } else {
+      slot.innerHTML = `<video id="r2-video" src="${url}" controls playsinline style="width:100%; height:100%;"></video>`;
+      const vid = document.getElementById('r2-video');
+      vid.addEventListener('play', () => { if(!isRemoteTrigger) updateWatchState({ isPlaying: true, currentTime: vid.currentTime }); });
+      vid.addEventListener('pause', () => { if(!isRemoteTrigger) updateWatchState({ isPlaying: false, currentTime: vid.currentTime }); });
+      vid.addEventListener('seeked', () => { if(!isRemoteTrigger) updateWatchState({ currentTime: vid.currentTime }); });
+    }
+    logActivity(`Loaded co-watch media`, "📺");
+  }
+
+  function extractYouTubeId(url) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : url;
+  }
+
+  async function updateWatchState(state) {
+    await updateDoc(watchPartyDoc, { ...state, updatedAt: serverTimestamp() }, {merge:true});
+  }
+
+  document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
+    const url = document.getElementById('cowatch-url-input').value.trim();
+    if(!url) return;
+    const type = url.includes('youtube.com') || url.includes('youtu.be') ? 'youtube' : 'r2';
+    await setDoc(watchPartyDoc, { url, type, isPlaying: true, currentTime: 0, updatedAt: serverTimestamp() });
+    loadMediaIntoTheater(url, type);
+  });
+
+  onSnapshot(watchPartyDoc, (snap) => {
+    if(!snap.exists()) return;
+    const d = snap.data();
+    if(!d.url) return;
+    const slot = document.getElementById('theater-player-slot');
+    if(!slot.querySelector('iframe') && !slot.querySelector('video')) {
+      loadMediaIntoTheater(d.url, d.type);
+    }
+  });
+
+
+  // ==========================================
+  // IN-BROWSER PDF READER & SYNCED BOOKMARKS
+  // ==========================================
+  let pdfDoc_ = null, pageNum_ = 1, pageRendering_ = false, pageNumPending_ = null, scale_ = 1.2, currentBookId_ = null;
+  const canvas_ = document.getElementById('pdf-canvas');
+  const ctx_ = canvas_.getContext('2d');
+
+  function renderPage(num) {
+    pageRendering_ = true;
+    pdfDoc_.getPage(num).then(function(page) {
+      const viewport = page.getViewport({scale: scale_});
+      canvas_.height = viewport.height;
+      canvas_.width = viewport.width;
+      const renderContext = { canvasContext: ctx_, viewport: viewport };
+      const renderTask = page.render(renderContext);
+      renderTask.promise.then(function() {
+        pageRendering_ = false;
+        if (pageNumPending_ !== null) { renderPage(pageNumPending_); pageNumPending_ = null; }
+      });
+    });
+    document.getElementById('pdf-current-page').textContent = num;
+    if(currentBookId_) {
+      updateDoc(doc(db, 'books', currentBookId_), { currentPage: num, updatedAt: serverTimestamp() });
+    }
+  }
+
+  function queueRenderPage(num) {
+    if (pageRendering_) { pageNumPending_ = num; } else { renderPage(num); }
+  }
+
+  window.openBookReader = async function(bookId, pdfUrl, title, startPage = 1) {
+    if(!pdfUrl) { alert("No PDF file attached to this book. Edit the book in your CMS/Lair to add an R2 PDF link."); return; }
+    currentBookId_ = bookId;
+    document.getElementById('pdf-title').textContent = title;
+    document.getElementById('pdf-modal').classList.add('active');
+    
+    try {
+      const loadingTask = pdfjsLib.getDocument(pdfUrl);
+      pdfDoc_ = await loadingTask.promise;
+      document.getElementById('pdf-total-pages').textContent = pdfDoc_.numPages;
+      pageNum_ = startPage || 1;
+      renderPage(pageNum_);
+    } catch(e) { alert("Failed to load PDF: " + e.message); }
+  }
+
+  document.getElementById('pdf-prev').addEventListener('click', () => { if (pageNum_ <= 1) return; pageNum_--; queueRenderPage(pageNum_); });
+  document.getElementById('pdf-next').addEventListener('click', () => { if (pageNum_ >= pdfDoc_.numPages) return; pageNum_++; queueRenderPage(pageNum_); });
+  document.getElementById('pdf-close').addEventListener('click', () => { document.getElementById('pdf-modal').classList.remove('active'); currentBookId_ = null; });
+
+
+  // ==========================================
+  // LAIR DROP & STORAGE
+  // ==========================================
   let totalStorageBytes = 0;
   function updateStorageGauge() {
     let pct = Math.min((totalStorageBytes / 10737418240) * 100, 100); document.getElementById('drop-gauge').style.setProperty('--pct', pct);
@@ -433,6 +594,16 @@
   });
   document.getElementById('lair-drop-list').addEventListener('click', async (e) => { if(e.target.classList.contains('btn-delete-drop') && confirm("Delete file?")) { await deleteDoc(doc(db, 'lairdrops', e.target.getAttribute('data-id'))); logActivity("Deleted file from Vault", "🗑"); } });
 
+  // Add PDF Book Handler
+  document.getElementById('btn-add-pdf-book').addEventListener('click', async () => {
+    const title = document.getElementById('book-title-input').value.trim();
+    const pdfUrl = document.getElementById('book-pdf-url').value.trim();
+    if(!title) return;
+    await addDoc(collection(db, 'books'), { title, pdfUrl, status: 'Want to Read', currentPage: 1, timestamp: serverTimestamp() });
+    document.getElementById('book-title-input').value = ''; document.getElementById('book-pdf-url').value = '';
+    logActivity(`Added book: ${title}`, "📚"); alert("Book added to library!");
+  });
+
   // Sync Data
   function initLiveSync() {
     onSnapshot(doc(db, 'system', 'analytics'), (snap) => { if(snap.exists()) document.getElementById('cc-views').textContent = snap.data().views || '--'; });
@@ -440,10 +611,20 @@
     onSnapshot(doc(db, 'system', 'scratchpad'), (snap) => { if(snap.exists() && document.activeElement !== document.getElementById('shared-scratchpad')) document.getElementById('shared-scratchpad').value = snap.data().text || ''; });
     onSnapshot(query(collection(db, 'activity'), orderBy('timestamp', 'desc'), limit(20)), (snap) => { const feed = document.getElementById('unified-activity-log'); feed.innerHTML = ''; if(snap.empty) { feed.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">No activity.</p>'; return; } snap.forEach(d => { const a = d.data(); const tStr = a.timestamp ? a.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''; feed.innerHTML += `<div class="activity-log-item"><span style="font-size:16px;">${a.icon||'•'}</span><div style="flex:1;"><p style="font-size:13px;"><b>${a.user}</b> ${a.text}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${tStr}</p></div></div>`; }); });
     onSnapshot(collection(db, 'watchlist'), (snap) => { let activeShow = '--'; window.watchlistData = {}; const wList = document.getElementById('shared-watchlist'); wList.innerHTML = ''; snap.forEach(d => { const v = d.data(); window.watchlistData[d.id] = v; if(v.status === 'Watching') activeShow = v.title; wList.innerHTML += `<div class="title-card" data-id="${d.id}"><div class="poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div><p class="title-name">${v.title}</p><span class="pill">${v.status}</span></div>`; }); document.getElementById('cc-watching').textContent = activeShow; });
-    onSnapshot(collection(db, 'books'), (snap) => { let activeBook = '--'; window.libraryData = {}; const bList = document.getElementById('shared-library'); bList.innerHTML = ''; snap.forEach(d => { const v = d.data(); window.libraryData[d.id] = v; if(v.status === 'Reading') activeBook = v.title; bList.innerHTML += `<div class="title-card" data-id="${d.id}"><div class="book-poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div><p class="title-name">${v.title}</p><span class="pill">${v.status}</span></div>`; }); document.getElementById('cc-reading').textContent = activeBook; });
+    
+    // Books Library Sync
+    onSnapshot(collection(db, 'books'), (snap) => { 
+      let activeBook = '--'; window.libraryData = {}; const bList = document.getElementById('shared-library'); bList.innerHTML = '';
+      snap.forEach(d => { 
+        const v = d.data(); window.libraryData[d.id] = v; 
+        if(v.status === 'Reading') activeBook = v.title; 
+        bList.innerHTML += `<div class="title-card" onclick="openBookReader('${d.id}', '${v.pdfUrl||''}', '${v.title.replace(/'/g, "\\'")}', ${v.currentPage||1})"><div class="book-poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div><p class="title-name">${v.title}</p><span class="pill">Pg ${v.currentPage||1}</span></div>`; 
+      });
+      document.getElementById('cc-reading').textContent = activeBook;
+    });
+
     onSnapshot(query(collection(db, 'chat'), orderBy('timestamp', 'asc')), (snap) => { const cw = document.getElementById('chat-window'); const isAtBottom = cw.scrollHeight - cw.scrollTop <= cw.clientHeight + 50; cw.innerHTML = ''; snap.forEach(docSnap => { const msg = docSnap.data(); const msgClass = (currentUser && msg.user === currentUser.name) ? 'mine' : 'theirs'; const timeStr = msg.timestamp ? msg.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''; cw.innerHTML += `<div class="chat-msg ${msgClass}"><div class="chat-meta" style="font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); margin-bottom:2px;">${msgClass === 'theirs' ? msg.user + ' • ' : ''}${timeStr}</div><div class="chat-bubble">${msg.text}</div></div>`; }); if (isAtBottom) cw.scrollTop = cw.scrollHeight; });
     
-    // Dynamic Config Sync
     onSnapshot(doc(db, 'system', 'config'), (snap) => {
       if(snap.exists()) {
         const d = snap.data();
