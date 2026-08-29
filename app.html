@@ -11,6 +11,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
 
 <style>
   :root{
@@ -85,7 +86,7 @@
   /* Upgraded Canvas Tools */
   .sketch-toolbar { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; background: var(--bg); padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); flex-wrap: wrap;}
   .sketch-toolbar .tool-group { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 140px;}
-  .canvas-wrapper { position: relative; width: 100%; height: 420px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; touch-action: none; }
+  .canvas-wrapper { position: relative; width: 100%; aspect-ratio: 4 / 3; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; touch-action: none; }
   canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
   #save-badge { font-family: var(--font-mono); font-size: 11px; background: rgba(76, 175, 80, 0.1); color: #4CAF50; padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(76, 175, 80, 0.3); opacity: 0; transition: opacity 0.3s; margin-left: auto; }
   #save-badge.show { opacity: 1; }
@@ -159,6 +160,11 @@
   .bottom-nav a:active { transform: scale(0.9); }
   .bottom-nav a.active{color:var(--accent); font-weight:600;}
   @media (max-width:720px){ .bottom-nav{display:flex;} }
+
+  /* Chessboard Overrides */
+  .board-b72b1 { border: 2px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; }
+  .white-1e1d7 { background-color: var(--ink) !important; color: var(--bg-card) !important; }
+  .black-3c85d { background-color: var(--ink-soft) !important; color: var(--bg-card) !important; }
 </style>
 </head>
 <body>
@@ -178,6 +184,7 @@
       <a data-target="books" class="nav-link">Books</a>
       <a data-target="music" class="nav-link">Music</a>
       <a data-target="study" class="nav-link">Focus</a>
+      <a data-target="games" class="nav-link">Games</a>
       <a data-target="admin" class="nav-link" style="color:var(--warn);">Admin</a>
     </nav>
     <div class="top-right">
@@ -318,6 +325,25 @@
       </section>
     </section>
 
+    <section id="view-games" class="view-container">
+      <section class="card">
+        <div class="card-head">
+          <h2>Lair Chess</h2>
+          <button class="btn-secondary" id="btn-reset-chess" style="padding: 6px 12px; font-size: 11px;">Reset Board</button>
+        </div>
+        <div style="display: flex; gap: 24px; flex-wrap: wrap; justify-content: center;">
+          <div id="chess-board" style="width: 400px; max-width: 100%;"></div>
+          <div style="flex: 1; min-width: 200px;">
+            <p class="field-label">Status</p>
+            <p id="chess-status" style="margin-bottom: 16px;">Waiting for move...</p>
+            <p class="field-label">Players</p>
+            <div class="chip" style="margin-bottom: 8px; width: max-content;">⚪ Con</div>
+            <div class="chip" style="width: max-content; background: var(--bg-card);">⚫ Cryeteria</div>
+          </div>
+        </div>
+      </section>
+    </section>
+
     <section id="view-admin" class="view-container">
       <section class="card" style="margin-bottom:20px;">
         <div class="card-head"><h2 style="color:var(--warn);">System Configuration</h2></div>
@@ -430,10 +456,13 @@
     <a data-target="books" class="nav-link">Books</a>
     <a data-target="music" class="nav-link">Music</a>
     <a data-target="study" class="nav-link">Focus</a>
+    <a data-target="games" class="nav-link">Games</a>
     <a data-target="admin" class="nav-link">Admin</a>
   </nav>
 
 <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -442,8 +471,6 @@
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
   const TMDB_API_KEY = "eecc2609dbfe92b8fcb518848aa112be"; 
-  
-  // LIVE WEBHOOK INTEGRATION
   const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbw8Pjcz0b4JBxKBix9RYOWHtuY5h3HJdhu4cFjLbZerFu36U-gShWz4_85sY8pFva3F/exec"; 
 
   const PEOPLE = {
@@ -465,7 +492,6 @@
     tooltips: { controls: true, seek: true }
   });
 
-  // --- MASTER LOGGER FUNCTION (Routes everything to Google Sheets) ---
   function sendLog(category, action, details) {
     if (!GOOGLE_SHEETS_WEBHOOK) return; 
     try { 
@@ -538,14 +564,17 @@
   let canvasHistory = [];
   let idleTimer;
 
-  function resizeCanvas() {
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width;
-    canvas.height = rect.height;
+  function initCanvasResolution() {
+    canvas.width = 800;  
+    canvas.height = 600; 
+    
+    if (canvasHistory.length > 0) {
+      const img = new Image();
+      img.onload = () => { ctx.drawImage(img, 0, 0); };
+      img.src = canvasHistory[canvasHistory.length - 1];
+    }
   }
-  window.addEventListener('resize', resizeCanvas);
-  resizeCanvas();
-
+  
   onSnapshot(doc(db, 'system', 'doodle'), (snap) => {
     if(snap.exists() && snap.data().image) {
       const img = new Image();
@@ -555,35 +584,39 @@
     }
   });
 
-  function startDraw(e) {
-    drawing = true;
+  function getMousePos(e) {
     const rect = canvas.getBoundingClientRect();
     const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
     const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-    lastX = clientX - rect.left;
-    lastY = clientY - rect.top;
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height)
+    };
+  }
+
+  function startDraw(e) {
+    drawing = true;
+    const pos = getMousePos(e);
+    lastX = pos.x;
+    lastY = pos.y;
     clearTimeout(idleTimer);
   }
 
   function draw(e) {
     if (!drawing) return;
     e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-    const clientY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-    const currentX = clientX - rect.left;
-    const currentY = clientY - rect.top;
-
+    const pos = getMousePos(e);
+    
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
-    ctx.lineTo(currentX, currentY);
+    ctx.lineTo(pos.x, pos.y);
     ctx.strokeStyle = document.getElementById('brush-color').value;
     ctx.lineWidth = document.getElementById('brush-size').value;
     ctx.lineCap = 'round';
     ctx.stroke();
 
-    lastX = currentX;
-    lastY = currentY;
+    lastX = pos.x;
+    lastY = pos.y;
   }
 
   async function stopDraw() {
@@ -592,11 +625,8 @@
     const dataUrl = canvas.toDataURL();
     canvasHistory.push(dataUrl);
     
-    // Firestore Sync
     await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true });
-    
-    // Google Drive 4-minute idle auto-save
-    idleTimer = setTimeout(archiveCanvas, 240000); // 240,000ms = 4 minutes
+    idleTimer = setTimeout(archiveCanvas, 240000);
   }
 
   function archiveCanvas() {
@@ -638,6 +668,64 @@
     }
   });
 
+  // --- MULTIPLAYER CHESS ENGINE ---
+  const chessGame = new Chess();
+  let chessBoard = null;
+
+  function onDragStart (source, piece, position, orientation) {
+    if (chessGame.game_over()) return false;
+    if ((chessGame.turn() === 'w' && piece.search(/^b/) !== -1) ||
+        (chessGame.turn() === 'b' && piece.search(/^w/) !== -1)) {
+      return false;
+    }
+  }
+
+  async function onDrop (source, target) {
+    const move = chessGame.move({ from: source, to: target, promotion: 'q' });
+    if (move === null) return 'snapback';
+
+    updateStatus();
+
+    await setDoc(doc(db, 'system', 'chess'), { 
+      fen: chessGame.fen(), 
+      lastMoveBy: currentUser.name,
+      updatedAt: serverTimestamp() 
+    }, { merge: true });
+    
+    sendLog("Games", "Chess Move", `${currentUser.name} moved to ${target}`);
+  }
+
+  function updateStatus () {
+    let status = '';
+    let moveColor = chessGame.turn() === 'w' ? 'White (Con)' : 'Black (Cryeteria)';
+    
+    if (chessGame.in_checkmate()) status = `Game over, ${moveColor} is in checkmate.`;
+    else if (chessGame.in_draw()) status = 'Game over, drawn position.';
+    else {
+      status = `${moveColor} to move`;
+      if (chessGame.in_check()) status += ', ' + moveColor + ' is in check';
+    }
+    document.getElementById('chess-status').textContent = status;
+  }
+
+  chessBoard = Chessboard('chess-board', {
+    draggable: true,
+    position: 'start',
+    onDragStart: onDragStart,
+    onDrop: onDrop,
+    onSnapEnd: () => chessBoard.position(chessGame.fen())
+  });
+
+  document.getElementById('btn-reset-chess').addEventListener('click', async () => {
+    if (confirm("Reset the chess game?")) {
+      chessGame.reset();
+      chessBoard.start();
+      updateStatus();
+      await setDoc(doc(db, 'system', 'chess'), { fen: chessGame.fen(), lastMoveBy: 'System', updatedAt: serverTimestamp() });
+      sendLog("Games", "Chess Reset", "Board wiped clean");
+    }
+  });
+
   // --- NAVIGATION CONTROLS ---
   const navLinks = document.querySelectorAll('.nav-link'); const views = document.querySelectorAll('.view-container');
   navLinks.forEach(link => {
@@ -648,10 +736,13 @@
       views.forEach(v => v.classList.remove('active'));
       document.getElementById(`view-${target}`).classList.add('active'); 
       window.scrollTo(0,0);
-      if(target === 'dashboard') resizeCanvas();
+      if(target === 'dashboard') initCanvasResolution();
       if(target === 'chat') {
         const cw = document.getElementById('chat-window');
         cw.scrollTop = cw.scrollHeight;
+      }
+      if(target === 'games' && chessBoard) {
+        chessBoard.resize();
       }
     });
   });
@@ -669,9 +760,10 @@
     currentUser = PEOPLE[user.email] || { name: "there", id: "unknown", color: "#70947A" };
     document.getElementById("me-name").textContent = currentUser.name;
     document.getElementById("me-dot").style.background = currentUser.color;
-    document.getElementById("brush-color").value = currentUser.color; // Default brush
+    document.getElementById("brush-color").value = currentUser.color; 
     document.getElementById("today-label").textContent = new Date().toLocaleDateString(undefined, { weekday:"long", day:"numeric", month:"long" });
     document.body.classList.add("ready"); 
+    initCanvasResolution();
     initLiveSync();
   });
   
@@ -726,6 +818,19 @@
             document.documentElement.style.setProperty('--font-display', "'Fraunces', serif");
           }
         }
+      }
+    });
+
+    // CHESS LIVE SYNC
+    onSnapshot(doc(db, 'system', 'chess'), (snap) => {
+      if(snap.exists()) {
+        const data = snap.data();
+        if(data.lastMoveBy !== currentUser.name) {
+          chessGame.load(data.fen);
+          chessBoard.position(data.fen);
+          updateStatus();
+        }
+        if (currentUser.id === 'cryeteria') chessBoard.orientation('black');
       }
     });
     
@@ -806,7 +911,7 @@
     if (!text) return;
     
     addDoc(collection(db, 'chat'), { user: currentUser.name, text: text, timestamp: serverTimestamp() });
-    sendLog("Chat", "Sent Message", text); // Route to Google Sheets
+    sendLog("Chat", "Sent Message", text); 
     
     chatInput.value = '';
     setTimeout(() => {
