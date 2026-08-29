@@ -24,7 +24,7 @@
   .brand{display:flex; align-items:center; gap:10px;}
   .brand-name{font-family:var(--font-display); font-size:20px; font-weight:600;}
   
-  .btn-primary{ background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; cursor:pointer; border:none; transition:transform 0.15s; width:100%;}
+  .btn-primary{ background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; cursor:pointer; border:none; transition:transform 0.1s; width:100%;}
   .btn-secondary{ background:var(--bg); color:var(--ink); border: 1px solid var(--line); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; cursor:pointer;}
   .btn-warn{ background:rgba(217,83,79,0.1); color:var(--err); border: 1px solid rgba(217,83,79,0.3); padding:8px 14px; border-radius:8px; font-size:11px; cursor:pointer; }
   .btn-primary:active, .btn-warn:active { transform: scale(0.96); }
@@ -39,26 +39,21 @@
 <body>
 
   <header class="topbar">
-    <div class="brand">
-      <svg width="26" height="26" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg>
-      <span class="brand-name">The Lair CMS</span>
-    </div>
-    <div style="display:flex; gap:20px; font-size:14px; font-weight:500;">
-      <a href="lair.html" style="color:var(--ink-soft);">Back to Lair</a>
-      <a style="color:var(--warn);">Admin Studio</a>
-    </div>
+    <div class="brand"><svg width="26" height="26" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg><span class="brand-name">CMS</span></div>
+    <div style="display:flex; gap:20px; font-size:14px; font-weight:500;"><a href="lair.html" style="color:var(--ink-soft);">Back to Lair</a><a style="color:var(--warn);">Admin Studio</a></div>
   </header>
 
   <main>
-    <!-- Portfolio Upload Studio -->
+    <!-- Portfolio Upload Studio with WebP Compression -->
     <section class="card">
       <div class="card-head"><h2 style="color:var(--accent);">Portfolio Upload Studio</h2></div>
       <div style="display:flex; flex-direction:column; gap:16px;">
-        <div><label class="field-label">Select Photo (WebP/JPEG)</label><input type="file" id="upload-photo-file" accept="image/*"></div>
+        <p style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">Images are automatically compressed to WebP before upload.</p>
+        <div><label class="field-label">Select Photo</label><input type="file" id="upload-photo-file" accept="image/*"></div>
         <div><label class="field-label">Title</label><input type="text" id="upload-photo-title" placeholder="e.g. Monolith Shadows"></div>
         <div><label class="field-label">EXIF Data</label><input type="text" id="upload-photo-exif" placeholder="e.g. ISO 100 • 35mm • f/2.8"></div>
         <div><label class="field-label">Accent Glow</label><input type="color" id="upload-photo-accent" value="#70947A"></div>
-        <button class="btn-primary" id="btn-upload-photo">Upload to Cloudflare & Publish</button>
+        <button class="btn-primary" id="btn-upload-photo">Compress & Publish</button>
         <p id="upload-status" style="font-family:var(--font-mono); font-size:11px; text-align:center; display:none;"></p>
       </div>
     </section>
@@ -67,68 +62,54 @@
     <section class="card">
       <div class="card-head"><h2>Public Resume & Profile</h2></div>
       <div style="display:flex; flex-direction:column; gap:16px;">
-        <div><label class="field-label">Public Bio</label><textarea id="edit-bio" rows="4" placeholder="Multidisciplinary creator..."></textarea></div>
-        <div><label class="field-label">Contact Email</label><input type="text" id="edit-email" placeholder="theibadhasan@gmail.com"></div>
-        
-        <!-- Simplified timeline editor: We just use a JSON string field for quick array editing -->
-        <div><label class="field-label">Timeline Records (JSON Format)</label><textarea id="edit-timeline" rows="6" placeholder='[{"date":"2024", "title":"Lead", "desc":"..."}, ...]' font-family="monospace"></textarea></div>
-        
+        <div><label class="field-label">Public Bio</label><textarea id="edit-bio" rows="4"></textarea></div>
+        <div><label class="field-label">Contact Email</label><input type="text" id="edit-email"></div>
+        <div><label class="field-label">Timeline Records (JSON Format)</label><textarea id="edit-timeline" rows="6" font-family="monospace"></textarea></div>
         <button class="btn-primary" id="btn-save-profile">Update Public Profile</button>
-        <p id="profile-status" style="font-family:var(--font-mono); font-size:11px; text-align:center; display:none;"></p>
       </div>
+    </section>
+
+    <!-- Master Backup -->
+    <section class="card">
+      <div class="card-head"><h2>Master Vault Backup</h2></div>
+      <p style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-bottom:16px;">Download a complete JSON snapshot of all Firestore collections (Portfolios, Chat, Lists, Files).</p>
+      <button class="btn-secondary" id="btn-backup-db" style="width:100%;">Download Offline Backup (.json)</button>
     </section>
 
     <!-- Gallery Manager -->
     <section class="card">
       <div class="card-head"><h2>Manage Live Gallery</h2></div>
-      <div id="admin-portfolio-list" style="display:flex; flex-direction:column; gap:10px;">
-         <p style="color:var(--ink-soft); font-size:13px;">Loading portfolio...</p>
-      </div>
-    </section>
-
-    <!-- System Configs -->
-    <section class="card">
-      <div class="card-head"><h2 style="color:var(--warn);">System Configuration</h2></div>
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <div><label class="field-label">Primary Accent Color</label><input type="color" id="admin-accent-color" value="#70947A"></div>
-        <button class="btn-primary" id="btn-save-admin">Save Global Config</button>
-      </div>
+      <div id="admin-portfolio-list" style="display:flex; flex-direction:column; gap:10px;"><p style="color:var(--ink-soft); font-size:13px;">Loading portfolio...</p></div>
     </section>
   </main>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, collection, onSnapshot, query, orderBy, setDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, collection, onSnapshot, query, orderBy, setDoc, deleteDoc, addDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
   const WORKER_URL = "https://portfolio-uploader.theibadhasan.workers.dev/";
   const PUBLIC_R2_URL = "https://pub-3a5505322c50496598874826433f7e72.r2.dev/";
 
   const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+  let currentUserName = "Unknown";
 
-  onAuthStateChanged(auth, (user) => { if (!user) window.location.replace("index.html"); else initAdmin(); });
+  onAuthStateChanged(auth, (user) => { if (!user) { window.location.replace("index.html"); } else { currentUserName = user.email.split('@')[0]; initAdmin(); } });
+  
+  async function logActivity(action, icon="⚙️") { await addDoc(collection(db, 'activity'), { text: action, user: currentUserName, icon, timestamp: serverTimestamp() }); }
 
   function initAdmin() {
-    // Gallery Manager Sync
     onSnapshot(query(collection(db, 'portfolio'), orderBy('timestamp', 'desc')), (snap) => {
       const adminList = document.getElementById('admin-portfolio-list');
       if (snap.empty) { adminList.innerHTML = '<p style="color:var(--ink-soft); font-size:13px;">No photos published yet.</p>'; return; }
       adminList.innerHTML = '';
       snap.forEach(docSnap => {
         const p = docSnap.data();
-        adminList.innerHTML += `
-          <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--line);">
-            <div style="display:flex; align-items:center; gap:12px;">
-                <img src="${p.imgUrl}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
-                <div><p style="font-size:13px; font-weight:500;">${p.title}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${p.exif || 'No EXIF data'}</p></div>
-            </div>
-            <button class="btn-warn btn-delete-photo" data-id="${docSnap.id}">Remove</button>
-          </div>`;
+        adminList.innerHTML += `<div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--line);"><div style="display:flex; align-items:center; gap:12px;"><img src="${p.imgUrl}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;"><div><p style="font-size:13px; font-weight:500;">${p.title}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${p.exif || 'No EXIF'}</p></div></div><button class="btn-warn btn-delete-photo" data-id="${docSnap.id}">Remove</button></div>`;
       });
     });
 
-    // Load existing profile
     onSnapshot(doc(db, 'system', 'profile'), (snap) => {
       if(snap.exists() && document.activeElement.tagName !== "TEXTAREA" && document.activeElement.tagName !== "INPUT") {
         const d = snap.data();
@@ -139,14 +120,27 @@
     });
   }
 
-  // Delete Photo
   document.getElementById('admin-portfolio-list').addEventListener('click', async (e) => {
-    if (e.target.classList.contains('btn-delete-photo')) {
-      if(confirm("Remove this photo from the public portfolio?")) await deleteDoc(doc(db, 'portfolio', e.target.getAttribute('data-id')));
-    }
+    if (e.target.classList.contains('btn-delete-photo')) { if(confirm("Remove this photo?")) { await deleteDoc(doc(db, 'portfolio', e.target.getAttribute('data-id'))); logActivity("Deleted a portfolio photo", "🗑"); } }
   });
 
-  // Upload Engine
+  // Client-Side Image Compression Engine
+  async function compressImageToWebP(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height; const max = 2500; // Cap resolution at 2500px
+        if(w > max || h > max) { if(w > h) { h = h * (max/w); w = max; } else { w = w * (max/h); h = max; } }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h);
+        canvas.toBlob(blob => resolve(blob), 'image/webp', 0.85); // 85% WebP quality
+      };
+      img.onerror = (err) => reject(err);
+    });
+  }
+
   document.getElementById('btn-upload-photo').addEventListener('click', async () => {
     const fileInput = document.getElementById('upload-photo-file');
     const title = document.getElementById('upload-photo-title').value.trim();
@@ -155,20 +149,21 @@
     const statusText = document.getElementById('upload-status');
 
     if (!fileInput.files.length || !title) { alert("Select an image and provide a title."); return; }
-    
     const file = fileInput.files[0];
-    const uniqueFileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.]/g, '')}`;
-    
-    statusText.style.display = 'block'; statusText.style.color = 'var(--ink-soft)'; statusText.textContent = 'Uploading to Cloudflare R2...';
+    statusText.style.display = 'block'; statusText.style.color = 'var(--ink-soft)'; statusText.textContent = 'Compressing image locally...';
 
     try {
-      const uploadRes = await fetch(WORKER_URL, { method: 'POST', headers: { 'X-Lair-Auth': 'lair-master-key-2026', 'X-File-Name': uniqueFileName }, body: file });
+      const webpBlob = await compressImageToWebP(file);
+      const uniqueFileName = `${Date.now()}-${file.name.replace(/\.[^/.]+$/, "")}.webp`.replace(/[^a-zA-Z0-9.-]/g, '');
+      
+      statusText.textContent = 'Uploading WebP to Cloudflare R2...';
+      const uploadRes = await fetch(WORKER_URL, { method: 'POST', headers: { 'X-Lair-Auth': 'lair-master-key-2026', 'X-File-Name': uniqueFileName }, body: webpBlob });
       if (!uploadRes.ok) throw new Error('Cloudflare rejected the upload.');
 
       statusText.textContent = 'Saving entry to database...';
       const finalImgUrl = `${PUBLIC_R2_URL}${uniqueFileName}`;
-      
       await setDoc(doc(collection(db, 'portfolio')), { title, exif, accent, imgUrl: finalImgUrl, timestamp: serverTimestamp() });
+      logActivity(`Published new photo: ${title}`, "📸");
 
       statusText.style.color = 'var(--con)'; statusText.textContent = 'Successfully published!';
       fileInput.value = ''; document.getElementById('upload-photo-title').value = ''; document.getElementById('upload-photo-exif').value = '';
@@ -176,25 +171,30 @@
     } catch (err) { statusText.style.color = 'var(--err)'; statusText.textContent = `Error: ${err.message}`; }
   });
 
-  // Save Profile
   document.getElementById('btn-save-profile').addEventListener('click', async () => {
-    const bio = document.getElementById('edit-bio').value;
-    const email = document.getElementById('edit-email').value;
-    let timeline = [];
-    try { timeline = JSON.parse(document.getElementById('edit-timeline').value); } catch(e) { alert("Timeline JSON is invalid. Please fix syntax."); return; }
-    
-    const statusText = document.getElementById('profile-status');
-    statusText.style.display = 'block'; statusText.style.color = 'var(--con)'; statusText.textContent = 'Updating...';
-    
+    const bio = document.getElementById('edit-bio').value; const email = document.getElementById('edit-email').value; let timeline = [];
+    try { timeline = JSON.parse(document.getElementById('edit-timeline').value); } catch(e) { alert("Timeline JSON is invalid."); return; }
     await setDoc(doc(db, 'system', 'profile'), { bio, email, timeline }, { merge: true });
-    statusText.textContent = 'Profile Updated ✔';
-    setTimeout(() => { statusText.style.display = 'none'; }, 3000);
+    logActivity("Updated public resume/bio", "📄"); alert('Profile Updated');
   });
 
-  // Config
-  document.getElementById('btn-save-admin').addEventListener('click', async () => {
-    await setDoc(doc(db, 'system', 'config'), { accentColor: document.getElementById('admin-accent-color').value }, { merge: true });
-    alert("Config saved!");
+  // Master Database Backup
+  document.getElementById('btn-backup-db').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-backup-db'); btn.textContent = "Extracting data..."; btn.disabled = true;
+    try {
+      const collections = ['portfolio', 'chat', 'books', 'watchlist', 'music', 'lairdrops'];
+      let backup = {};
+      for(let col of collections) {
+         const snap = await getDocs(collection(db, col));
+         backup[col] = snap.docs.map(d => ({id: d.id, ...d.data()}));
+      }
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+      a.download = `lair_master_backup_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      logActivity("Downloaded master database backup", "💾");
+    } catch (e) { alert("Backup failed: " + e.message); }
+    btn.textContent = "Download Offline Backup (.json)"; btn.disabled = false;
   });
 </script>
 </body>
