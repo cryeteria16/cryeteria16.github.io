@@ -20,7 +20,7 @@
   
   .film-grain { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; opacity: var(--grain-intensity); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
   
-  input[type="text"], input[type="number"], input[type="file"], select, textarea { appearance:none; font-family:var(--font-body); font-size:14px; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; width:100%; transition:border-color 0.2s; touch-action: manipulation; }
+  input[type="text"], input[type="password"], input[type="number"], input[type="file"], select, textarea { appearance:none; font-family:var(--font-body); font-size:14px; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; width:100%; transition:border-color 0.2s; touch-action: manipulation; }
   input[type="file"]::file-selector-button { background: var(--bg-card); color: var(--ink); border: 1px solid var(--line); padding: 6px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 11px; cursor: pointer; margin-right: 12px;}
   input[type="color"] { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:2px; height: 38px; width: 48px; cursor: pointer; }
   input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); }
@@ -28,9 +28,9 @@
   input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; height:16px; width:16px; border-radius:50%; background:var(--ink); cursor:pointer; margin-top:-6px; }
   input[type=range]::-webkit-slider-runnable-track { width:100%; height:4px; background:var(--line); border-radius:2px; }
 
-  .btn-primary { background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; text-align:center; transition: transform 0.1s, opacity 0.2s; }
-  .btn-secondary { background:var(--bg); color:var(--ink); border: 1px solid var(--line); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; transition: transform 0.1s, background 0.2s; }
-  .btn-warn { background:rgba(217, 83, 79, 0.1); color:var(--err); border: 1px solid rgba(217, 83, 79, 0.3); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; }
+  .btn-primary { background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; text-align:center; transition: transform 0.1s, opacity 0.2s; cursor:pointer;}
+  .btn-secondary { background:var(--bg); color:var(--ink); border: 1px solid var(--line); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; transition: transform 0.1s, background 0.2s; cursor:pointer;}
+  .btn-warn { background:rgba(217, 83, 79, 0.1); color:var(--err); border: 1px solid rgba(217, 83, 79, 0.3); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; cursor:pointer;}
   .btn-primary:active, .btn-secondary:active, .btn-warn:active { transform: scale(0.96); }
 
   /* Floating Pill Navigation */
@@ -100,18 +100,21 @@
   .chat-msg.mine .chat-bubble { background: var(--accent); color: #0A0A0A; border-bottom-right-radius: 4px; }
   .chat-msg.theirs .chat-bubble { background: var(--bg-card); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
 
-  /* Vitality Tracker (Hold-to-Log) */
+  /* Vitality Tracker */
   .khaadi-glass-btn { position: relative; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: border-color 0.2s; overflow: hidden; }
   .khaadi-glass-btn:hover { border-color: var(--accent); }
   .khaadi-glass-btn svg circle.hold-ring { transition: stroke-dashoffset 0.1s linear; transform: rotate(-90deg); transform-origin: 50% 50%; }
 
   /* Media UI & Co-Watching */
-  .scroll-row { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px; scroll-snap-type: x mandatory; }
+  .scroll-row { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 12px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+  .scroll-row::-webkit-scrollbar { height: 6px; }
+  .scroll-row::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+  
   .title-card { flex: 0 0 130px; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s; position: relative; scroll-snap-align: start; }
   .title-card:hover { transform: translateY(-4px) scale(1.02); }
-  .poster, .book-poster { height: 195px; border-radius: var(--radius-sm); margin-bottom: 8px; background: var(--bg) center/cover; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 13px; color: var(--ink-soft); text-align: center; padding: 10px; border: 1px solid var(--line); }
-  .title-name { font-size: 12px; font-weight: 500; margin-bottom: 4px; line-height: 1.3; }
-  .pill { display: inline-block; font-family: var(--font-mono); font-size: 10px; padding: 4px 10px; border-radius: 12px; background:var(--line); width: max-content; }
+  .poster, .book-poster { height: 195px; border-radius: var(--radius-sm); margin-bottom: 8px; background: var(--bg) center/cover no-repeat; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 13px; color: var(--ink-soft); text-align: center; padding: 10px; border: 1px solid var(--line); }
+  .title-name { font-size: 12px; font-weight: 500; margin-bottom: 4px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pill { display: inline-block; font-family: var(--font-mono); font-size: 10px; padding: 3px 8px; border-radius: 12px; background:var(--line); width: max-content; }
   
   /* Co-Watch Theater Frame */
   .theater-container { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--line); margin-bottom: 16px; }
@@ -162,6 +165,43 @@
         <div class="cmd-item" data-action="nav:theater"><span class="cmd-item-icon">Watch</span> <span>Open Theater & Voice Room</span></div>
         <div class="cmd-item" data-action="link:admin.html"><span class="cmd-item-icon">CMS</span> <span>Open Admin Studio</span></div>
         <div class="cmd-item" data-action="func:signout"><span class="cmd-item-icon">Auth</span> <span>Lock Lair & Exit</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Movie Action / Stream Link Modal -->
+  <div class="modal-overlay" id="movie-action-modal">
+    <div class="modal-content">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+        <div>
+          <h2 id="modal-movie-title" style="font-family:var(--font-display); font-size:20px; font-weight:600;">Movie Details</h2>
+          <p id="modal-movie-id" style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft);"></p>
+        </div>
+        <button class="btn-secondary" id="btn-close-movie-modal" style="padding:4px 10px; font-size:12px;">✕</button>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div>
+          <label class="field-label">Status</label>
+          <select id="modal-movie-status">
+            <option value="Want to Watch">Want to Watch</option>
+            <option value="Watching">Watching</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="field-label">Attached Video / Cloudflare Tunnel Stream URL</label>
+          <input type="text" id="modal-movie-stream-url" placeholder="https://....trycloudflare.com/video.mp4" autocomplete="off">
+          <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-top:6px;">Paste Tunnel link or R2 video URL to auto-launch this title.</p>
+        </div>
+
+        <button class="btn-primary" id="btn-play-movie-direct" style="background:var(--con); color:#0A0A0A;">▶ Play in Theater Now</button>
+        
+        <div style="display:flex; gap:10px; margin-top:4px;">
+          <button class="btn-secondary" id="btn-save-movie-details" style="flex:1;">Save</button>
+          <button class="btn-warn" id="btn-delete-movie" style="flex:1;">Remove</button>
+        </div>
       </div>
     </div>
   </div>
@@ -303,13 +343,13 @@
       </section>
     </section>
 
-    <!-- THEATER (Voice, Chat, Media) -->
+    <!-- THEATER (Voice, Chat, Media & Watchlist) -->
     <section id="view-theater" class="view-container">
       <div class="theater-grid">
         
-        <!-- Left: Main Stage (Media Player & Watchlist) -->
+        <!-- Left: Main Stage (Media Player, TMDB Search, & Watchlist) -->
         <div>
-          <!-- Player Card -->
+          <!-- Co-Watch Player Card -->
           <section class="card" style="padding:16px;">
             <div class="card-head" style="margin-bottom:12px;">
               <h2>Co-Watch Theater</h2>
@@ -318,19 +358,34 @@
             
             <div class="theater-container" id="theater-frame-box">
               <div id="theater-player-slot" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px; text-align:center; padding:20px;">
-                Select a title or load a Tunnel URL
+                Select a title from Watchlist or paste a Tunnel link below
               </div>
             </div>
             
             <div style="display:flex; gap:10px;">
-              <input type="text" id="cowatch-url-input" placeholder="Paste Cloudflare Tunnel URL..." autocomplete="off" style="flex:1; min-width:0;">
+              <input type="text" id="cowatch-url-input" placeholder="Paste Cloudflare Tunnel / Video URL..." autocomplete="off" style="flex:1; min-width:0;">
               <button class="btn-primary" id="btn-load-cowatch" style="width:auto; padding:0 24px;">Load</button>
             </div>
           </section>
 
-          <!-- Watchlist Card -->
+          <!-- Watchlist & TMDB Search Card -->
           <section class="card" style="padding:16px;">
-            <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Watchlist</h2></div>
+            <div class="card-head" style="margin-bottom:12px;">
+              <h2 style="font-size:16px;">Find Movies (TMDB)</h2>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-bottom:14px;">
+              <input type="text" id="tmdb-search-input" placeholder="Search movies or shows to add..." autocomplete="off" style="flex:1; min-width:0;">
+              <button class="btn-secondary" id="btn-tmdb-search" style="width:auto; padding:0 18px;">Search</button>
+            </div>
+
+            <!-- Search Results Row -->
+            <div id="tmdb-results" class="scroll-row" style="display:none; margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:16px;"></div>
+
+            <div class="card-head" style="margin-bottom:12px; margin-top:8px;">
+              <h2 style="font-size:16px;">Shared Watchlist</h2>
+              <span style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft);">Tap card to play / attach stream</span>
+            </div>
             <div id="shared-watchlist" class="scroll-row"></div>
           </section>
         </div>
@@ -351,13 +406,12 @@
               <button class="btn-warn" id="btn-leave-voice" style="flex:1; display:none;">Leave</button>
             </div>
           </div>
-          <!-- Keep this hidden so it doesn't render a white bar -->
           <audio id="remote-audio" autoplay style="display:none;"></audio> 
 
-          <!-- Chat Room -->
+          <!-- Theater Chat -->
           <section class="card" style="padding:16px; display:flex; flex-direction:column; flex:1;">
             <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Theater Chat</h2></div>
-            <div id="chat-window" style="height:300px; flex:1; margin-bottom:12px;"></div>
+            <div id="chat-window" style="height:320px; flex:1; margin-bottom:12px;"></div>
             <div style="display:flex; gap:10px;">
               <input type="text" id="chat-input" placeholder="Message..." autocomplete="off" style="flex:1; min-width:0;">
               <button class="btn-primary" id="btn-send-chat" style="width:auto; padding:0 16px;">Send</button>
@@ -406,6 +460,7 @@
   const PEOPLE = { "justibadx@gmail.com":{name:"Con",id:"con",color:"#70947A"}, "theibadhasan@gmail.com":{name:"Cryeteria",id:"cryeteria",color:"#7A9BC2"} };
   const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
   let currentUser = null;
+  let activeSelectedMovieId = null;
 
   async function logActivity(action, icon="⚡") { await addDoc(collection(db, 'activity'), { text: action, user: currentUser.name, icon, timestamp: serverTimestamp() }); }
 
@@ -769,6 +824,134 @@
   }, true);
 
   // ==========================================
+  // TMDB SEARCH & WATCHLIST ASSIGNMENT
+  // ==========================================
+  const TMDB_API_KEY = "4b52b76174a761002dc02aa11e0394c8";
+
+  document.getElementById('btn-tmdb-search').addEventListener('click', () => {
+    const q = document.getElementById('tmdb-search-input').value.trim();
+    if(q) searchTMDB(q);
+  });
+  document.getElementById('tmdb-search-input').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') {
+      const q = e.target.value.trim();
+      if(q) searchTMDB(q);
+    }
+  });
+
+  async function searchTMDB(queryStr) {
+    const resRow = document.getElementById('tmdb-results');
+    resRow.style.display = 'flex';
+    resRow.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">Searching TMDB...</p>';
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(queryStr)}`);
+      const data = await res.json();
+      if(!data.results || data.results.length === 0) {
+        resRow.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">No titles found.</p>';
+        return;
+      }
+      resRow.innerHTML = '';
+      data.results.forEach(item => {
+        const title = item.title || item.name;
+        if(!title) return;
+        const posterUrl = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '';
+        const card = document.createElement('div');
+        card.className = 'title-card';
+        card.innerHTML = `
+          <div class="poster" style="${posterUrl ? `background-image:url('${posterUrl}')` : ''}">${!posterUrl ? title : ''}</div>
+          <p class="title-name">${title}</p>
+          <button class="btn-primary" style="padding:4px 8px; font-size:10px; width:100%;">+ Add</button>
+        `;
+        card.querySelector('button').addEventListener('click', (e) => {
+          e.stopPropagation();
+          addToWatchlist(title, posterUrl);
+        });
+        resRow.appendChild(card);
+      });
+    } catch(err) {
+      resRow.innerHTML = '<p style="font-size:12px; color:var(--err); padding:10px;">Search error. Check network.</p>';
+    }
+  }
+
+  async function addToWatchlist(title, poster) {
+    await addDoc(collection(db, 'watchlist'), {
+      title,
+      poster,
+      status: 'Want to Watch',
+      streamUrl: '',
+      addedBy: currentUser.name,
+      timestamp: serverTimestamp()
+    });
+    logActivity(`Added "${title}" to Watchlist`, "🎬");
+    document.getElementById('tmdb-results').style.display = 'none';
+    document.getElementById('tmdb-search-input').value = '';
+  }
+
+  // Movie Details & Stream Link Modal Handlers
+  window.openMovieActionModal = function(id) {
+    const movie = window.watchlistData[id];
+    if(!movie) return;
+    activeSelectedMovieId = id;
+    document.getElementById('modal-movie-title').textContent = movie.title;
+    document.getElementById('modal-movie-id').textContent = `ID: ${id}`;
+    document.getElementById('modal-movie-status').value = movie.status || 'Want to Watch';
+    document.getElementById('modal-movie-stream-url').value = movie.streamUrl || '';
+    document.getElementById('movie-action-modal').classList.add('active');
+  };
+
+  document.getElementById('btn-close-movie-modal').addEventListener('click', () => {
+    document.getElementById('movie-action-modal').classList.remove('active');
+    activeSelectedMovieId = null;
+  });
+
+  document.getElementById('btn-save-movie-details').addEventListener('click', async () => {
+    if(!activeSelectedMovieId) return;
+    const status = document.getElementById('modal-movie-status').value;
+    const streamUrl = document.getElementById('modal-movie-stream-url').value.trim();
+    await updateDoc(doc(db, 'watchlist', activeSelectedMovieId), {
+      status,
+      streamUrl,
+      updatedAt: serverTimestamp()
+    });
+    document.getElementById('movie-action-modal').classList.remove('active');
+    logActivity(`Updated details for "${window.watchlistData[activeSelectedMovieId].title}"`, "⚙️");
+  });
+
+  document.getElementById('btn-play-movie-direct').addEventListener('click', async () => {
+    if(!activeSelectedMovieId) return;
+    const streamUrl = document.getElementById('modal-movie-stream-url').value.trim();
+    const movieTitle = window.watchlistData[activeSelectedMovieId].title;
+    
+    if(!streamUrl) {
+      alert("Please paste a Cloudflare Tunnel or video URL first.");
+      return;
+    }
+
+    // Save and load into player simultaneously
+    await updateDoc(doc(db, 'watchlist', activeSelectedMovieId), {
+      status: 'Watching',
+      streamUrl,
+      updatedAt: serverTimestamp()
+    });
+
+    document.getElementById('cowatch-url-input').value = streamUrl;
+    const type = streamUrl.includes('youtube.com') || streamUrl.includes('youtu.be') ? 'youtube' : 'r2';
+    await setDoc(watchPartyDoc, { url: streamUrl, type, isPlaying: true, currentTime: 0, title: movieTitle, updatedAt: serverTimestamp() });
+    loadMediaIntoTheater(streamUrl, type);
+
+    document.getElementById('movie-action-modal').classList.remove('active');
+  });
+
+  document.getElementById('btn-delete-movie').addEventListener('click', async () => {
+    if(!activeSelectedMovieId) return;
+    if(confirm(`Remove "${window.watchlistData[activeSelectedMovieId].title}" from Watchlist?`)) {
+      await deleteDoc(doc(db, 'watchlist', activeSelectedMovieId));
+      document.getElementById('movie-action-modal').classList.remove('active');
+      logActivity("Removed movie from Watchlist", "🗑");
+    }
+  });
+
+  // ==========================================
   // IN-BROWSER PDF READER & SYNCED BOOKMARKS
   // ==========================================
   let pdfDoc_ = null, pageNum_ = 1, pageRendering_ = false, pageNumPending_ = null, scale_ = 1.2, currentBookId_ = null;
@@ -815,7 +998,6 @@
   document.getElementById('pdf-prev').addEventListener('click', () => { if (pageNum_ <= 1) return; pageNum_--; queueRenderPage(pageNum_); });
   document.getElementById('pdf-next').addEventListener('click', () => { if (pageNum_ >= pdfDoc_.numPages) return; pageNum_++; queueRenderPage(pageNum_); });
   document.getElementById('pdf-close').addEventListener('click', () => { document.getElementById('pdf-modal').classList.remove('active'); currentBookId_ = null; });
-
 
   // ==========================================
   // LAIR DROP & STORAGE
@@ -868,7 +1050,30 @@
     onSnapshot(doc(db, 'system', 'doodle'), (snap) => { if (snap.exists() && snap.data().image) { const img = new Image(); img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; img.src = snap.data().image; if (canvasHistory.length === 0) canvasHistory.push(snap.data().image); } });
     onSnapshot(doc(db, 'system', 'scratchpad'), (snap) => { if(snap.exists() && document.activeElement !== document.getElementById('shared-scratchpad')) document.getElementById('shared-scratchpad').value = snap.data().text || ''; });
     onSnapshot(query(collection(db, 'activity'), orderBy('timestamp', 'desc'), limit(20)), (snap) => { const feed = document.getElementById('unified-activity-log'); feed.innerHTML = ''; if(snap.empty) { feed.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">No activity.</p>'; return; } snap.forEach(d => { const a = d.data(); const tStr = a.timestamp ? a.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''; feed.innerHTML += `<div class="activity-log-item"><span style="font-size:16px;">${a.icon||'•'}</span><div style="flex:1;"><p style="font-size:13px;"><b>${a.user}</b> ${a.text}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${tStr}</p></div></div>`; }); });
-    onSnapshot(collection(db, 'watchlist'), (snap) => { let activeShow = '--'; window.watchlistData = {}; const wList = document.getElementById('shared-watchlist'); wList.innerHTML = ''; snap.forEach(d => { const v = d.data(); window.watchlistData[d.id] = v; if(v.status === 'Watching') activeShow = v.title; wList.innerHTML += `<div class="title-card" data-id="${d.id}"><div class="poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div><p class="title-name">${v.title}</p><span class="pill">${v.status}</span></div>`; }); document.getElementById('cc-watching').textContent = activeShow; });
+    
+    // Watchlist Snapshot
+    onSnapshot(collection(db, 'watchlist'), (snap) => { 
+      let activeShow = '--'; 
+      window.watchlistData = {}; 
+      const wList = document.getElementById('shared-watchlist'); 
+      wList.innerHTML = ''; 
+      if(snap.empty) {
+        wList.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">No titles in watchlist. Search TMDB above to add!</p>';
+        return;
+      }
+      snap.forEach(d => { 
+        const v = d.data(); 
+        window.watchlistData[d.id] = v; 
+        if(v.status === 'Watching') activeShow = v.title; 
+        wList.innerHTML += `
+          <div class="title-card" onclick="openMovieActionModal('${d.id}')">
+            <div class="poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div>
+            <p class="title-name">${v.title}</p>
+            <span class="pill">${v.status || 'Want to Watch'}</span>
+          </div>`; 
+      }); 
+      document.getElementById('cc-watching').textContent = activeShow; 
+    });
     
     onSnapshot(collection(db, 'books'), (snap) => { 
       let activeBook = '--'; window.libraryData = {}; const bList = document.getElementById('shared-library'); bList.innerHTML = '';
