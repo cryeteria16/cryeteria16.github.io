@@ -181,7 +181,7 @@
     </div>
   </div>
 
-  <!-- FLOATING PILL NAV (Cleaned up: Audio & Focus removed) -->
+  <!-- FLOATING PILL NAV -->
   <div class="floating-header-wrapper">
     <header class="floating-pill">
       <div class="brand"><svg width="20" height="20" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg></div>
@@ -206,7 +206,7 @@
         <div class="cmd-widget"><h3>Public Traffic</h3><div><p id="cc-views" style="font-family:var(--font-display); font-size:24px;">--</p><p style="font-family:var(--font-mono); color:var(--ink-soft); font-size:11px;">Unique Views Tracked</p></div></div>
       </div>
 
-      <!-- VITALITY & HYDRATION DASHBOARD CARD (1.5s Hold-to-Log & No Heatmap) -->
+      <!-- VITALITY & HYDRATION DASHBOARD CARD -->
       <section class="card" style="margin-bottom:20px;">
         <div class="card-head">
           <h2 style="font-size:16px;">Vitality & Hydration</h2>
@@ -381,7 +381,7 @@
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
   const WORKER_URL = "https://portfolio-uploader.theibadhasan.workers.dev/";
   const PUBLIC_R2_URL = "https://pub-3a5505322c50496598874826433f7e72.r2.dev/";
-  const GS_WEBHOOK_URL = "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE";
+  const GS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw8Pjcz0b4JBxKBix9RYOWHtuY5h3HJdhu4cFjLbZerFu36U-gShWz4_85sY8pFva3F/exec";
 
   const PEOPLE = { "justibadx@gmail.com":{name:"Con",id:"con",color:"#70947A"}, "theibadhasan@gmail.com":{name:"Cryeteria",id:"cryeteria",color:"#7A9BC2"} };
   const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -523,7 +523,7 @@
 
   async function logVitalityData(type, payload) {
     const record = { type, user: currentUser.name, ...payload, timestamp: new Date().toISOString() };
-    if (navigator.onLine && GS_WEBHOOK_URL !== "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE") {
+    if (navigator.onLine && GS_WEBHOOK_URL) {
       try {
         await fetch(GS_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) });
       } catch(e) { queueOffline(record); }
@@ -541,7 +541,7 @@
 
   async function flushOfflineQueue() {
     let queue = JSON.parse(localStorage.getItem('lair_offline_queue') || '[]');
-    if(queue.length === 0 || GS_WEBHOOK_URL === "YOUR_GOOGLE_APPS_SCRIPT_WEB_APP_URL_HERE") return;
+    if(queue.length === 0 || !GS_WEBHOOK_URL) return;
     try {
       for(let rec of queue) {
         await fetch(GS_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rec) });
@@ -834,7 +834,7 @@
   function getMousePos(e) { const r = canvas.getBoundingClientRect(); const cx = e.clientX||(e.touches?e.touches[0].clientX:0); const cy = e.clientY||(e.touches?e.touches[0].clientY:0); return {x:(cx-r.left)*(canvas.width/r.width),y:(cy-r.top)*(canvas.height/r.height)}; }
   canvas.addEventListener('mousedown', e=>{ drawing=true; const p=getMousePos(e); lastX=p.x; lastY=p.y; });
   canvas.addEventListener('mousemove', e=>{ if(!drawing)return; e.preventDefault(); const p=getMousePos(e); ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(p.x,p.y); ctx.strokeStyle=document.getElementById('brush-color').value; ctx.lineWidth=document.getElementById('brush-size').value; ctx.lineCap='round'; ctx.stroke(); lastX=p.x; lastY=p.y; });
-  const stopDraw = async () => { if(!drawing)return; drawing=false; const dataUrl = canvas.toDataURL(); canvasHistory.push(dataUrl); await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); };
+  const stopDraw = async () => { if(!drawing)return; drawing=false; const dataUrl = canvas.toDataURL(); canvasHistory.path = canvasHistory.push(dataUrl); await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); };
   canvas.addEventListener('mouseup', stopDraw); canvas.addEventListener('mouseleave', stopDraw); canvas.addEventListener('touchend', stopDraw);
   document.getElementById('btn-save-canvas').addEventListener('click', () => { const btn = document.getElementById('btn-save-canvas'); logActivity("Archived canvas sketch", "🎨"); btn.textContent = "Saved ✔"; setTimeout(() => btn.textContent = "💾 Archive", 3000); });
   document.getElementById('btn-undo-canvas').addEventListener('click', async () => { if (canvasHistory.length > 1) { canvasHistory.pop(); let lastStateUrl = canvasHistory[canvasHistory.length - 1]; await setDoc(doc(db, 'system', 'doodle'), { image: lastStateUrl, updatedAt: serverTimestamp() }, { merge: true }); } });
