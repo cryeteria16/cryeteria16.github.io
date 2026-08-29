@@ -5,54 +5,64 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0A0A0A">
 <title>Ibad Hasan — Visuals & Archive</title>
+<!-- Default Fallback Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-  :root { --bg:#0A0A0A; --bg-card:#121212; --bg-card-hover:#181818; --ink:#EDEDED; --ink-soft:#A3A3A3; --ink-faint:#525252; --line:#262626; --con:#70947A; --accent:var(--con); --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; --radius:16px; --radius-sm:10px; }
+  :root { 
+    --bg:#0A0A0A; --bg-card:#121212; --bg-card-hover:#181818; --ink:#EDEDED; --ink-soft:#A3A3A3; --line:#262626; 
+    --con:#70947A; --accent:var(--con); 
+    --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; 
+    --radius:16px; --radius-sm:10px; --grain-intensity: 0.04;
+  }
+  
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
   html { scroll-behavior: smooth; }
-  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); line-height: 1.5; padding-top: env(safe-area-inset-top); overflow-x: hidden; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); line-height: 1.5; overflow-x: hidden; }
   a { color: inherit; text-decoration: none; cursor: pointer; }
-  input[type="text"], input[type="password"] { appearance: none; font-family: var(--font-body); font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; width: 100%; transition: border-color 0.2s; }
-  input:focus { outline: none; border-color: var(--accent); }
   
-  .btn-primary { background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; text-align: center; border: none; cursor: pointer; width: 100%; transition: opacity 0.2s; }
+  /* Cinematic Film Grain Overlay */
+  .film-grain { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; opacity: var(--grain-intensity); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+
+  /* Floating Pill Navigation */
+  .floating-header-wrapper { position: sticky; top: env(safe-area-inset-top, 20px); z-index: 50; padding: 20px; display: flex; justify-content: center; pointer-events: none; }
+  .floating-pill { background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); border-radius: 50px; padding: 12px 28px; display: flex; align-items: center; gap: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); pointer-events: auto; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .floating-pill::-webkit-scrollbar { display: none; }
+  .pub-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; flex-shrink: 0; }
+  .pub-brand h1 { font-family: var(--font-display); font-size: 18px; font-weight: 500; letter-spacing: -0.02em; white-space: nowrap;}
+  .pub-nav { display: flex; gap: 24px; font-size: 13px; font-family: var(--font-mono); color: var(--ink-soft); align-items: center; }
+  .pub-nav a { position: relative; padding: 4px 0; white-space: nowrap; transition: color 0.2s;}
+  .pub-nav a:hover, .pub-nav a.active { color: var(--ink); }
+  .pub-nav a.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 1px; background: var(--ink); }
+  
+  .btn-primary { background: var(--ink); color: var(--bg); padding: 12px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; text-align: center; border: none; cursor: pointer; width: 100%; transition: transform 0.15s, opacity 0.2s; }
   .btn-primary:active { transform: scale(0.97); } .btn-primary:hover { opacity: 0.88; }
   .btn-secondary { background: var(--bg); color: var(--ink); border: 1px solid var(--line); padding: 12px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; width: 100%; transition: background 0.2s; }
   .btn-secondary:hover { background: var(--bg-card-hover); }
 
-  /* High-End Scroll Transitions */
+  /* High-End Scroll Reveals */
   .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1); }
   .reveal.visible { opacity: 1; transform: translateY(0); }
-  
   .view-container { display: none; opacity: 0; }
   .view-container.active { display: block; animation: smoothFadeIn 0.35s forwards; }
   @keyframes smoothFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-
-  .pub-header { display: flex; justify-content: space-between; padding: 24px 32px; max-width: 1280px; margin: 0 auto; position: sticky; top: 0; background: rgba(10, 10, 10, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 40; border-bottom: 1px solid rgba(38, 38, 38, 0.6); }
-  .pub-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
-  .pub-brand h1 { font-family: var(--font-display); font-size: 21px; font-weight: 500; letter-spacing: -0.02em; }
-  .pub-nav { display: flex; gap: 28px; font-size: 13px; font-family: var(--font-mono); color: var(--ink-soft); align-items: center;}
-  .pub-nav a { position: relative; padding: 4px 0; }
-  .pub-nav a:hover, .pub-nav a.active { color: var(--ink); }
-  .pub-nav a.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 1px; background: var(--ink); }
   
-  .pub-content { max-width: 1280px; width: 100%; margin: 0 auto; padding: 36px 32px; flex: 1; min-height: 100vh;}
-  .pub-hero { margin-bottom: 48px; max-width: 720px; }
-  .pub-hero h2 { font-family: var(--font-display); font-size: 38px; font-weight: 400; line-height: 1.25; letter-spacing: -0.02em; margin-bottom: 14px; }
-  .pub-hero p { font-size: 15px; color: var(--ink-soft); font-weight: 300; line-height: 1.6; }
+  .pub-content { max-width: 1280px; width: 100%; margin: 0 auto; padding: 20px 32px 80px; flex: 1; min-height: 100vh;}
+  .pub-hero { margin-bottom: 56px; max-width: 720px; }
+  .pub-hero h2 { font-family: var(--font-display); font-size: 42px; font-weight: 400; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 16px; }
+  .pub-hero p { font-size: 16px; color: var(--ink-soft); font-weight: 300; line-height: 1.6; }
 
+  /* Photo Grid & Micro-Parallax */
   .photo-grid { column-count: 3; column-gap: 20px; }
   @media (max-width: 900px) { .photo-grid { column-count: 2; } }
   @media (max-width: 600px) { .photo-grid { column-count: 1; } }
-  .photo-card { break-inside: avoid; margin-bottom: 20px; position: relative; border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-card); border: 1px solid var(--line); cursor: pointer; transition: transform 0.3s, border-color 0.3s; }
-  .photo-card:hover { transform: translateY(-4px); border-color: #444; }
-  .photo-card img { width: 100%; height: auto; display: block; transition: transform 0.4s; }
-  .photo-card:hover img { transform: scale(1.02); }
-  .photo-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 24px 16px 16px; background: linear-gradient(to top, rgba(10,10,10,0.92) 0%, transparent 100%); opacity: 0; transform: translateY(8px); transition: opacity 0.25s, transform 0.25s; display: flex; flex-direction: column; gap: 4px; }
+  .photo-card { break-inside: avoid; margin-bottom: 20px; position: relative; border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-card); cursor: pointer; }
+  .photo-card img { width: 100%; height: auto; display: block; transform: scale(1.01); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s; }
+  .photo-card:hover img { transform: scale(1.05) translateZ(0); filter: brightness(0.8); }
+  .photo-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 32px 16px 16px; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%); opacity: 0; transform: translateY(10px); transition: opacity 0.4s, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; gap: 4px; }
   .photo-card:hover .photo-overlay { opacity: 1; transform: translateY(0); }
-  .photo-title { font-size: 13px; font-weight: 500; }
+  .photo-title { font-size: 14px; font-weight: 500; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
   .photo-exif { font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); }
 
   .resume-section { display: grid; grid-template-columns: 1fr 2fr; gap: 48px; margin-top: 20px; }
@@ -66,11 +76,12 @@
   .contact-card { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; transition: border-color 0.2s, background 0.2s; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;}
   .contact-card:hover { border-color: #383838; background: var(--bg-card-hover); }
 
+  /* Modals & Lightbox */
   #pub-lightbox { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(8,8,8,0.94); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); z-index: 150; display: none; align-items: center; justify-content: center; padding: 24px; opacity: 0; transition: opacity 0.3s; }
   #pub-lightbox.active { display: flex; opacity: 1; }
   .lightbox-img { max-width: 100%; max-height: 75vh; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
   
-  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
   .modal-overlay.active { opacity: 1; pointer-events: auto; }
   .modal-content { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 380px; transform: scale(0.95) translateY(10px); transition: transform 0.35s; text-align: center;}
   .modal-overlay.active .modal-content { transform: scale(1) translateY(0); }
@@ -79,22 +90,30 @@
 </head>
 <body>
 
-  <header class="pub-header">
-    <div class="pub-brand" id="brand-secret-trigger" title="Double tap for gateway">
-      <svg width="24" height="24" viewBox="0 0 26 26" aria-hidden="true"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg>
-      <h1>Ibad Hasan</h1>
-    </div>
-    <nav class="pub-nav">
-      <a data-pubtarget="work" class="pub-nav-link active">Work</a>
-      <a data-pubtarget="about" class="pub-nav-link">About</a>
-      <a data-pubtarget="contact" class="pub-nav-link">Contact</a>
-    </nav>
-  </header>
+  <div class="film-grain"></div>
+
+  <!-- FLOATING PILL NAV -->
+  <div class="floating-header-wrapper">
+    <header class="floating-pill">
+      <div class="pub-brand" id="brand-secret-trigger" title="Double tap for gateway">
+        <svg width="20" height="20" viewBox="0 0 26 26" aria-hidden="true"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg>
+        <h1>Ibad Hasan</h1>
+      </div>
+      <nav class="pub-nav">
+        <a data-pubtarget="work" class="pub-nav-link active">Work</a>
+        <a data-pubtarget="about" class="pub-nav-link">About</a>
+        <a data-pubtarget="contact" class="pub-nav-link">Contact</a>
+      </nav>
+    </header>
+  </div>
 
   <main class="pub-content">
     <!-- Work / Gallery -->
     <section id="pub-view-work" class="view-container active">
-      <div class="pub-hero reveal visible"><h2>Visual Archival & Photography</h2><p>A curated collection exploring architectural form, street narratives, and high-contrast monochrome studies.</p></div>
+      <div class="pub-hero reveal visible">
+        <h2 id="dynamic-hero-title">Visual Archival & Photography</h2>
+        <p id="dynamic-hero-sub">A curated collection exploring architectural form, street narratives, and high-contrast monochrome studies.</p>
+      </div>
       <div class="photo-grid reveal" id="public-photo-grid"><p style="color:var(--ink-soft); font-family:var(--font-mono); font-size:12px;">Loading archive...</p></div>
     </section>
 
@@ -126,15 +145,13 @@
         </a>
         <div class="contact-card" style="align-items:center; text-align:center;">
           <p class="field-label" style="text-align:center;">Scan to Save Contact</p>
-          <!-- Dynamic vCard QR Code Generation via API -->
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3AIbad+Hasan%0AEMAIL%3Atheibadhasan%40gmail.com%0AURL%3Ahttps%3A%2F%2Fibadhasan.com%0AEND%3AVCARD" alt="vCard QR Code" style="width:100px; height:100px; border-radius:8px; margin: 8px 0; mix-blend-mode: screen;">
+          <img id="vcard-qr" src="" alt="vCard QR Code" style="width:100px; height:100px; border-radius:8px; margin: 8px 0; mix-blend-mode: screen;">
           <p style="font-family:var(--font-mono); font-size:11px; color:var(--accent);">iOS / Android Native</p>
         </div>
       </div>
     </section>
   </main>
 
-  <!-- Lightbox -->
   <div id="pub-lightbox">
     <div class="lightbox-inner" style="display:flex; flex-direction:column; align-items:center; position:relative;">
       <img id="lightbox-target-img" class="lightbox-img" src="" alt="Expanded View">
@@ -145,7 +162,6 @@
     </div>
   </div>
 
-  <!-- Gateway -->
   <div class="modal-overlay" id="modal-secret-login">
     <div class="modal-content">
       <div style="display:flex; justify-content:center; margin-bottom:14px;"><svg width="36" height="36" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg></div>
@@ -168,17 +184,15 @@
   const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
   const USERS = { "con": { pass: "confusicus", email: "justibadx@gmail.com" }, "cryeteria": { pass: "cryeteria", email: "theibadhasan@gmail.com" } };
 
-  // Scroll Intersector Setup
+  // Scroll Reveals
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); } });
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
   }, { threshold: 0.1 });
-  
   function triggerReveal() { document.querySelectorAll('.reveal:not(.visible)').forEach(el => observer.observe(el)); }
 
-  // Log Public Visitor
   try { setDoc(doc(db, 'system', 'analytics'), { views: increment(1) }, { merge: true }); } catch(e){}
 
-  // Public Nav
+  // Navigation
   const pubNavLinks = document.querySelectorAll('.pub-nav-link');
   pubNavLinks.forEach(link => {
     link.addEventListener('click', (e) => {
@@ -188,13 +202,51 @@
       const targetView = document.getElementById(`pub-view-${target}`); 
       if (targetView) {
         targetView.classList.add('active');
-        // Reset reveals for new view
         targetView.querySelectorAll('.reveal').forEach(el => { el.classList.remove('visible'); observer.observe(el); });
       }
     });
   });
 
-  // Fetch Portfolio
+  // Dynamic Fonts & System Config
+  onSnapshot(doc(db, 'system', 'config'), (snap) => {
+    if(snap.exists()) {
+      const d = snap.data();
+      if(d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
+      if(d.grainOpacity) document.documentElement.style.setProperty('--grain-intensity', d.grainOpacity);
+      
+      if(d.fontDisplay && d.fontBody) {
+        const fontLink = document.getElementById('dynamic-fonts');
+        if(fontLink) fontLink.href = `https://fonts.googleapis.com/css2?family=${d.fontDisplay.replace(/ /g, '+')}:wght@400;500;600&family=${d.fontBody.replace(/ /g, '+')}:wght@300;400;500&display=swap`;
+        document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay}', serif`);
+        document.documentElement.style.setProperty('--font-body', `'${d.fontBody}', sans-serif`);
+      }
+    }
+  });
+
+  // Dynamic Profile & Hero Text
+  onSnapshot(doc(db, 'system', 'profile'), (snap) => {
+    if(snap.exists()) {
+      const d = snap.data();
+      if(d.heroTitle) document.getElementById('dynamic-hero-title').textContent = d.heroTitle;
+      if(d.heroSub) document.getElementById('dynamic-hero-sub').textContent = d.heroSub;
+      if(d.bio) document.getElementById('dynamic-bio').textContent = d.bio;
+      if(d.email) {
+        document.getElementById('dynamic-email-btn').href = `mailto:${d.email}`;
+        document.getElementById('contact-email-link').href = `mailto:${d.email}`;
+        document.getElementById('contact-email-text').textContent = d.email;
+        // Generate vCard dynamically
+        document.getElementById('vcard-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3AIbad+Hasan%0AEMAIL%3A${encodeURIComponent(d.email)}%0AURL%3Ahttps%3A%2F%2Fibadhasan.com%0AEND%3AVCARD`;
+      }
+      if(d.timeline && Array.isArray(d.timeline)) {
+        const tlContainer = document.getElementById('dynamic-timeline'); tlContainer.innerHTML = '';
+        d.timeline.forEach(item => {
+          tlContainer.innerHTML += `<div class="timeline-block"><p class="timeline-date">${item.date}</p><h4 class="timeline-title">${item.title}</h4><p class="timeline-desc">${item.desc}</p></div>`;
+        });
+      }
+    }
+  });
+
+  // Portfolio Engine
   onSnapshot(query(collection(db, 'portfolio'), orderBy('timestamp', 'desc')), (snap) => {
     const pubGrid = document.getElementById('public-photo-grid');
     if (snap.empty) { pubGrid.innerHTML = '<p style="color:var(--ink-soft); grid-column: 1 / -1; text-align:center;">No photos published yet.</p>'; return; }
@@ -207,10 +259,8 @@
           <div class="photo-overlay"><span class="photo-title">${p.title}</span><span class="photo-exif">${p.exif||''}</span></div>
         </div>`;
     });
-    
     triggerReveal();
 
-    // Bind Lightbox
     const lightbox = document.getElementById('pub-lightbox');
     document.querySelectorAll('.photo-card').forEach(card => {
       card.addEventListener('click', () => {
@@ -224,46 +274,18 @@
     lightbox.addEventListener('click', (e) => { if(e.target.id === 'pub-lightbox') lightbox.classList.remove('active'); });
   });
 
-  // Fetch Resume Data
-  onSnapshot(doc(db, 'system', 'profile'), (snap) => {
-    if(snap.exists()) {
-      const d = snap.data();
-      if(d.bio) document.getElementById('dynamic-bio').textContent = d.bio;
-      if(d.email) {
-        document.getElementById('dynamic-email-btn').href = `mailto:${d.email}`;
-        document.getElementById('contact-email-link').href = `mailto:${d.email}`;
-        document.getElementById('contact-email-text').textContent = d.email;
-      }
-      if(d.timeline && Array.isArray(d.timeline)) {
-        const tlContainer = document.getElementById('dynamic-timeline'); tlContainer.innerHTML = '';
-        d.timeline.forEach(item => {
-          tlContainer.innerHTML += `<div class="timeline-block"><p class="timeline-date">${item.date}</p><h4 class="timeline-title">${item.title}</h4><p class="timeline-desc">${item.desc}</p></div>`;
-        });
-      }
-    }
-  });
-
-  // Config Sync (Fonts & Accents)
-  onSnapshot(doc(db, 'system', 'config'), (snap) => {
-    if(snap.exists() && snap.data().accentColor) document.documentElement.style.setProperty('--accent', snap.data().accentColor);
-  });
-
-  // Secret Gateway
+  // Gateway
   const sm = document.getElementById('modal-secret-login');
   document.getElementById('brand-secret-trigger').addEventListener('dblclick', () => sm.classList.add('active'));
   window.addEventListener('keydown', (e) => { if(e.shiftKey && e.key.toLowerCase() === 'l') { sm.classList.add('active'); document.getElementById('login-username').focus();} });
   document.getElementById('btn-cancel-login').addEventListener('click', () => sm.classList.remove('active'));
-
   document.getElementById('btn-do-login').addEventListener('click', async () => {
     const usr = document.getElementById('login-username').value.trim().toLowerCase();
     const pwd = document.getElementById('login-password').value;
     if(USERS[usr] && USERS[usr].pass === pwd) {
-      try { await signInWithEmailAndPassword(auth, USERS[usr].email, pwd); } 
-      catch(e) { document.getElementById('login-error-msg').textContent = e.message; document.getElementById('login-error-msg').style.display='block'; }
+      try { await signInWithEmailAndPassword(auth, USERS[usr].email, pwd); } catch(e) { document.getElementById('login-error-msg').textContent = e.message; document.getElementById('login-error-msg').style.display='block'; }
     } else { document.getElementById('login-error-msg').textContent = "Invalid identity."; document.getElementById('login-error-msg').style.display='block'; }
   });
-
-  // Auth Watcher - Auto Bypass
   onAuthStateChanged(auth, (user) => { if (user) window.location.replace("lair.html"); });
 </script>
 </body>

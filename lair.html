@@ -5,26 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0A0A0A">
 <title>The Lair</title>
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
-
 <style>
-  :root { --bg:#0A0A0A; --bg-card:#121212; --ink:#EDEDED; --ink-soft:#A3A3A3; --ink-faint:#525252; --line:#262626; --con:#70947A; --cryeteria:#7A9BC2; --warn:#A9803F; --err:#D9534F; --radius:16px; --radius-sm:10px; --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; --accent:var(--con); --plyr-color-main:var(--accent); }
+  :root { --bg:#0A0A0A; --bg-card:#121212; --bg-card-hover:#181818; --ink:#EDEDED; --ink-soft:#A3A3A3; --line:#262626; --con:#70947A; --cryeteria:#7A9BC2; --warn:#A9803F; --err:#D9534F; --radius:16px; --radius-sm:10px; --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; --accent:var(--con); --grain-intensity: 0.04;}
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
-  body { background:var(--bg); color:var(--ink); font-family:var(--font-body); padding-bottom:140px; padding-top:env(safe-area-inset-top); overflow-x:hidden; }
+  body { background:var(--bg); color:var(--ink); font-family:var(--font-body); padding-bottom:140px; overflow-x:hidden; }
   a { color:inherit; text-decoration:none; cursor:pointer; }
   ul { list-style:none; } button { font-family:inherit; border:none; background:none; cursor:pointer; outline:none; }
-  ::-webkit-scrollbar { height: 0px; width: 0px; display: none; }
+  .film-grain { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; opacity: var(--grain-intensity); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
   
   input[type="text"], input[type="number"], input[type="file"], select, textarea { appearance:none; font-family:var(--font-body); font-size:14px; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; width:100%; transition:border-color 0.2s; }
   input[type="file"]::file-selector-button { background: var(--bg-card); color: var(--ink); border: 1px solid var(--line); padding: 6px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 11px; cursor: pointer; margin-right: 12px;}
   input[type="color"] { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:2px; height: 38px; width: 48px; cursor: pointer; }
   input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); }
-  
   input[type=range] { -webkit-appearance:none; width:100%; background:transparent; padding:0; }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; height:16px; width:16px; border-radius:50%; background:var(--ink); cursor:pointer; margin-top:-6px; }
   input[type=range]::-webkit-slider-runnable-track { width:100%; height:4px; background:var(--line); border-radius:2px; }
@@ -34,18 +29,20 @@
   .btn-warn { background:rgba(217, 83, 79, 0.1); color:var(--err); border: 1px solid rgba(217, 83, 79, 0.3); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; }
   .btn-primary:active, .btn-secondary:active, .btn-warn:active { transform: scale(0.96); }
 
-  .topbar { display:flex; align-items:center; justify-content:space-between; padding:18px 20px 10px; max-width:1040px; margin:0 auto; background:var(--bg); position: sticky; top: env(safe-area-inset-top); z-index: 20; }
-  .brand { display:flex; align-items:center; gap:10px; }
-  .brand-name { font-family:var(--font-display); font-size:20px; font-weight:600; }
-  .top-right { display:flex; align-items:center; gap:12px; }
-  .chip { display:flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:12px; padding:5px 10px; border-radius:20px; border:1px solid var(--line); color:var(--ink-soft); }
-  .dot { width:7px; height:7px; border-radius:50%; display:inline-block; }
+  /* Floating Pill Navigation */
+  .floating-header-wrapper { position: sticky; top: env(safe-area-inset-top, 10px); z-index: 50; padding: 10px 20px 20px; display: flex; justify-content: center; pointer-events: none; }
+  .floating-pill { background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); border-radius: 50px; padding: 10px 24px; display: flex; align-items: center; gap: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); pointer-events: auto; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .floating-pill::-webkit-scrollbar { display: none; }
   
-  .pill-nav-wrapper { position: sticky; top: calc(64px + env(safe-area-inset-top)); background: rgba(10,10,10,0.9); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); z-index: 15; padding: 10px 0; margin-bottom: 20px;}
-  .pill-nav { display:flex; gap:8px; overflow-x:auto; scroll-snap-type: x mandatory; padding: 0 20px; max-width:1040px; margin:0 auto; }
-  .lair-nav-link { padding: 8px 16px; border-radius: 20px; border: 1px solid transparent; font-size: 13px; font-weight: 500; color: var(--ink-soft); white-space: nowrap; scroll-snap-align: start; transition: color 0.2s, background 0.2s; }
-  .lair-nav-link:hover { color: var(--ink); }
-  .lair-nav-link.active { background: var(--bg-card); border-color: var(--line); color: var(--ink); }
+  .brand { display:flex; align-items:center; gap:8px; flex-shrink: 0;}
+  .brand-name { font-family:var(--font-display); font-size:18px; font-weight:600; white-space:nowrap;}
+  .pill-nav { display:flex; gap:16px; align-items:center;}
+  .lair-nav-link { font-size: 13px; font-weight: 500; color: var(--ink-soft); white-space: nowrap; transition: color 0.2s; position: relative;}
+  .lair-nav-link:hover, .lair-nav-link.active { color: var(--ink); }
+  .lair-nav-link.active::after { content: ''; position: absolute; bottom: -4px; left: 0; right: 0; height: 1px; background: var(--ink); }
+  .top-right { display:flex; align-items:center; gap:12px; flex-shrink: 0; border-left: 1px solid var(--line); padding-left: 16px;}
+  .chip { display:flex; align-items:center; gap:6px; font-family:var(--font-mono); font-size:11px; padding:4px 10px; border-radius:20px; border:1px solid var(--line); color:var(--ink-soft); }
+  .dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
 
   .view-container { display: none; opacity: 0; }
   .view-container.active { display: block; animation: smoothFadeIn 0.35s forwards; }
@@ -57,15 +54,16 @@
   .card-head h2 { font-family:var(--font-display); font-size:18px; font-weight:600; }
 
   /* Cmd+K Palette */
-  #cmd-palette .modal-content { background: rgba(18,18,18,0.98); border: 1px solid var(--line); box-shadow: 0 20px 50px rgba(0,0,0,0.8); display:flex; flex-direction:column; padding:0; border-radius:12px; overflow:hidden;}
-  #cmd-input { background: transparent; border: none; font-size: 18px; padding: 24px; border-bottom: 1px solid var(--line); border-radius:0; }
+  #cmd-palette .modal-content { background: rgba(15,15,15,0.95); backdrop-filter: blur(24px); border: 1px solid var(--line); box-shadow: 0 40px 80px rgba(0,0,0,0.9); display:flex; flex-direction:column; padding:0; border-radius:16px; overflow:hidden;}
+  #cmd-input { background: transparent; border: none; font-size: 18px; padding: 24px; border-bottom: 1px solid var(--line); border-radius:0; color:var(--ink);}
   #cmd-input:focus { box-shadow: none; }
-  .cmd-item { padding: 16px 24px; display: flex; align-items:center; gap:12px; cursor: pointer; transition: background 0.2s; border-bottom:1px solid rgba(255,255,255,0.02);}
+  .cmd-item { padding: 16px 24px; display: flex; align-items:center; gap:16px; cursor: pointer; transition: background 0.2s; border-bottom:1px solid rgba(255,255,255,0.02);}
   .cmd-item:hover { background: var(--bg-card-hover); }
-  .cmd-item-icon { font-family:var(--font-mono); font-size:12px; background:var(--line); padding:4px 8px; border-radius:4px;}
+  .cmd-item-icon { font-family:var(--font-mono); font-size:11px; background:var(--line); padding:4px 8px; border-radius:6px; color:var(--ink-soft);}
 
   /* Status Strip & Activity */
-  .status-strip { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; margin-bottom: 24px; }
+  .status-strip { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; margin-bottom: 24px; scrollbar-width:none;}
+  .status-strip::-webkit-scrollbar{display:none;}
   .cmd-widget { flex: 0 0 85%; max-width: 300px; background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; display:flex; flex-direction:column; justify-content:space-between; scroll-snap-align: start;}
   .cmd-widget h3 { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); letter-spacing:0.05em; margin-bottom: 8px; }
   .activity-log-item { display:flex; gap:12px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: flex-start;}
@@ -105,7 +103,7 @@
   .title-name { font-size: 12px; font-weight: 500; margin-bottom: 4px; line-height: 1.3; }
   .pill { display: inline-block; font-family: var(--font-mono); font-size: 10px; padding: 4px 10px; border-radius: 12px; background:var(--line); width: max-content; }
   
-  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .modal-overlay.active { opacity: 1; pointer-events: auto; }
   .modal-content { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 440px; transform: scale(0.95); transition: transform 0.35s; max-height: 90vh; overflow-y:auto;}
   .modal-overlay.active .modal-content { transform: scale(1); }
@@ -113,8 +111,9 @@
 </style>
 </head>
 <body>
+  
+  <div class="film-grain"></div>
 
-  <!-- Idle Lock Screen -->
   <div class="modal-overlay" id="idle-lock-modal" style="z-index:9999; backdrop-filter: blur(24px);">
     <div class="modal-content" style="max-width:340px; text-align:center;">
       <h2 style="font-family:var(--font-display); font-size:24px; margin-bottom:6px;">Lair Secured</h2>
@@ -125,7 +124,6 @@
     </div>
   </div>
 
-  <!-- Global Command Palette -->
   <div class="modal-overlay" id="cmd-palette" style="z-index:200;">
     <div class="modal-content">
       <input type="text" id="cmd-input" placeholder="Type a command..." autocomplete="off">
@@ -139,23 +137,23 @@
     </div>
   </div>
 
-  <header class="topbar">
-    <div class="brand"><svg width="26" height="26" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg><span class="brand-name">The Lair</span></div>
-    <div class="top-right"><span class="chip"><span class="dot" id="me-dot"></span><span id="me-name">…</span></span><button class="signout" id="signout" style="color:var(--ink-faint); font-family:var(--font-mono); font-size:12px;">Exit</button></div>
-  </header>
-
-  <div class="pill-nav-wrapper">
-    <nav class="pill-nav">
-      <a data-target="dashboard" class="lair-nav-link active">Dashboard</a>
-      <a data-target="drop" class="lair-nav-link">Lair Drop</a>
-      <a data-target="chat" class="lair-nav-link">Comms</a>
-      <a data-target="watchlist" class="lair-nav-link">Watch</a>
-      <a data-target="books" class="lair-nav-link">Books</a>
-      <a data-target="music" class="lair-nav-link">Audio</a>
-      <a data-target="study" class="lair-nav-link">Focus</a>
-      <a data-target="games" class="lair-nav-link">Chess</a>
-      <a href="admin.html" class="lair-nav-link" style="color:var(--warn); border-color:rgba(169, 128, 63, 0.3);">Admin Studio</a>
-    </nav>
+  <!-- FLOATING PILL NAV -->
+  <div class="floating-header-wrapper">
+    <header class="floating-pill">
+      <div class="brand"><svg width="20" height="20" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg></div>
+      <nav class="pill-nav">
+        <a data-target="dashboard" class="lair-nav-link active">Home</a>
+        <a data-target="drop" class="lair-nav-link">Drop</a>
+        <a data-target="chat" class="lair-nav-link">Comms</a>
+        <a data-target="watchlist" class="lair-nav-link">Watch</a>
+        <a data-target="books" class="lair-nav-link">Books</a>
+        <a data-target="music" class="lair-nav-link">Audio</a>
+        <a data-target="study" class="lair-nav-link">Focus</a>
+        <a data-target="games" class="lair-nav-link">Chess</a>
+        <a href="admin.html" class="lair-nav-link" style="color:var(--warn);">Admin</a>
+      </nav>
+      <div class="top-right"><span class="chip"><span class="dot" id="me-dot"></span></span><button class="signout" id="signout" style="color:var(--ink-faint); font-family:var(--font-mono); font-size:11px;">Exit</button></div>
+    </header>
   </div>
 
   <main>
@@ -168,7 +166,7 @@
 
       <div class="studio-grid" style="margin-bottom:20px;">
         <section class="card">
-          <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Shared Sketchpad</h2><div style="display:flex; gap:8px;"><button class="btn-secondary" id="btn-undo-canvas" style="padding:4px 10px; font-size:11px;">↺ Undo</button><button class="btn-secondary" id="btn-clear-canvas" style="padding:4px 10px; font-size:11px; color:var(--err); border-color:rgba(217,83,79,0.3);">Clear</button></div></div>
+          <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Shared Sketchpad</h2><div style="display:flex; gap:8px;"><button class="btn-secondary" id="btn-undo-canvas" style="padding:4px 10px; font-size:11px;">↺</button><button class="btn-secondary" id="btn-clear-canvas" style="padding:4px 10px; font-size:11px; color:var(--err); border-color:rgba(217,83,79,0.3);">Clear</button></div></div>
           <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px; background:var(--bg); padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--line);">
             <input type="color" id="brush-color" value="#EDEDED" style="height:28px; width:36px; padding:0;">
             <input type="range" id="brush-size" min="1" max="20" value="3" style="width:80px;">
@@ -192,7 +190,7 @@
       </section>
     </section>
 
-    <!-- NEW: Lair Drop Bucket -->
+    <!-- Lair Drop Bucket -->
     <section id="view-drop" class="view-container">
       <section class="card" style="margin-bottom:20px; text-align:center;">
         <div class="card-head" style="justify-content:center; margin-bottom:24px;"><h2>R2 Storage Bucket (10GB)</h2></div>
@@ -211,9 +209,7 @@
       </section>
       <section class="card">
         <div class="card-head"><h2>Vault Files</h2></div>
-        <div id="lair-drop-list" style="display:flex; flex-direction:column; gap:12px;">
-           <p style="font-size:12px; color:var(--ink-soft);">Loading bucket...</p>
-        </div>
+        <div id="lair-drop-list" style="display:flex; flex-direction:column; gap:12px;"></div>
       </section>
     </section>
 
@@ -225,9 +221,9 @@
           <div style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:8px;"><span class="pulse-dot" id="voice-indicator"></span><span id="voice-status-text">Disconnected</span></div>
         </div>
         <div style="display:flex; gap:8px;">
-          <button class="btn-primary" id="btn-call-start" style="flex:2;">🎙 Connect Voice</button>
+          <button class="btn-primary" id="btn-call-start" style="flex:2;">🎙 Connect</button>
           <button class="btn-secondary" id="btn-call-mute" style="flex:1; display:none;">Mute</button>
-          <button class="btn-warn" id="btn-call-end" style="flex:1; display:none;">End Call</button>
+          <button class="btn-warn" id="btn-call-end" style="flex:1; display:none;">End</button>
         </div>
       </div>
       <audio id="remote-audio" autoplay></audio>
@@ -236,15 +232,13 @@
 
     <!-- Standard Views -->
     <section id="view-watchlist" class="view-container">
-      <section class="card" style="margin-bottom:20px;"><div class="card-head"><h2 style="font-size:16px;">Find Titles</h2></div><input type="text" id="tmdb-search-input" placeholder="Search a title..." autocomplete="off"><div id="tmdb-results" class="scroll-row" style="margin-top:16px;"></div></section>
-      <section class="card"><div class="card-head"><h2 style="font-size:16px;">Watchlist</h2></div><div id="shared-watchlist" class="scroll-row" style="flex-wrap:wrap; display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));"></div></section>
+      <section class="card" style="margin-bottom:20px;"><div class="card-head"><h2 style="font-size:16px;">Find Titles</h2></div><input type="text" id="tmdb-search-input" placeholder="Search..." autocomplete="off"><div id="tmdb-results" class="scroll-row" style="margin-top:16px;"></div></section>
+      <section class="card"><div class="card-head"><h2 style="font-size:16px;">Watchlist</h2></div><div id="shared-watchlist" class="scroll-row"></div></section>
     </section>
-
     <section id="view-books" class="view-container">
       <section class="card" style="margin-bottom:20px;"><div class="card-head"><h2 style="font-size:16px;">Find Books</h2></div><div style="display:flex; gap:10px;"><input type="text" id="books-search-input" placeholder="Search..." autocomplete="off"><button class="btn-primary" id="btn-search-books" style="width:auto;">Search</button></div><div id="books-results" class="scroll-row" style="margin-top:16px;"></div></section>
-      <section class="card"><div class="card-head"><h2 style="font-size:16px;">Library</h2></div><div id="shared-library" class="scroll-row" style="flex-wrap:wrap; display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));"></div></section>
+      <section class="card"><div class="card-head"><h2 style="font-size:16px;">Library</h2></div><div id="shared-library" class="scroll-row"></div></section>
     </section>
-
     <section id="view-music" class="view-container">
       <section class="card" style="margin-bottom:20px;">
         <div class="card-head"><h2 style="font-size:16px;">Ambient Mixer</h2></div>
@@ -255,7 +249,6 @@
       </section>
       <section class="card"><div class="card-head"><h2 style="font-size:16px;">Audio Vault</h2></div><div id="shared-music-vault" style="display:flex; flex-direction:column; gap:10px;"></div></section>
     </section>
-
     <section id="view-study" class="view-container">
       <section class="card">
         <div class="card-head"><h2 style="font-size:16px;">Focus Timer</h2></div>
@@ -268,16 +261,15 @@
         <div style="text-align:center; padding-top:24px;"><p id="focus-timer" style="font-family:var(--font-mono); font-size:48px; margin-bottom:16px;">25:00</p><button class="btn-primary" id="btn-focus-toggle">Start Deep Work</button></div>
       </section>
     </section>
-
     <section id="view-games" class="view-container">
       <section class="card">
-        <div class="card-head"><h2 style="font-size:16px;">Lair Chess</h2><button class="btn-secondary" id="btn-reset-chess" style="width:auto; padding:6px 12px; font-size:11px;">Reset Board</button></div>
+        <div class="card-head"><h2 style="font-size:16px;">Lair Chess</h2><button class="btn-secondary" id="btn-reset-chess" style="width:auto; padding:6px 12px; font-size:11px;">Reset</button></div>
         <div style="display:flex; flex-direction:column; gap:20px; align-items:center;"><div id="chess-board" style="width:100%; max-width:400px;"></div><div style="width:100%; text-align:center;"><p class="field-label">Status</p><p id="chess-status" style="margin-bottom:16px; font-weight:500;">Waiting...</p></div></div>
       </section>
     </section>
   </main>
 
-  <div class="persistent-player" id="persistent-player-bar" style="display:none; position:fixed; bottom:20px; left:20px; right:20px; max-width:1000px; margin:0 auto; background:rgba(18,18,18,0.95); backdrop-filter:blur(12px); border:1px solid var(--line); border-radius:16px; padding:14px 20px; align-items:center; gap:16px; z-index:99;">
+  <div class="persistent-player" id="persistent-player-bar" style="display:none; position:fixed; bottom:20px; left:20px; right:20px; max-width:1000px; margin:0 auto; background:rgba(18,18,18,0.95); backdrop-filter:blur(12px); border:1px solid var(--line); border-radius:50px; padding:14px 24px; align-items:center; gap:16px; z-index:99;">
     <div style="flex:1; min-width:0;"><p id="bar-title" style="font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">Track</p><p id="bar-artist" style="font-size:11px; color:var(--ink-soft); font-family:var(--font-mono);">Artist</p></div>
     <div style="display:flex; gap:12px; align-items:center;"><button id="bar-play-pause-btn" style="width:36px; height:36px; border-radius:50%; background:var(--ink); color:var(--bg); font-weight:bold;">▶</button><a id="bar-download-btn" class="btn-secondary" style="width:auto; padding:8px 12px; font-size:11px;" download>DL</a></div>
   </div>
@@ -292,7 +284,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, collection, onSnapshot, query, orderBy, limit, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, collection, onSnapshot, query, orderBy, limit, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
   const TMDB_API_KEY = "eecc2609dbfe92b8fcb518848aa112be"; 
@@ -305,18 +297,14 @@
 
   async function logActivity(action, icon="⚡") { await addDoc(collection(db, 'activity'), { text: action, user: currentUser.name, icon, timestamp: serverTimestamp() }); }
 
-  // Auth Protection
   onAuthStateChanged(auth, (user) => {
     if (!user || !PEOPLE[user.email]) { window.location.replace("index.html"); return; }
-    currentUser = PEOPLE[user.email];
-    document.getElementById("me-name").textContent = currentUser.name;
-    document.getElementById("me-dot").style.background = currentUser.color;
-    document.getElementById("brush-color").value = currentUser.color; 
-    initCanvasResolution(); initLiveSync(); initWidgets(); startIdleTimer();
+    currentUser = PEOPLE[user.email]; document.getElementById("me-dot").style.background = currentUser.color;
+    document.getElementById("brush-color").value = currentUser.color; initCanvasResolution(); initLiveSync(); initWidgets(); startIdleTimer();
   });
   document.getElementById("signout").addEventListener("click", async () => { await signOut(auth); window.location.replace("index.html"); });
 
-  // Navigation Logic (Scrollable Pill)
+  // Floating Nav
   const lairNavLinks = document.querySelectorAll('.lair-nav-link');
   lairNavLinks.forEach(link => {
     link.addEventListener('click', (e) => {
@@ -331,51 +319,41 @@
     });
   });
 
-  // Global Command Palette (Cmd+K)
+  // Cmd+K
   window.addEventListener('keydown', (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-      e.preventDefault(); 
-      const p = document.getElementById('cmd-palette');
-      if(p.classList.contains('active')) { p.classList.remove('active'); }
-      else { p.classList.add('active'); document.getElementById('cmd-input').focus(); }
+      e.preventDefault(); const p = document.getElementById('cmd-palette');
+      if(p.classList.contains('active')) { p.classList.remove('active'); } else { p.classList.add('active'); document.getElementById('cmd-input').focus(); }
     }
   });
   document.getElementById('cmd-palette').addEventListener('click', (e) => { if(e.target.id === 'cmd-palette') e.target.classList.remove('active'); });
   document.getElementById('cmd-results').addEventListener('click', (e) => {
     const item = e.target.closest('.cmd-item'); if(!item) return;
-    const action = item.getAttribute('data-action');
-    document.getElementById('cmd-palette').classList.remove('active');
-    if(action.startsWith('nav:')) { document.querySelector(`[data-target="${action.split(':')[1]}"]`).click(); }
-    if(action.startsWith('link:')) { window.location.href = action.split(':')[1]; }
-    if(action === 'func:signout') { document.getElementById('signout').click(); }
+    const action = item.getAttribute('data-action'); document.getElementById('cmd-palette').classList.remove('active');
+    if(action.startsWith('nav:')) document.querySelector(`[data-target="${action.split(':')[1]}"]`).click();
+    if(action.startsWith('link:')) window.location.href = action.split(':')[1];
+    if(action === 'func:signout') document.getElementById('signout').click();
   });
   document.getElementById('cmd-input').addEventListener('input', (e) => {
-    const q = e.target.value.toLowerCase();
-    document.querySelectorAll('.cmd-item').forEach(el => {
-      el.style.display = el.textContent.toLowerCase().includes(q) ? 'flex' : 'none';
-    });
+    const q = e.target.value.toLowerCase(); document.querySelectorAll('.cmd-item').forEach(el => { el.style.display = el.textContent.toLowerCase().includes(q) ? 'flex' : 'none'; });
   });
 
   // Idle Lock
   let idleTime = 0; const IDLE_LIMIT = 15 * 60; 
   function startIdleTimer() {
     setInterval(() => { idleTime++; if (idleTime >= IDLE_LIMIT) document.getElementById('idle-lock-modal').classList.add('active'); }, 1000);
-    const reset = () => idleTime = 0;
-    window.addEventListener('mousemove', reset); window.addEventListener('keypress', reset); window.addEventListener('touchstart', reset);
+    const reset = () => idleTime = 0; window.addEventListener('mousemove', reset); window.addEventListener('keypress', reset); window.addEventListener('touchstart', reset);
   }
   document.getElementById('btn-unlock-lair').addEventListener('click', () => {
-    if(document.getElementById('idle-pin').value === '2026') { 
-      document.getElementById('idle-lock-modal').classList.remove('active'); document.getElementById('idle-pin').value = ''; document.getElementById('pin-error').style.display='none'; idleTime = 0;
-    } else { document.getElementById('pin-error').style.display='block'; }
+    if(document.getElementById('idle-pin').value === '2026') { document.getElementById('idle-lock-modal').classList.remove('active'); document.getElementById('idle-pin').value = ''; document.getElementById('pin-error').style.display='none'; idleTime = 0; } else { document.getElementById('pin-error').style.display='block'; }
   });
 
-  // Widgets
   function initWidgets() {
     setInterval(() => { document.getElementById('cc-time').textContent = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Dubai', hour:'2-digit', minute:'2-digit', hour12:false }); }, 1000);
-    fetch('https://api.open-meteo.com/v1/forecast?latitude=25.2048&longitude=55.2708&current_weather=true').then(r => r.json()).then(data => document.getElementById('cc-weather').textContent = `${data.current_weather.temperature}°C • Clear Visibility`).catch(()=> document.getElementById('cc-weather').textContent = 'Unable to fetch');
+    fetch('https://api.open-meteo.com/v1/forecast?latitude=25.2048&longitude=55.2708&current_weather=true').then(r => r.json()).then(data => document.getElementById('cc-weather').textContent = `${data.current_weather.temperature}°C • Clear`).catch(()=> document.getElementById('cc-weather').textContent = 'Error');
   }
 
-  // WebRTC Voice Sync
+  // WebRTC
   const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
   let peerConn = null; let localStream = null; const voiceDoc = doc(db, 'system', 'voice_call');
   const startBtn = document.getElementById('btn-call-start'); const muteBtn = document.getElementById('btn-call-mute'); const endBtn = document.getElementById('btn-call-end');
@@ -412,129 +390,76 @@
     if (peerConn && peerConn.remoteDescription) { Object.keys(data).forEach(key => { if ((data.caller === currentUser.name && key.startsWith('calleeIce_')) || (data.caller !== currentUser.name && key.startsWith('callerIce_'))) { peerConn.addIceCandidate(new RTCIceCandidate(data[key])).catch(e=>{}); } }); }
     if (data.status === 'idle' && peerConn) { hangUp(); }
   });
-  startBtn.addEventListener('click', () => { if (startBtn.textContent.includes('Connect Voice')) { startBtn.textContent = 'Calling...'; startBtn.disabled = true; startCall(); } });
+  startBtn.addEventListener('click', () => { if (startBtn.textContent.includes('Connect')) { startBtn.textContent = 'Calling...'; startBtn.disabled = true; startCall(); } });
   endBtn.addEventListener('click', hangUp);
   muteBtn.addEventListener('click', () => { if (localStream) { const audioTrack = localStream.getAudioTracks()[0]; audioTrack.enabled = !audioTrack.enabled; muteBtn.textContent = audioTrack.enabled ? 'Mute' : 'Unmute'; muteBtn.style.color = audioTrack.enabled ? 'var(--ink)' : 'var(--warn)'; } });
   function updateVoiceUI(state, text) {
     document.getElementById('voice-status-text').textContent = text; const ind = document.getElementById('voice-indicator');
-    if (state === 'idle') { startBtn.style.display = 'block'; startBtn.textContent = '🎙 Connect Voice'; startBtn.disabled = false; muteBtn.style.display = 'none'; endBtn.style.display = 'none'; ind.classList.remove('active'); ind.style.background = 'var(--ink-soft)'; } 
+    if (state === 'idle') { startBtn.style.display = 'block'; startBtn.textContent = '🎙 Connect'; startBtn.disabled = false; muteBtn.style.display = 'none'; endBtn.style.display = 'none'; ind.classList.remove('active'); ind.style.background = 'var(--ink-soft)'; } 
     else if (state === 'ringing') { endBtn.style.display = 'block'; muteBtn.style.display = 'none'; ind.classList.add('active'); ind.style.background = 'var(--warn)'; } 
     else if (state === 'connected') { startBtn.style.display = 'none'; endBtn.style.display = 'block'; muteBtn.style.display = 'block'; muteBtn.textContent = 'Mute'; muteBtn.style.color='var(--ink)'; ind.classList.add('active'); ind.style.background = 'var(--con)'; }
   }
 
-  // ==========================================
-  // LAIR DROP & STORAGE TRACKING
-  // ==========================================
+  // Lair Drop
   let totalStorageBytes = 0;
   function updateStorageGauge() {
-    // 10GB = 10,737,418,240 bytes. Max cap display to 100%
-    let pct = Math.min((totalStorageBytes / 10737418240) * 100, 100);
-    document.getElementById('drop-gauge').style.setProperty('--pct', pct);
-    let mb = (totalStorageBytes / (1024*1024)).toFixed(1);
-    document.getElementById('drop-usage-text').textContent = `${mb} MB`;
+    let pct = Math.min((totalStorageBytes / 10737418240) * 100, 100); document.getElementById('drop-gauge').style.setProperty('--pct', pct);
+    document.getElementById('drop-usage-text').textContent = `${(totalStorageBytes / (1024*1024)).toFixed(1)} MB`;
   }
-
-  const dropZone = document.getElementById('drop-zone-ui');
-  const fileInput = document.getElementById('drop-file-input');
+  const dropZone = document.getElementById('drop-zone-ui'); const fileInput = document.getElementById('drop-file-input');
   dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
   dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
   dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleDropUpload(e.dataTransfer.files[0]); });
   fileInput.addEventListener('change', (e) => handleDropUpload(e.target.files[0]));
 
   async function handleDropUpload(file) {
-    if(!file) return;
-    const statusText = document.getElementById('drop-upload-status');
-    statusText.style.display = 'block'; statusText.style.color = 'var(--ink-soft)'; statusText.textContent = `Uploading ${file.name}...`;
-    
+    if(!file) return; const statusText = document.getElementById('drop-upload-status'); statusText.style.display = 'block'; statusText.style.color = 'var(--ink-soft)'; statusText.textContent = `Uploading ${file.name}...`;
     const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
     try {
       const uploadRes = await fetch(WORKER_URL, { method: 'POST', headers: { 'X-Lair-Auth': 'lair-master-key-2026', 'X-File-Name': safeName }, body: file });
-      if (!uploadRes.ok) throw new Error('Worker rejected upload');
-      
-      const fileUrl = `${PUBLIC_R2_URL}${safeName}`;
-      await addDoc(collection(db, 'lairdrops'), { name: file.name, url: fileUrl, size: file.size, type: file.type || 'file', uploader: currentUser.name, timestamp: serverTimestamp() });
-      
-      statusText.style.color = 'var(--con)'; statusText.textContent = 'Upload complete.';
-      logActivity(`Dropped file: ${file.name}`, "📁");
-      setTimeout(()=> statusText.style.display='none', 3000);
+      if (!uploadRes.ok) throw new Error('Worker rejected');
+      await addDoc(collection(db, 'lairdrops'), { name: file.name, url: `${PUBLIC_R2_URL}${safeName}`, size: file.size, type: file.type || 'file', uploader: currentUser.name, timestamp: serverTimestamp() });
+      statusText.style.color = 'var(--con)'; statusText.textContent = 'Upload complete.'; logActivity(`Dropped file: ${file.name}`, "📁"); setTimeout(()=> statusText.style.display='none', 3000);
     } catch (err) { statusText.style.color = 'var(--err)'; statusText.textContent = 'Upload failed.'; }
   }
 
   onSnapshot(query(collection(db, 'lairdrops'), orderBy('timestamp', 'desc')), (snap) => {
-    const list = document.getElementById('lair-drop-list');
-    let dropBytes = 0;
-    if(snap.empty) { list.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Bucket is empty.</p>'; }
-    else {
+    const list = document.getElementById('lair-drop-list'); let dropBytes = 0;
+    if(snap.empty) { list.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Bucket is empty.</p>'; } else {
       list.innerHTML = '';
-      snap.forEach(d => {
-        const file = d.data();
-        dropBytes += (file.size || 0);
-        list.innerHTML += `
-          <div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:12px; border-radius:8px; border:1px solid var(--line);">
-            <div style="min-width:0;"><p style="font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${file.name}</p>
-            <p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${(file.size/1024/1024).toFixed(2)} MB • Added by ${file.uploader}</p></div>
-            <div style="display:flex; gap:8px;">
-              <a href="${file.url}" target="_blank" class="btn-secondary" style="padding:6px 12px; font-size:11px; width:auto;">View</a>
-              <button class="btn-warn btn-delete-drop" data-id="${d.id}" style="padding:6px 12px; font-size:11px; width:auto;">Del</button>
-            </div>
-          </div>
-        `;
-      });
+      snap.forEach(d => { const file = d.data(); dropBytes += (file.size || 0); list.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:12px; border-radius:8px; border:1px solid var(--line);"><div style="min-width:0;"><p style="font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${file.name}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${(file.size/1024/1024).toFixed(2)} MB • ${file.uploader}</p></div><div style="display:flex; gap:8px;"><a href="${file.url}" target="_blank" class="btn-secondary" style="padding:6px 12px; font-size:11px; width:auto;">View</a><button class="btn-warn btn-delete-drop" data-id="${d.id}" style="padding:6px 12px; font-size:11px; width:auto;">Del</button></div></div>`; });
     }
-    // Update Storage Logic (Add ~400KB per portfolio photo as estimate)
-    getDocs(collection(db, 'portfolio')).then(pSnap => {
-      totalStorageBytes = dropBytes + (pSnap.size * 400 * 1024);
-      updateStorageGauge();
-    });
+    getDocs(collection(db, 'portfolio')).then(pSnap => { totalStorageBytes = dropBytes + (pSnap.size * 400 * 1024); updateStorageGauge(); });
   });
+  document.getElementById('lair-drop-list').addEventListener('click', async (e) => { if(e.target.classList.contains('btn-delete-drop') && confirm("Delete file?")) { await deleteDoc(doc(db, 'lairdrops', e.target.getAttribute('data-id'))); logActivity("Deleted file from Vault", "🗑"); } });
 
-  document.getElementById('lair-drop-list').addEventListener('click', async (e) => {
-    if(e.target.classList.contains('btn-delete-drop')) {
-      if(confirm("Delete this file from database?")) { await deleteDoc(doc(db, 'lairdrops', e.target.getAttribute('data-id'))); logActivity("Deleted a file from Lair Drop", "🗑"); }
-    }
-  });
-
-
-  // ==========================================
-  // GENERAL LAIR SYNC
-  // ==========================================
-  import { getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+  // Sync Data
   function initLiveSync() {
     onSnapshot(doc(db, 'system', 'analytics'), (snap) => { if(snap.exists()) document.getElementById('cc-views').textContent = snap.data().views || '--'; });
     onSnapshot(doc(db, 'system', 'doodle'), (snap) => { if (snap.exists() && snap.data().image) { const img = new Image(); img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; img.src = snap.data().image; if (canvasHistory.length === 0) canvasHistory.push(snap.data().image); } });
     onSnapshot(doc(db, 'system', 'scratchpad'), (snap) => { if(snap.exists() && document.activeElement !== document.getElementById('shared-scratchpad')) document.getElementById('shared-scratchpad').value = snap.data().text || ''; });
-    
-    // Unified Activity Log
-    onSnapshot(query(collection(db, 'activity'), orderBy('timestamp', 'desc'), limit(20)), (snap) => {
-      const feed = document.getElementById('unified-activity-log');
-      feed.innerHTML = '';
-      if(snap.empty) { feed.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">No recent activity.</p>'; return; }
-      snap.forEach(d => {
-        const a = d.data();
-        const tStr = a.timestamp ? a.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-        feed.innerHTML += `<div class="activity-log-item"><span style="font-size:16px;">${a.icon||'•'}</span><div style="flex:1;"><p style="font-size:13px;"><b>${a.user}</b> ${a.text}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${tStr}</p></div></div>`;
-      });
-    });
-
-    onSnapshot(collection(db, 'watchlist'), (snap) => { 
-      let activeShow = '--'; window.watchlistData = {}; const wList = document.getElementById('shared-watchlist'); wList.innerHTML = '';
-      snap.forEach(d => { const v = d.data(); window.watchlistData[d.id] = v; if(v.status === 'Watching') activeShow = v.title; wList.innerHTML += `<div class="title-card" data-id="${d.id}"><div class="poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div><p class="title-name">${v.title}</p><span class="pill">${v.status}</span></div>`; });
-      document.getElementById('cc-watching').textContent = activeShow;
-    });
-
-    onSnapshot(collection(db, 'books'), (snap) => { 
-      let activeBook = '--'; window.libraryData = {}; const bList = document.getElementById('shared-library'); bList.innerHTML = '';
-      snap.forEach(d => { const v = d.data(); window.libraryData[d.id] = v; if(v.status === 'Reading') activeBook = v.title; bList.innerHTML += `<div class="title-card" data-id="${d.id}"><div class="book-poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div><p class="title-name">${v.title}</p><span class="pill">${v.status}</span></div>`; });
-      document.getElementById('cc-reading').textContent = activeBook;
-    });
-
+    onSnapshot(query(collection(db, 'activity'), orderBy('timestamp', 'desc'), limit(20)), (snap) => { const feed = document.getElementById('unified-activity-log'); feed.innerHTML = ''; if(snap.empty) { feed.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">No activity.</p>'; return; } snap.forEach(d => { const a = d.data(); const tStr = a.timestamp ? a.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''; feed.innerHTML += `<div class="activity-log-item"><span style="font-size:16px;">${a.icon||'•'}</span><div style="flex:1;"><p style="font-size:13px;"><b>${a.user}</b> ${a.text}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${tStr}</p></div></div>`; }); });
+    onSnapshot(collection(db, 'watchlist'), (snap) => { let activeShow = '--'; window.watchlistData = {}; const wList = document.getElementById('shared-watchlist'); wList.innerHTML = ''; snap.forEach(d => { const v = d.data(); window.watchlistData[d.id] = v; if(v.status === 'Watching') activeShow = v.title; wList.innerHTML += `<div class="title-card" data-id="${d.id}"><div class="poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div><p class="title-name">${v.title}</p><span class="pill">${v.status}</span></div>`; }); document.getElementById('cc-watching').textContent = activeShow; });
+    onSnapshot(collection(db, 'books'), (snap) => { let activeBook = '--'; window.libraryData = {}; const bList = document.getElementById('shared-library'); bList.innerHTML = ''; snap.forEach(d => { const v = d.data(); window.libraryData[d.id] = v; if(v.status === 'Reading') activeBook = v.title; bList.innerHTML += `<div class="title-card" data-id="${d.id}"><div class="book-poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div><p class="title-name">${v.title}</p><span class="pill">${v.status}</span></div>`; }); document.getElementById('cc-reading').textContent = activeBook; });
     onSnapshot(query(collection(db, 'chat'), orderBy('timestamp', 'asc')), (snap) => { const cw = document.getElementById('chat-window'); const isAtBottom = cw.scrollHeight - cw.scrollTop <= cw.clientHeight + 50; cw.innerHTML = ''; snap.forEach(docSnap => { const msg = docSnap.data(); const msgClass = (currentUser && msg.user === currentUser.name) ? 'mine' : 'theirs'; const timeStr = msg.timestamp ? msg.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''; cw.innerHTML += `<div class="chat-msg ${msgClass}"><div class="chat-meta" style="font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); margin-bottom:2px;">${msgClass === 'theirs' ? msg.user + ' • ' : ''}${timeStr}</div><div class="chat-bubble">${msg.text}</div></div>`; }); if (isAtBottom) cw.scrollTop = cw.scrollHeight; });
-    onSnapshot(doc(db, 'system', 'config'), (snap) => { if(snap.exists() && snap.data().accentColor) document.documentElement.style.setProperty('--accent', snap.data().accentColor); });
+    
+    // Dynamic Config Sync
+    onSnapshot(doc(db, 'system', 'config'), (snap) => {
+      if(snap.exists()) {
+        const d = snap.data();
+        if(d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
+        if(d.grainOpacity) document.documentElement.style.setProperty('--grain-intensity', d.grainOpacity);
+        if(d.fontDisplay && d.fontBody) {
+          const fontLink = document.getElementById('dynamic-fonts');
+          if(fontLink) fontLink.href = `https://fonts.googleapis.com/css2?family=${d.fontDisplay.replace(/ /g, '+')}:wght@400;500;600&family=${d.fontBody.replace(/ /g, '+')}:wght@300;400;500&display=swap`;
+          document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay}', serif`); document.documentElement.style.setProperty('--font-body', `'${d.fontBody}', sans-serif`);
+        }
+      }
+    });
   }
 
   // Tools
-  document.getElementById('btn-save-scratchpad').addEventListener('click', async () => { const btn = document.getElementById('btn-save-scratchpad'); await setDoc(doc(db, 'system', 'scratchpad'), { text: document.getElementById('shared-scratchpad').value, updatedAt: serverTimestamp() }); btn.textContent = "Saved ✔"; setTimeout(()=> btn.textContent = "Save Text", 2000); logActivity("Updated the scratchpad text", "📝");});
+  document.getElementById('btn-save-scratchpad').addEventListener('click', async () => { const btn = document.getElementById('btn-save-scratchpad'); await setDoc(doc(db, 'system', 'scratchpad'), { text: document.getElementById('shared-scratchpad').value, updatedAt: serverTimestamp() }); btn.textContent = "Saved ✔"; setTimeout(()=> btn.textContent = "Save Text", 2000); logActivity("Updated scratchpad", "📝");});
   const canvas = document.getElementById('doodle-canvas'); const ctx = canvas.getContext('2d'); let drawing = false; let lastX=0; let lastY=0; let canvasHistory=[];
   function initCanvasResolution() { if(!canvas) return; canvas.width=800; canvas.height=600; if(canvasHistory.length>0){ const img = new Image(); img.onload=()=>ctx.drawImage(img,0,0); img.src=canvasHistory[canvasHistory.length-1];} }
   function getMousePos(e) { const r = canvas.getBoundingClientRect(); const cx = e.clientX||(e.touches?e.touches[0].clientX:0); const cy = e.clientY||(e.touches?e.touches[0].clientY:0); return {x:(cx-r.left)*(canvas.width/r.width),y:(cy-r.top)*(canvas.height/r.height)}; }
@@ -542,13 +467,13 @@
   canvas.addEventListener('mousemove', e=>{ if(!drawing)return; e.preventDefault(); const p=getMousePos(e); ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(p.x,p.y); ctx.strokeStyle=document.getElementById('brush-color').value; ctx.lineWidth=document.getElementById('brush-size').value; ctx.lineCap='round'; ctx.stroke(); lastX=p.x; lastY=p.y; });
   const stopDraw = async () => { if(!drawing)return; drawing=false; const dataUrl = canvas.toDataURL(); canvasHistory.push(dataUrl); await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); };
   canvas.addEventListener('mouseup', stopDraw); canvas.addEventListener('mouseleave', stopDraw); canvas.addEventListener('touchend', stopDraw);
-  document.getElementById('btn-save-canvas').addEventListener('click', () => { const btn = document.getElementById('btn-save-canvas'); logActivity("Archived a canvas sketch", "🎨"); btn.textContent = "Saved ✔"; setTimeout(() => btn.textContent = "💾 Archive", 3000); });
+  document.getElementById('btn-save-canvas').addEventListener('click', () => { const btn = document.getElementById('btn-save-canvas'); logActivity("Archived canvas sketch", "🎨"); btn.textContent = "Saved ✔"; setTimeout(() => btn.textContent = "💾 Archive", 3000); });
   document.getElementById('btn-undo-canvas').addEventListener('click', async () => { if (canvasHistory.length > 1) { canvasHistory.pop(); let lastStateUrl = canvasHistory[canvasHistory.length - 1]; await setDoc(doc(db, 'system', 'doodle'), { image: lastStateUrl, updatedAt: serverTimestamp() }, { merge: true }); } });
-  document.getElementById('btn-clear-canvas').addEventListener('click', async () => { if (confirm("Wipe the canvas?")) { ctx.clearRect(0, 0, canvas.width, canvas.height); const dataUrl = canvas.toDataURL(); canvasHistory.push(dataUrl); await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); logActivity("Cleared the canvas", "🧼"); } });
+  document.getElementById('btn-clear-canvas').addEventListener('click', async () => { if (confirm("Wipe canvas?")) { ctx.clearRect(0, 0, canvas.width, canvas.height); const dataUrl = canvas.toDataURL(); canvasHistory.push(dataUrl); await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); logActivity("Cleared canvas", "🧼"); } });
 
   document.getElementById('btn-send-chat').addEventListener('click', () => { const text=document.getElementById('chat-input').value.trim(); if(!text)return; addDoc(collection(db, 'chat'), { user:currentUser.name, text, timestamp: serverTimestamp() }); document.getElementById('chat-input').value=''; });
   const chessGame = new Chess(); let chessBoard = null;
-  async function onDrop(s,t){ const m=chessGame.move({from:s,to:t,promotion:'q'}); if(!m)return 'snapback'; document.getElementById('chess-status').textContent = chessGame.turn()==='w'?'White to move':'Black to move'; await setDoc(doc(db,'system','chess'), {fen:chessGame.fen(), lastMoveBy:currentUser.name, updatedAt:serverTimestamp()}, {merge:true}); logActivity(`Moved chess piece to ${t}`, "♟");}
+  async function onDrop(s,t){ const m=chessGame.move({from:s,to:t,promotion:'q'}); if(!m)return 'snapback'; document.getElementById('chess-status').textContent = chessGame.turn()==='w'?'White to move':'Black to move'; await setDoc(doc(db,'system','chess'), {fen:chessGame.fen(), lastMoveBy:currentUser.name, updatedAt:serverTimestamp()}, {merge:true}); logActivity(`Moved chess piece`, "♟");}
   function initChessEngine(){ if(!chessBoard) { chessBoard = Chessboard('chess-board', {draggable:true, position:'start', onDrop, onSnapEnd:()=>chessBoard.position(chessGame.fen())}); setTimeout(() => chessBoard.resize(), 100); } }
 
   const toggleModal = (id, show) => document.getElementById(id).classList.toggle('active', show);
