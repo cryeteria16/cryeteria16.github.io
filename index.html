@@ -67,6 +67,18 @@
     background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px;
     transition: border-color 0.2s ease, box-shadow 0.2s ease; width: 100%;
   }
+  input[type="file"] {
+    font-family: var(--font-body); font-size: 13px; color: var(--ink-soft);
+    background: var(--bg); border: 1px dashed var(--line); border-radius: 8px; padding: 10px;
+    width: 100%; cursor: pointer;
+  }
+  input[type="file"]::file-selector-button {
+    background: var(--bg-card); color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 11px;
+    cursor: pointer; margin-right: 12px; transition: background 0.2s;
+  }
+  input[type="file"]::file-selector-button:hover { background: #1e1e1e; }
+  
   input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
   input[type="color"] { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 2px; height: 38px; width: 48px; cursor: pointer; }
   input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(112, 148, 122, 0.15); }
@@ -128,13 +140,6 @@
     font-size: 21px;
     font-weight: 500;
     letter-spacing: -0.02em;
-  }
-  .pub-brand-tag {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    color: var(--ink-faint);
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
   }
   .pub-nav {
     display: flex;
@@ -523,55 +528,9 @@
           <p>A curated collection exploring architectural form, street narratives, and high-contrast monochrome studies.</p>
         </div>
         
-        <!-- Masonry Grid with Curated Placeholders & EXIF Data -->
-        <div class="photo-grid">
-          <div class="photo-card" data-title="Monolith Shadows" data-exif="ISO 100 • 35mm • f/2.8 • 1/1000s" data-img="https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80" data-accent="#70947A">
-            <img src="https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80" alt="Architecture photo">
-            <div class="photo-overlay">
-              <span class="photo-title">Monolith Shadows</span>
-              <span class="photo-exif">ISO 100 • 35mm • f/2.8 • 1/1000s</span>
-            </div>
-          </div>
-
-          <div class="photo-card" data-title="Subway Passage" data-exif="ISO 800 • 28mm • f/1.8 • 1/160s" data-img="https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&q=80" data-accent="#7A9BC2">
-            <img src="https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=800&q=80" alt="Subway Passage">
-            <div class="photo-overlay">
-              <span class="photo-title">Subway Passage</span>
-              <span class="photo-exif">ISO 800 • 28mm • f/1.8 • 1/160s</span>
-            </div>
-          </div>
-
-          <div class="photo-card" data-title="Dune Contours" data-exif="ISO 50 • 50mm • f/8.0 • 1/500s" data-img="https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1200&q=80" data-accent="#A9803F">
-            <img src="https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=800&q=80" alt="Desert Dunes">
-            <div class="photo-overlay">
-              <span class="photo-title">Dune Contours</span>
-              <span class="photo-exif">ISO 50 • 50mm • f/8.0 • 1/500s</span>
-            </div>
-          </div>
-
-          <div class="photo-card" data-title="Tokyo Rain Study" data-exif="ISO 1600 • 35mm • f/1.4 • 1/125s" data-img="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80" data-accent="#7A9BC2">
-            <img src="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=80" alt="Night rain in city">
-            <div class="photo-overlay">
-              <span class="photo-title">Tokyo Rain Study</span>
-              <span class="photo-exif">ISO 1600 • 35mm • f/1.4 • 1/125s</span>
-            </div>
-          </div>
-
-          <div class="photo-card" data-title="Brutalist Geometry" data-exif="ISO 100 • 24mm • f/5.6 • 1/400s" data-img="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=1200&q=80" data-accent="#EDEDED">
-            <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=800&q=80" alt="Skyscrapers geometry">
-            <div class="photo-overlay">
-              <span class="photo-title">Brutalist Geometry</span>
-              <span class="photo-exif">ISO 100 • 24mm • f/5.6 • 1/400s</span>
-            </div>
-          </div>
-
-          <div class="photo-card" data-title="Solitude at Dawn" data-exif="ISO 200 • 85mm • f/2.0 • 1/800s" data-img="https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=1200&q=80" data-accent="#70947A">
-            <img src="https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=800&q=80" alt="Silhouette in morning mist">
-            <div class="photo-overlay">
-              <span class="photo-title">Solitude at Dawn</span>
-              <span class="photo-exif">ISO 200 • 85mm • f/2.0 • 1/800s</span>
-            </div>
-          </div>
+        <!-- Dynamic Masonry Grid (Populated by Firebase & Cloudflare R2) -->
+        <div class="photo-grid" id="public-photo-grid">
+          <p style="color:var(--ink-soft); grid-column: 1 / -1; text-align:center; padding:40px 0; font-family:var(--font-mono); font-size:12px;">Loading archive...</p>
         </div>
       </section>
 
@@ -861,6 +820,41 @@
       </section>
 
       <section id="view-admin" class="view-container">
+        
+        <!-- NEW: Portfolio Studio CMS -->
+        <section class="card" style="margin-bottom:20px;">
+          <div class="card-head"><h2 style="color:var(--accent);">Portfolio Upload Studio</h2></div>
+          <div style="display:flex; flex-direction:column; gap:16px;">
+            <div>
+              <label class="field-label">Select Photo</label>
+              <input type="file" id="upload-photo-file" accept="image/*">
+            </div>
+            <div>
+              <label class="field-label">Title</label>
+              <input type="text" id="upload-photo-title" placeholder="e.g. Monolith Shadows" autocomplete="off">
+            </div>
+            <div>
+              <label class="field-label">EXIF / Camera Data (Optional)</label>
+              <input type="text" id="upload-photo-exif" placeholder="e.g. ISO 100 • 35mm • f/2.8 • 1/1000s" autocomplete="off">
+            </div>
+            <div>
+              <label class="field-label">Ambient Glow Color</label>
+              <input type="color" id="upload-photo-accent" value="#70947A" style="width:100%; height:42px; padding:2px;">
+            </div>
+            <button class="btn-primary" id="btn-upload-photo">Upload to Cloudflare & Publish</button>
+            <p id="upload-status" style="font-family:var(--font-mono); font-size:11px; text-align:center; display:none;"></p>
+          </div>
+        </section>
+
+        <!-- NEW: Portfolio Manager -->
+        <section class="card" style="margin-bottom:20px;">
+          <div class="card-head"><h2>Manage Live Gallery</h2></div>
+          <div id="admin-portfolio-list" style="display:flex; flex-direction:column; gap:10px;">
+             <p style="color:var(--ink-soft); font-size:13px;">Loading portfolio...</p>
+          </div>
+        </section>
+
+        <!-- Existing Admin Configs -->
         <section class="card" style="margin-bottom:20px;">
           <div class="card-head"><h2 style="color:var(--warn);">System Configuration</h2></div>
           <div style="display:flex; flex-direction:column; gap:16px;">
@@ -997,6 +991,10 @@
   const TMDB_API_KEY = "eecc2609dbfe92b8fcb518848aa112be"; 
   const GOOGLE_SHEETS_WEBHOOK = "https://script.google.com/macros/s/AKfycbw8Pjcz0b4JBxKBix9RYOWHtuY5h3HJdhu4cFjLbZerFu36U-gShWz4_85sY8pFva3F/exec"; 
 
+  // CLOUDFLARE R2 CREDENTIALS
+  const WORKER_URL = "https://portfolio-uploader.theibadhasan.workers.dev/";
+  const PUBLIC_R2_URL = "https://pub-3a5505322c50496598874826433f7e72.r2.dev/";
+
   const PEOPLE = {
     "justibadx@gmail.com":    { name: "Con",       id: "con",       color: "#70947A" },
     "theibadhasan@gmail.com": { name: "Cryeteria", id: "cryeteria", color: "#7A9BC2" }
@@ -1015,7 +1013,6 @@
   let globalStreamServer = ""; 
   let isTheaterSyncing = false; 
 
-  // Plyr Setup
   const player = new Plyr('#theater-player', {
     controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
     keyboard: { focused: true, global: true },
@@ -1053,8 +1050,10 @@
   const lightboxCaption = document.getElementById('lightbox-caption');
   const lightboxExif = document.getElementById('lightbox-exif-detail');
 
-  document.querySelectorAll('.photo-card').forEach(card => {
-    card.addEventListener('click', () => {
+  // Delegated listener for dynamic photo cards
+  document.getElementById('public-photo-grid').addEventListener('click', (e) => {
+    const card = e.target.closest('.photo-card');
+    if (card) {
       const fullImg = card.getAttribute('data-img');
       const title = card.getAttribute('data-title');
       const exif = card.getAttribute('data-exif');
@@ -1065,12 +1064,73 @@
       lightboxExif.textContent = exif;
       lightbox.style.background = `radial-gradient(circle, ${accent}22 0%, rgba(8,8,8,0.96) 80%)`;
       lightbox.classList.add('active');
-    });
+    }
   });
 
   lightbox.addEventListener('click', (e) => {
     if (e.target !== lightboxImg) lightbox.classList.remove('active');
   });
+
+  // =========================================================================
+  // GLOBAL REAL-TIME PORTFOLIO SYNC (Runs instantly for public viewers)
+  // =========================================================================
+  onSnapshot(query(collection(db, 'portfolio'), orderBy('timestamp', 'desc')), (snap) => {
+    const pubGrid = document.getElementById('public-photo-grid');
+    const adminList = document.getElementById('admin-portfolio-list');
+
+    if (snap.empty) {
+      if (pubGrid) pubGrid.innerHTML = '<p style="color:var(--ink-soft); grid-column: 1 / -1; text-align:center; padding: 40px 0;">No photos published yet.</p>';
+      if (adminList) adminList.innerHTML = '<p style="color:var(--ink-soft); font-size:13px;">No photos published yet.</p>';
+      return;
+    }
+
+    if (pubGrid) pubGrid.innerHTML = '';
+    if (adminList) adminList.innerHTML = '';
+
+    snap.forEach(docSnap => {
+      const p = docSnap.data();
+      
+      // Build Public Gallery
+      if (pubGrid) {
+        pubGrid.innerHTML += `
+          <div class="photo-card" data-title="${p.title.replace(/"/g, '&quot;')}" data-exif="${(p.exif || '').replace(/"/g, '&quot;')}" data-img="${p.imgUrl}" data-accent="${p.accent}">
+            <img src="${p.imgUrl}" alt="${p.title.replace(/"/g, '&quot;')}">
+            <div class="photo-overlay">
+              <span class="photo-title">${p.title}</span>
+              <span class="photo-exif">${p.exif || ''}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Build Admin Manager View
+      if (adminList) {
+        adminList.innerHTML += `
+          <div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--line);">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <img src="${p.imgUrl}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;">
+                <div>
+                  <p style="font-size:13px; font-weight:500;">${p.title}</p>
+                  <p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${p.exif || 'No EXIF data'}</p>
+                </div>
+            </div>
+            <button class="btn-warn btn-delete-photo" data-id="${docSnap.id}" style="padding:6px 12px; font-size:11px;">Remove</button>
+          </div>
+        `;
+      }
+    });
+  });
+
+  // Admin: Delete Photo Listener
+  document.getElementById('admin-portfolio-list').addEventListener('click', async (e) => {
+    if (e.target.classList.contains('btn-delete-photo')) {
+      if(confirm("Remove this photo from the public portfolio?")) {
+        await deleteDoc(doc(db, 'portfolio', e.target.getAttribute('data-id')));
+        sendLog("Portfolio", "Deleted Photo", e.target.getAttribute('data-id'));
+      }
+    }
+  });
+
 
   // =========================================================================
   // SECRET ACCESS GATEWAY (DOUBLE CLICK LOGO OR SHORTCUT)
@@ -1083,13 +1143,11 @@
   const loginPassIn = document.getElementById('login-password');
   const loginErrorMsg = document.getElementById('login-error-msg');
 
-  // Double click / Double tap trigger
   secretTrigger.addEventListener('dblclick', () => {
     secretModal.classList.add('active');
     loginUserIn.focus();
   });
 
-  // Shortcut trigger: Shift + L
   window.addEventListener('keydown', (e) => {
     if (e.shiftKey && (e.key === 'L' || e.key === 'l')) {
       secretModal.classList.add('active');
@@ -1151,6 +1209,74 @@
     await signOut(auth); 
     location.reload();
   });
+
+  // =========================================================================
+  // LAIR: PORTFOLIO UPLOAD ENGINE (TO CLOUDFLARE R2)
+  // =========================================================================
+  document.getElementById('btn-upload-photo').addEventListener('click', async () => {
+    const fileInput = document.getElementById('upload-photo-file');
+    const title = document.getElementById('upload-photo-title').value.trim();
+    const exif = document.getElementById('upload-photo-exif').value.trim();
+    const accent = document.getElementById('upload-photo-accent').value;
+    const statusText = document.getElementById('upload-status');
+
+    if (!fileInput.files.length || !title) {
+      alert("Please select an image file and provide a title.");
+      return;
+    }
+
+    const file = fileInput.files[0];
+    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, ''); // sanitize filename
+    const uniqueFileName = `${Date.now()}-${cleanFileName}`;
+    
+    statusText.style.display = 'block';
+    statusText.style.color = 'var(--ink-soft)';
+    statusText.textContent = 'Uploading to Cloudflare R2...';
+
+    try {
+      // 1. Upload to the Cloudflare Worker
+      const uploadRes = await fetch(WORKER_URL, {
+        method: 'POST',
+        headers: {
+          'X-Lair-Auth': 'lair-master-key-2026',
+          'X-File-Name': uniqueFileName
+        },
+        body: file
+      });
+
+      if (!uploadRes.ok) throw new Error('Failed to upload file to storage bucket.');
+
+      statusText.textContent = 'Saving entry to database...';
+
+      // 2. Save the metadata and URL to Firestore
+      const finalImgUrl = `${PUBLIC_R2_URL}${uniqueFileName}`;
+      
+      await addDoc(collection(db, 'portfolio'), {
+        title,
+        exif,
+        accent,
+        imgUrl: finalImgUrl,
+        addedBy: currentUser.name,
+        timestamp: serverTimestamp()
+      });
+
+      statusText.style.color = 'var(--con)';
+      statusText.textContent = 'Successfully published to public portfolio!';
+      sendLog("Portfolio", "Uploaded Photo", title);
+
+      // Reset the form
+      fileInput.value = '';
+      document.getElementById('upload-photo-title').value = '';
+      document.getElementById('upload-photo-exif').value = '';
+      
+      setTimeout(() => { statusText.style.display = 'none'; }, 4000);
+
+    } catch (err) {
+      statusText.style.color = 'var(--err)';
+      statusText.textContent = `Error: ${err.message}`;
+    }
+  });
+
 
   // =========================================================================
   // LAIR: AUDIO BACKGROUND & AMBIENT MIXER
@@ -1343,7 +1469,6 @@
     document.getElementById('chess-status').textContent = status;
   }
 
-  // FIXED BUG: Chess engine only boots when the element is visibly on-screen
   function initChessEngine() {
     if (!chessBoard) {
       chessBoard = Chessboard('chess-board', {
@@ -1391,7 +1516,7 @@
         cw.scrollTop = cw.scrollHeight;
       }
       if (target === 'games') {
-        initChessEngine(); // Properly initializes board when clicked!
+        initChessEngine(); 
         if (chessBoard) chessBoard.resize();
       }
     });
