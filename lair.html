@@ -84,11 +84,18 @@
   canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
   #shared-scratchpad { height: 100%; min-height: 180px; resize: none; font-family: var(--font-mono); font-size: 12px; border-radius: var(--radius-sm); touch-action: manipulation; }
 
-  /* Voice Card */
+  /* Voice Card & Chat */
   .voice-card { background: var(--bg); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 16px; display: flex; flex-direction: column; gap: 12px; margin-bottom:16px;}
   .pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--ink-soft); }
   .pulse-dot.active { background:var(--con); box-shadow: 0 0 8px var(--con); animation: pulse 1.5s infinite; }
   @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+  
+  #chat-window { height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 16px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 16px; }
+  .chat-msg { max-width: 85%; display: flex; flex-direction: column; gap: 4px; }
+  .chat-msg.mine { align-self: flex-end; align-items: flex-end; } .chat-msg.theirs { align-self: flex-start; align-items: flex-start; }
+  .chat-bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; word-wrap: break-word; }
+  .chat-msg.mine .chat-bubble { background: var(--accent); color: #0A0A0A; border-bottom-right-radius: 4px; }
+  .chat-msg.theirs .chat-bubble { background: var(--bg-card); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
 
   /* Vitality Tracker (Hold-to-Log) */
   .khaadi-glass-btn { position: relative; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; user-select: none; transition: border-color 0.2s; overflow: hidden; }
@@ -96,13 +103,6 @@
   .khaadi-glass-btn svg circle.hold-ring { transition: stroke-dashoffset 0.1s linear; transform: rotate(-90deg); transform-origin: 50% 50%; }
 
   /* Media UI & Co-Watching */
-  #chat-window { height: 350px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding: 16px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 16px; }
-  .chat-msg { max-width: 85%; display: flex; flex-direction: column; gap: 4px; }
-  .chat-msg.mine { align-self: flex-end; align-items: flex-end; } .chat-msg.theirs { align-self: flex-start; align-items: flex-start; }
-  .chat-bubble { padding: 10px 14px; border-radius: 16px; font-size: 14px; word-wrap: break-word; }
-  .chat-msg.mine .chat-bubble { background: var(--accent); color: #0A0A0A; border-bottom-right-radius: 4px; }
-  .chat-msg.theirs .chat-bubble { background: var(--bg-card); border: 1px solid var(--line); border-bottom-left-radius: 4px; }
-  
   .scroll-row { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 16px; scroll-snap-type: x mandatory;}
   .title-card { flex: 0 0 130px; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s; position: relative; scroll-snap-align: start;}
   .title-card:hover { transform: translateY(-4px) scale(1.02); }
@@ -113,13 +113,6 @@
   /* Co-Watch Theater Frame */
   .theater-container { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--line); margin-bottom: 16px; }
   .theater-container iframe, .theater-container video { width: 100%; height: 100%; border: none; display: block; }
-  
-  /* YouTube Feed Grid */
-  .yt-feed-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 16px; }
-  .yt-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; cursor: pointer; transition: border-color 0.2s, transform 0.2s; }
-  .yt-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-  .yt-thumb { width: 100%; aspect-ratio: 16/9; background: #1a1a1a; background-size: cover; background-position: center; }
-  .yt-info { padding: 12px; }
 
   /* PDF Reader Overlay */
   #pdf-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(16px); z-index: 1000; display: none; flex-direction: column; }
@@ -157,8 +150,7 @@
       <div id="cmd-results" style="display:flex; flex-direction:column; max-height:300px; overflow-y:auto;">
         <div class="cmd-item" data-action="nav:dashboard"><span class="cmd-item-icon">Nav</span> <span>Go to Dashboard</span></div>
         <div class="cmd-item" data-action="nav:drop"><span class="cmd-item-icon">File</span> <span>Open Lair Drop</span></div>
-        <div class="cmd-item" data-action="nav:watchlist"><span class="cmd-item-icon">Watch</span> <span>Open Co-Watch Theater & YouTube Feed</span></div>
-        <div class="cmd-item" data-action="nav:chat"><span class="cmd-item-icon">Comms</span> <span>Open Chat & Voice</span></div>
+        <div class="cmd-item" data-action="nav:theater"><span class="cmd-item-icon">Watch</span> <span>Open Theater & Voice Room</span></div>
         <div class="cmd-item" data-action="link:admin.html"><span class="cmd-item-icon">CMS</span> <span>Open Admin Studio</span></div>
         <div class="cmd-item" data-action="func:signout"><span class="cmd-item-icon">Auth</span> <span>Lock Lair & Exit</span></div>
       </div>
@@ -188,8 +180,7 @@
       <nav class="pill-nav">
         <a data-target="dashboard" class="lair-nav-link active">Home</a>
         <a data-target="drop" class="lair-nav-link">Drop</a>
-        <a data-target="chat" class="lair-nav-link">Comms</a>
-        <a data-target="watchlist" class="lair-nav-link">Watch</a>
+        <a data-target="theater" class="lair-nav-link">Theater</a>
         <a data-target="books" class="lair-nav-link">Books</a>
         <a data-target="games" class="lair-nav-link">Chess</a>
         <a href="admin.html" class="lair-nav-link" style="color:var(--warn);">Admin</a>
@@ -302,50 +293,60 @@
       </section>
     </section>
 
-    <!-- Comms & Voice -->
-    <section id="view-chat" class="view-container">
-      <div class="voice-card">
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <h2 style="font-family:var(--font-display); font-size:16px;">Voice Channel</h2>
-          <div style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:8px;"><span class="pulse-dot" id="voice-indicator"></span><span id="voice-status-text">Disconnected</span></div>
+    <!-- THEATER (Voice, Chat, Media) -->
+    <section id="view-theater" class="view-container">
+      <div class="studio-grid" style="margin-bottom:20px;">
+        
+        <!-- Left Column: Media Player & Chat -->
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <section class="card" style="padding:16px;">
+            <div class="card-head" style="margin-bottom:12px;">
+              <h2>Co-Watch Theater</h2>
+              <button class="btn-secondary" id="btn-sync-play" style="width:auto; padding:6px 12px; font-size:11px;">Force Sync</button>
+            </div>
+            <div class="theater-container" id="theater-frame-box">
+              <div id="theater-player-slot" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px;">Select a title or load a Tunnel URL</div>
+            </div>
+            <div style="display:flex; gap:10px;">
+              <input type="text" id="cowatch-url-input" placeholder="Paste Cloudflare Tunnel URL..." autocomplete="off">
+              <button class="btn-primary" id="btn-load-cowatch" style="width:auto; padding:0 20px;">Load</button>
+            </div>
+          </section>
+
+          <section class="card" style="padding:16px;">
+            <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Theater Chat</h2></div>
+            <div id="chat-window" style="height:250px;"></div>
+            <div style="display:flex; gap:10px;">
+              <input type="text" id="chat-input" placeholder="Message..." autocomplete="off">
+              <button class="btn-primary" id="btn-send-chat" style="width:auto; padding:0 24px;">Send</button>
+            </div>
+          </section>
         </div>
-        <div style="display:flex; gap:8px;">
-          <button class="btn-primary" id="btn-call-start" style="flex:2;">🎙 Connect</button>
-          <button class="btn-secondary" id="btn-call-mute" style="flex:1; display:none;">Mute</button>
-          <button class="btn-warn" id="btn-call-end" style="flex:1; display:none;">End</button>
+
+        <!-- Right Column: Discord-Style Voice & Watchlist -->
+        <div style="display:flex; flex-direction:column; gap:20px;">
+          <div class="voice-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h2 style="font-family:var(--font-display); font-size:16px;">Voice Room</h2>
+              <div style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); display:flex; align-items:center; gap:8px;">
+                <span class="pulse-dot" id="voice-indicator"></span><span id="voice-status-text">Empty Room</span>
+              </div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <button class="btn-primary" id="btn-join-voice" style="flex:2;">🎙 Join Room</button>
+              <button class="btn-secondary" id="btn-voice-mute" style="flex:1; display:none;">Mute</button>
+              <button class="btn-warn" id="btn-leave-voice" style="flex:1; display:none;">Leave</button>
+            </div>
+          </div>
+          <audio id="remote-audio" autoplay></audio>
+
+          <section class="card" style="padding:16px;">
+            <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Watchlist</h2></div>
+            <div id="shared-watchlist" class="scroll-row"></div>
+          </section>
         </div>
+
       </div>
-      <audio id="remote-audio" autoplay></audio>
-      <section class="card"><div id="chat-window"></div><div style="display:flex; gap:10px;"><input type="text" id="chat-input" placeholder="Message..." autocomplete="off"><button class="btn-primary" id="btn-send-chat" style="width:auto; padding:0 24px;">Send</button></div></section>
-    </section>
-
-    <!-- Watch / Co-Watching Theater & Live YouTube Feed -->
-    <section id="view-watchlist" class="view-container">
-      <section class="card" style="margin-bottom:20px;">
-        <div class="card-head"><h2>Co-Watch Theater</h2><button class="btn-secondary" id="btn-sync-play" style="width:auto; padding:6px 12px; font-size:11px;">Force Sync</button></div>
-        <div class="theater-container" id="theater-frame-box">
-          <div id="theater-player-slot" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px;">Select a title or search YouTube below</div>
-        </div>
-        <div style="display:flex; gap:10px;">
-          <input type="text" id="cowatch-url-input" placeholder="Paste YouTube URL or R2 video file link..." autocomplete="off">
-          <button class="btn-primary" id="btn-load-cowatch" style="width:auto; padding:0 20px;">Load Media</button>
-        </div>
-      </section>
-
-      <!-- Live YouTube Search Feed -->
-      <section class="card" style="margin-bottom:20px;">
-        <div class="card-head"><h2>YouTube Feed & Discovery</h2></div>
-        <div style="display:flex; gap:10px; margin-bottom:12px;">
-          <input type="text" id="yt-search-input" placeholder="Search YouTube videos..." autocomplete="off">
-          <button class="btn-primary" id="btn-yt-search" style="width:auto; padding:0 20px;">Search</button>
-        </div>
-        <div class="yt-feed-grid" id="yt-feed-results">
-          <p style="font-size:12px; color:var(--ink-soft); grid-column: 1/-1;">Search or select a preset below to explore.</p>
-        </div>
-      </section>
-
-      <section class="card" style="margin-bottom:20px;"><div class="card-head"><h2 style="font-size:16px;">Find Movies (TMDB)</h2></div><input type="text" id="tmdb-search-input" placeholder="Search..." autocomplete="off"><div id="tmdb-results" class="scroll-row" style="margin-top:16px;"></div></section>
-      <section class="card"><div class="card-head"><h2 style="font-size:16px;">Watchlist</h2></div><div id="shared-watchlist" class="scroll-row"></div></section>
     </section>
 
     <!-- Books & PDF Reader -->
@@ -361,7 +362,7 @@
       <section class="card"><div class="card-head"><h2 style="font-size:16px;">Library (Tap to Read)</h2></div><div id="shared-library" class="scroll-row"></div></section>
     </section>
 
-    <!-- Chess (Fixed with Tap-to-Move for Mobile) -->
+    <!-- Chess -->
     <section id="view-games" class="view-container">
       <section class="card">
         <div class="card-head"><h2 style="font-size:16px;">Lair Chess</h2><button class="btn-secondary" id="btn-reset-chess" style="width:auto; padding:6px 12px; font-size:11px;">Reset</button></div>
@@ -476,7 +477,7 @@
     const circumference = 339.29;
     let timer = null;
     let startTime = null;
-    const duration = 1500; // 1.5 seconds
+    const duration = 1500;
 
     const startHold = (e) => {
       e.preventDefault();
@@ -575,55 +576,102 @@
     if(savedIntention) document.getElementById('intention-input').value = savedIntention;
   }
 
-  // WebRTC
+  // ==========================================
+  // DISCORD-STYLE VOICE ROOM
+  // ==========================================
   const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-  let peerConn = null; let localStream = null; const voiceDoc = doc(db, 'system', 'voice_call');
-  const startBtn = document.getElementById('btn-call-start'); const muteBtn = document.getElementById('btn-call-mute'); const endBtn = document.getElementById('btn-call-end');
+  let peerConn = null; let localStream = null; let voiceData = null;
+  const voiceDoc = doc(db, 'system', 'voice_room');
+  const joinBtn = document.getElementById('btn-join-voice'); 
+  const muteBtn = document.getElementById('btn-voice-mute'); 
+  const leaveBtn = document.getElementById('btn-leave-voice');
   
   async function initMic() { try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); return true; } catch (e) { alert("Mic access needed."); return false; } }
-  async function startCall() {
-    if (!await initMic()) return; updateVoiceUI('connecting', 'Connecting...');
-    peerConn = new RTCPeerConnection(rtcConfig); localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
-    peerConn.ontrack = e => { document.getElementById('remote-audio').srcObject = e.streams[0]; };
-    const offer = await peerConn.createOffer(); await peerConn.setLocalDescription(offer);
-    await setDoc(voiceDoc, { offer: { type: offer.type, sdp: offer.sdp }, caller: currentUser.name, status: 'ringing', updatedAt: serverTimestamp() });
-    peerConn.onicecandidate = e => { if (e.candidate) updateDoc(voiceDoc, { [`callerIce_${Date.now()}`]: e.candidate.toJSON() }, {merge:true}); };
-    logActivity("Started a voice call", "🎙");
+  
+  async function joinVoiceRoom() {
+    if (!await initMic()) return;
+    
+    if (!voiceData || voiceData.status === 'idle') {
+      updateVoiceUI('connecting', 'Opening Room...');
+      peerConn = new RTCPeerConnection(rtcConfig); 
+      localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
+      peerConn.ontrack = e => { document.getElementById('remote-audio').srcObject = e.streams[0]; };
+      
+      const offer = await peerConn.createOffer(); await peerConn.setLocalDescription(offer);
+      await setDoc(voiceDoc, { offer: { type: offer.type, sdp: offer.sdp }, host: currentUser.name, status: 'waiting', updatedAt: serverTimestamp() });
+      peerConn.onicecandidate = e => { if (e.candidate) updateDoc(voiceDoc, { [`hostIce_${Date.now()}`]: e.candidate.toJSON() }, {merge:true}); };
+      
+      updateVoiceUI('waiting', 'In Room (Alone)');
+      logActivity("Opened the voice room", "🎙");
+      
+    } else if (voiceData.status === 'waiting' && voiceData.host !== currentUser.name) {
+      updateVoiceUI('connecting', 'Joining Room...');
+      peerConn = new RTCPeerConnection(rtcConfig); 
+      localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
+      peerConn.ontrack = e => { document.getElementById('remote-audio').srcObject = e.streams[0]; };
+      
+      await peerConn.setRemoteDescription(new RTCSessionDescription(voiceData.offer));
+      const answer = await peerConn.createAnswer(); await peerConn.setLocalDescription(answer);
+      await updateDoc(voiceDoc, { answer: { type: answer.type, sdp: answer.sdp }, status: 'connected', updatedAt: serverTimestamp() }, {merge:true});
+      peerConn.onicecandidate = e => { if (e.candidate) updateDoc(voiceDoc, { [`guestIce_${Date.now()}`]: e.candidate.toJSON() }, {merge:true}); };
+      
+      updateVoiceUI('connected', `In Room with ${voiceData.host}`);
+      logActivity(`Joined ${voiceData.host} in voice`, "🎙");
+    }
   }
-  async function answerCall(callData) {
-    if (!await initMic()) return; updateVoiceUI('connected', 'Live Sync Active');
-    peerConn = new RTCPeerConnection(rtcConfig); localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
-    peerConn.ontrack = e => { document.getElementById('remote-audio').srcObject = e.streams[0]; };
-    await peerConn.setRemoteDescription(new RTCSessionDescription(callData.offer));
-    const answer = await peerConn.createAnswer(); await peerConn.setLocalDescription(answer);
-    await updateDoc(voiceDoc, { answer: { type: answer.type, sdp: answer.sdp }, status: 'connected' }, {merge:true});
-    peerConn.onicecandidate = e => { if (e.candidate) updateDoc(voiceDoc, { [`calleeIce_${Date.now()}`]: e.candidate.toJSON() }, {merge:true}); };
-    logActivity("Joined voice call", "🎙");
-  }
-  async function hangUp() {
+
+  async function leaveVoiceRoom(updateDB = true) {
     if (peerConn) { peerConn.close(); peerConn = null; }
     if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-    await setDoc(voiceDoc, { status: 'idle', updatedAt: serverTimestamp() }); updateVoiceUI('idle', 'Disconnected');
+    if (updateDB) await setDoc(voiceDoc, { status: 'idle', updatedAt: serverTimestamp() }); 
+    updateVoiceUI('idle', 'Empty Room');
   }
+
   onSnapshot(voiceDoc, async (snap) => {
-    if (!snap.exists()) return; const data = snap.data(); if (!data) return;
-    if (data.status === 'ringing' && data.caller !== currentUser.name && !peerConn) { updateVoiceUI('ringing', `Incoming from ${data.caller}...`); startBtn.textContent = '📞 Answer'; startBtn.onclick = () => answerCall(data); }
-    if (data.status === 'connected' && data.caller === currentUser.name && peerConn && !peerConn.currentRemoteDescription && data.answer) { await peerConn.setRemoteDescription(new RTCSessionDescription(data.answer)); updateVoiceUI('connected', 'Live Sync Active'); }
-    if (peerConn && peerConn.remoteDescription) { Object.keys(data).forEach(key => { if ((data.caller === currentUser.name && key.startsWith('calleeIce_')) || (data.caller !== currentUser.name && key.startsWith('callerIce_'))) { peerConn.addIceCandidate(new RTCIceCandidate(data[key])).catch(e=>{}); } }); }
-    if (data.status === 'idle' && peerConn) { hangUp(); }
+    if (!snap.exists()) return; 
+    voiceData = snap.data();
+    
+    if (voiceData.status === 'idle' && peerConn) leaveVoiceRoom(false);
+    
+    if (voiceData.status === 'waiting' && voiceData.host !== currentUser.name && !peerConn) {
+      document.getElementById('voice-status-text').textContent = `${voiceData.host} is in the room`;
+      document.getElementById('voice-indicator').style.background = 'var(--warn)';
+    }
+
+    if (voiceData.status === 'connected' && voiceData.host === currentUser.name && peerConn && !peerConn.currentRemoteDescription && voiceData.answer) { 
+      await peerConn.setRemoteDescription(new RTCSessionDescription(voiceData.answer)); 
+      updateVoiceUI('connected', 'Live Sync Active'); 
+    }
+    
+    if (peerConn && peerConn.remoteDescription) { 
+      Object.keys(voiceData).forEach(key => { 
+        if ((voiceData.host === currentUser.name && key.startsWith('guestIce_')) || (voiceData.host !== currentUser.name && key.startsWith('hostIce_'))) { 
+          peerConn.addIceCandidate(new RTCIceCandidate(voiceData[key])).catch(e=>{}); 
+        } 
+      }); 
+    }
   });
-  startBtn.addEventListener('click', () => { if (startBtn.textContent.includes('Connect')) { startBtn.textContent = 'Calling...'; startBtn.disabled = true; startCall(); } });
-  endBtn.addEventListener('click', hangUp);
-  muteBtn.addEventListener('click', () => { if (localStream) { const audioTrack = localStream.getAudioTracks()[0]; audioTrack.enabled = !audioTrack.enabled; muteBtn.textContent = audioTrack.enabled ? 'Mute' : 'Unmute'; muteBtn.style.color = audioTrack.enabled ? 'var(--ink)' : 'var(--warn)'; } });
+
+  joinBtn.addEventListener('click', joinVoiceRoom);
+  leaveBtn.addEventListener('click', () => leaveVoiceRoom(true));
+  muteBtn.addEventListener('click', () => { 
+    if (localStream) { 
+      const audioTrack = localStream.getAudioTracks()[0]; 
+      audioTrack.enabled = !audioTrack.enabled; 
+      muteBtn.textContent = audioTrack.enabled ? 'Mute' : 'Unmute'; 
+      muteBtn.style.color = audioTrack.enabled ? 'var(--ink)' : 'var(--warn)'; 
+    } 
+  });
+
   function updateVoiceUI(state, text) {
     document.getElementById('voice-status-text').textContent = text; const ind = document.getElementById('voice-indicator');
-    if (state === 'idle') { startBtn.style.display = 'block'; startBtn.textContent = '🎙 Connect'; startBtn.disabled = false; muteBtn.style.display = 'none'; endBtn.style.display = 'none'; ind.classList.remove('active'); ind.style.background = 'var(--ink-soft)'; } 
-    else if (state === 'ringing') { endBtn.style.display = 'block'; muteBtn.style.display = 'none'; ind.classList.add('active'); ind.style.background = 'var(--warn)'; } 
-    else if (state === 'connected') { startBtn.style.display = 'none'; endBtn.style.display = 'block'; muteBtn.style.display = 'block'; muteBtn.textContent = 'Mute'; muteBtn.style.color='var(--ink)'; ind.classList.add('active'); ind.style.background = 'var(--con)'; }
+    if (state === 'idle') { joinBtn.style.display = 'block'; muteBtn.style.display = 'none'; leaveBtn.style.display = 'none'; ind.classList.remove('active'); ind.style.background = 'var(--ink-soft)'; } 
+    else if (state === 'waiting') { joinBtn.style.display = 'none'; leaveBtn.style.display = 'block'; ind.classList.add('active'); ind.style.background = 'var(--warn)'; } 
+    else if (state === 'connected') { joinBtn.style.display = 'none'; leaveBtn.style.display = 'block'; muteBtn.style.display = 'block'; muteBtn.textContent = 'Mute'; muteBtn.style.color='var(--ink)'; ind.classList.add('active'); ind.style.background = 'var(--con)'; }
   }
 
   // ==========================================
-  // CO-WATCHING & LIVE YOUTUBE SEARCH FEED
+  // CO-WATCHING & THEATER SYNC
   // ==========================================
   const watchPartyDoc = doc(db, 'system', 'watch_party');
 
@@ -653,51 +701,53 @@
     loadMediaIntoTheater(url, type);
   });
 
-  document.getElementById('btn-yt-search').addEventListener('click', () => {
-    const q = document.getElementById('yt-search-input').value.trim();
-    if(!q) return;
-    searchYouTubeFeed(q);
-  });
-
-  async function searchYouTubeFeed(queryStr) {
-    const grid = document.getElementById('yt-feed-results');
-    grid.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); grid-column:1/-1;">Searching YouTube...</p>';
-    try {
-      setTimeout(() => {
-        grid.innerHTML = `
-          <div class="yt-card" onclick="selectYtVideo('dQw4w9WgXcQ', 'Editorial Cut: ${queryStr}')">
-            <div class="yt-thumb" style="background-image:url('https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg')"></div>
-            <div class="yt-info"><p style="font-size:12px; font-weight:500; margin-bottom:4px;">Editorial Cut: ${queryStr}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">Curated Archive</p></div>
-          </div>
-          <div class="yt-card" onclick="selectYtVideo('jfKfPfyJRdk', 'Lofi Focus Stream: ${queryStr}')">
-            <div class="yt-thumb" style="background-image:url('https://img.youtube.com/vi/jfKfPfyJRdk/hqdefault.jpg')"></div>
-            <div class="yt-info"><p style="font-size:12px; font-weight:500; margin-bottom:4px;">Ambient Feed: ${queryStr}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">Live Broadcast</p></div>
-          </div>
-        `;
-      }, 400);
-    } catch(e) {
-      grid.innerHTML = '<p style="font-size:12px; color:var(--err); grid-column:1/-1;">Search failed.</p>';
-    }
-  }
-
-  window.selectYtVideo = async function(videoId, title) {
-    const url = `https://www.youtube.com/watch?v=${videoId}`;
-    document.getElementById('cowatch-url-input').value = url;
-    await setDoc(watchPartyDoc, { url, type: 'youtube', isPlaying: true, currentTime: 0, updatedAt: serverTimestamp() });
-    loadMediaIntoTheater(url, 'youtube');
-    logActivity(`Queued YouTube video: ${title}`, "▶");
-  }
-
   onSnapshot(watchPartyDoc, (snap) => {
     if(!snap.exists()) return;
     const d = snap.data();
     if(!d.url) return;
+    
     const slot = document.getElementById('theater-player-slot');
-    if(!slot.querySelector('iframe') && !slot.querySelector('video')) {
+    const currentMedia = slot.querySelector('video') || slot.querySelector('iframe');
+    
+    if(!currentMedia || currentMedia.getAttribute('src') !== d.url) {
       loadMediaIntoTheater(d.url, d.type);
+    }
+
+    const vid = document.getElementById('r2-video');
+    if (vid && d.type === 'r2') {
+      if (Math.abs(vid.currentTime - d.currentTime) > 1.5) {
+        vid.currentTime = d.currentTime;
+      }
+      if (d.isPlaying && vid.paused) vid.play().catch(e => console.log("Autoplay blocked by browser. Click screen."));
+      if (!d.isPlaying && !vid.paused) vid.pause();
     }
   });
 
+  document.getElementById('btn-sync-play').addEventListener('click', async () => {
+    const vid = document.getElementById('r2-video');
+    if (vid) {
+      await updateDoc(watchPartyDoc, { 
+        currentTime: vid.currentTime, 
+        isPlaying: !vid.paused,
+        updatedAt: serverTimestamp() 
+      });
+      logActivity("Forced media sync", "🔄");
+    } else {
+      alert("Note: Frame-accurate syncing currently supports Vault/Tunnel videos.");
+    }
+  });
+
+  document.getElementById('theater-player-slot').addEventListener('play', (e) => {
+    if (e.target.id === 'r2-video') {
+        updateDoc(watchPartyDoc, { isPlaying: true, currentTime: e.target.currentTime, updatedAt: serverTimestamp() });
+    }
+  }, true);
+  
+  document.getElementById('theater-player-slot').addEventListener('pause', (e) => {
+    if (e.target.id === 'r2-video') {
+        updateDoc(watchPartyDoc, { isPlaying: false, currentTime: e.target.currentTime, updatedAt: serverTimestamp() });
+    }
+  }, true);
 
   // ==========================================
   // IN-BROWSER PDF READER & SYNCED BOOKMARKS
@@ -834,7 +884,7 @@
   function getMousePos(e) { const r = canvas.getBoundingClientRect(); const cx = e.clientX||(e.touches?e.touches[0].clientX:0); const cy = e.clientY||(e.touches?e.touches[0].clientY:0); return {x:(cx-r.left)*(canvas.width/r.width),y:(cy-r.top)*(canvas.height/r.height)}; }
   canvas.addEventListener('mousedown', e=>{ drawing=true; const p=getMousePos(e); lastX=p.x; lastY=p.y; });
   canvas.addEventListener('mousemove', e=>{ if(!drawing)return; e.preventDefault(); const p=getMousePos(e); ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(p.x,p.y); ctx.strokeStyle=document.getElementById('brush-color').value; ctx.lineWidth=document.getElementById('brush-size').value; ctx.lineCap='round'; ctx.stroke(); lastX=p.x; lastY=p.y; });
-  const stopDraw = async () => { if(!drawing)return; drawing=false; const dataUrl = canvas.toDataURL(); canvasHistory.path = canvasHistory.push(dataUrl); await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); };
+  const stopDraw = async () => { if(!drawing)return; drawing=false; const dataUrl = canvas.toDataURL(); canvasHistory.push(dataUrl); await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); };
   canvas.addEventListener('mouseup', stopDraw); canvas.addEventListener('mouseleave', stopDraw); canvas.addEventListener('touchend', stopDraw);
   document.getElementById('btn-save-canvas').addEventListener('click', () => { const btn = document.getElementById('btn-save-canvas'); logActivity("Archived canvas sketch", "🎨"); btn.textContent = "Saved ✔"; setTimeout(() => btn.textContent = "💾 Archive", 3000); });
   document.getElementById('btn-undo-canvas').addEventListener('click', async () => { if (canvasHistory.length > 1) { canvasHistory.pop(); let lastStateUrl = canvasHistory[canvasHistory.length - 1]; await setDoc(doc(db, 'system', 'doodle'), { image: lastStateUrl, updatedAt: serverTimestamp() }, { merge: true }); } });
@@ -842,7 +892,7 @@
 
   document.getElementById('btn-send-chat').addEventListener('click', () => { const text=document.getElementById('chat-input').value.trim(); if(!text)return; addDoc(collection(db, 'chat'), { user:currentUser.name, text, timestamp: serverTimestamp() }); document.getElementById('chat-input').value=''; });
   
-  // Chess Engine (Tap-to-Move for Mobile Compatibility)
+  // Chess Engine
   const chessGame = new Chess(); let chessBoard = null; let selectedSquare = null;
   async function onSquareClick(square) {
     if (!selectedSquare) {
@@ -866,10 +916,7 @@
   }
   function initChessEngine(){ 
     if(!chessBoard) { 
-      chessBoard = Chessboard('chess-board', {
-        position: 'start',
-        onSquareClick: onSquareClick
-      }); 
+      chessBoard = Chessboard('chess-board', { position: 'start', onSquareClick: onSquareClick }); 
       setTimeout(() => chessBoard.resize(), 100); 
     } 
   }
