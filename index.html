@@ -1343,18 +1343,23 @@
     document.getElementById('chess-status').textContent = status;
   }
 
-  chessBoard = Chessboard('chess-board', {
-    draggable: true,
-    position: 'start',
-    onDragStart: onDragStart,
-    onDrop: onDrop,
-    onSnapEnd: () => chessBoard.position(chessGame.fen())
-  });
+  // FIXED BUG: Chess engine only boots when the element is visibly on-screen
+  function initChessEngine() {
+    if (!chessBoard) {
+      chessBoard = Chessboard('chess-board', {
+        draggable: true,
+        position: 'start',
+        onDragStart: onDragStart,
+        onDrop: onDrop,
+        onSnapEnd: () => chessBoard.position(chessGame.fen())
+      });
+    }
+  }
 
   document.getElementById('btn-reset-chess').addEventListener('click', async () => {
     if (confirm("Reset the chess game?")) {
       chessGame.reset();
-      chessBoard.start();
+      if (chessBoard) chessBoard.start();
       updateChessStatus();
       await setDoc(doc(db, 'system', 'chess'), { fen: chessGame.fen(), lastMoveBy: 'System', updatedAt: serverTimestamp() });
       sendLog("Games", "Chess Reset", "Board wiped clean");
@@ -1370,20 +1375,25 @@
   lairNavLinks.forEach(link => {
     link.addEventListener('click', (e) => {
       const target = e.currentTarget.getAttribute('data-target');
+      
       lairNavLinks.forEach(l => l.classList.remove('active'));
       document.querySelectorAll(`.lair-nav-link[data-target="${target}"]`).forEach(l => l.classList.add('active'));
-      lairViews.forEach(v => v.classList.remove('active'));
       
+      lairViews.forEach(v => v.classList.remove('active'));
       const activeLairView = document.getElementById(`view-${target}`);
       if (activeLairView) activeLairView.classList.add('active'); 
       
       window.scrollTo(0, 0);
+      
       if (target === 'dashboard') initCanvasResolution();
       if (target === 'chat') {
         const cw = document.getElementById('chat-window');
         cw.scrollTop = cw.scrollHeight;
       }
-      if (target === 'games' && chessBoard) chessBoard.resize();
+      if (target === 'games') {
+        initChessEngine(); // Properly initializes board when clicked!
+        if (chessBoard) chessBoard.resize();
+      }
     });
   });
 
@@ -1462,10 +1472,10 @@
         const data = snap.data();
         if (currentUser && data.lastMoveBy !== currentUser.name) {
           chessGame.load(data.fen);
-          chessBoard.position(data.fen);
+          if (chessBoard) chessBoard.position(data.fen);
           updateChessStatus();
         }
-        if (currentUser && currentUser.id === 'cryeteria') chessBoard.orientation('black');
+        if (currentUser && currentUser.id === 'cryeteria' && chessBoard) chessBoard.orientation('black');
       }
     });
     
