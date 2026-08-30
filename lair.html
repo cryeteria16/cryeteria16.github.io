@@ -12,7 +12,12 @@
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
 <style>
-  :root { --bg:#0A0A0A; --bg-card:#121212; --bg-card-hover:#181818; --ink:#EDEDED; --ink-soft:#A3A3A3; --line:#262626; --con:#70947A; --cryeteria:#7A9BC2; --warn:#A9803F; --err:#D9534F; --radius:16px; --radius-sm:10px; --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; --accent:var(--con); --grain-intensity: 0.04;}
+  :root { 
+    --bg:#0A0A0A; --bg-card:#121212; --bg-card-hover:#181818; --ink:#EDEDED; --ink-soft:#A3A3A3; --line:#222222; 
+    --con:#70947A; --cryeteria:#7A9BC2; --warn:#A9803F; --err:#D9534F; --radius:16px; --radius-sm:10px; 
+    --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; 
+    --accent:var(--con); --grain-intensity: 0.04;
+  }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
   body { background:var(--bg); color:var(--ink); font-family:var(--font-body); padding-bottom:140px; overflow-x:hidden; }
   a { color:inherit; text-decoration:none; cursor:pointer; }
@@ -21,13 +26,14 @@
   .film-grain { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; opacity: var(--grain-intensity); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
   
   /* Cinematic "Lights Out" Mode */
-  #cinematic-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 40; opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+  #cinematic-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.96); z-index: 40; opacity: 0; pointer-events: none; transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
   #cinematic-overlay.active { opacity: 1; pointer-events: auto; }
-  .theater-card { transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; }
-  .theater-card.lights-out { position: relative; z-index: 45; transform: scale(1.02); box-shadow: 0 40px 100px rgba(0,0,0,1); border-color: var(--accent); }
+  .theater-card { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s, border-color 0.4s; }
+  .theater-card.lights-out { position: relative; z-index: 45; transform: scale(1.01); box-shadow: 0 40px 120px rgba(0,0,0,1); border-color: var(--accent); }
 
   /* Plyr Customizations */
   .plyr { border-radius: var(--radius-sm); overflow: hidden; height: 100%; width: 100%; }
+  .plyr--video { height: 100%; aspect-ratio: 16/9; }
   .plyr__control--overlaid { background: var(--accent) !important; color: #000 !important; }
 
   input[type="text"], input[type="password"], input[type="number"], input[type="file"], select, textarea { appearance:none; font-family:var(--font-body); font-size:14px; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; width:100%; transition:border-color 0.2s; touch-action: manipulation; }
@@ -39,12 +45,12 @@
   input[type=range]::-webkit-slider-runnable-track { width:100%; height:4px; background:var(--line); border-radius:2px; }
 
   .btn-primary { background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; text-align:center; transition: transform 0.1s, opacity 0.2s; cursor:pointer;}
-  .btn-secondary { background:var(--bg); color:var(--ink); border: 1px solid var(--line); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; transition: transform 0.1s, background 0.2s; cursor:pointer;}
+  .btn-secondary { background:var(--bg); color:var(--ink); border: 1px solid var(--line); padding:10px 16px; border-radius:var(--radius-sm); font-size:12px; font-weight:500; transition: transform 0.1s, background 0.2s; cursor:pointer;}
   .btn-warn { background:rgba(217, 83, 79, 0.1); color:var(--err); border: 1px solid rgba(217, 83, 79, 0.3); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; cursor:pointer;}
   .btn-primary:active, .btn-secondary:active, .btn-warn:active { transform: scale(0.96); }
 
   /* Floating Pill Navigation */
-  .floating-header-wrapper { position: sticky; top: env(safe-area-inset-top, 10px); z-index: 50; padding: 10px 20px 20px; display: flex; justify-content: center; pointer-events: none; }
+  .floating-header-wrapper { position: sticky; top: env(safe-area-inset-top, 10px); z-index: 50; padding: 10px 24px 24px; display: flex; justify-content: center; pointer-events: none; }
   .floating-pill { background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); border-radius: 50px; padding: 10px 24px; display: flex; align-items: center; gap: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); pointer-events: auto; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
   .floating-pill::-webkit-scrollbar { display: none; }
   
@@ -61,9 +67,12 @@
   .view-container.active { display: block; animation: smoothFadeIn 0.35s forwards; }
   @keyframes smoothFadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 
-  main { padding: 0 20px 40px; max-width:1040px; margin:0 auto; display:flex; flex-direction:column; gap:20px; overflow-x: hidden; }
+  /* Widescreen Netflix-Style Viewport Constraints */
+  main { padding: 0 32px 40px; max-width: 1520px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+  @media (max-width: 768px) { main { padding: 0 16px 40px; } }
+
   .card { background:var(--bg-card); border:1px solid var(--line); border-radius:var(--radius); padding:24px; max-width: 100%; overflow:hidden;}
-  .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap: 12px; }
   .card-head h2 { font-family:var(--font-display); font-size:18px; font-weight:600; }
 
   /* Cmd+K Palette */
@@ -75,9 +84,8 @@
   .cmd-item-icon { font-family:var(--font-mono); font-size:11px; background:var(--line); padding:4px 8px; border-radius:6px; color:var(--ink-soft);}
 
   /* Status Strip & Activity */
-  .status-strip { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; margin-bottom: 24px; scrollbar-width:none;}
-  .status-strip::-webkit-scrollbar{display:none;}
-  .cmd-widget { flex: 0 0 85%; max-width: 300px; background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; display:flex; flex-direction:column; justify-content:space-between; scroll-snap-align: start;}
+  .status-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .cmd-widget { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 20px; display:flex; flex-direction:column; justify-content:space-between; }
   .cmd-widget h3 { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); letter-spacing:0.05em; margin-bottom: 8px; }
   .activity-log-item { display:flex; gap:12px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: flex-start;}
   .activity-log-item:last-child { border-bottom: none; }
@@ -87,10 +95,10 @@
   .studio-grid > div { min-width: 0; }
   @media (max-width: 800px) { .studio-grid { grid-template-columns: 1fr; } }
   
-  /* THEATER GRID: 70/30 Layout */
-  .theater-grid { display: grid; grid-template-columns: 7fr 3fr; gap: 20px; align-items: start; }
-  .theater-grid > div { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
-  @media (max-width: 900px) { .theater-grid { grid-template-columns: 1fr; } }
+  /* THEATER GRID: 72/28 Netflix-Style Layout */
+  .theater-grid { display: grid; grid-template-columns: 7.2fr 2.8fr; gap: 24px; align-items: start; }
+  .theater-grid > div { min-width: 0; display: flex; flex-direction: column; gap: 24px; }
+  @media (max-width: 1024px) { .theater-grid { grid-template-columns: 1fr; } }
 
   /* Tools & Canvas */
   .canvas-wrapper { position: relative; width: 100%; aspect-ratio: 4/3; background: var(--bg); border: 1px solid var(--line); border-radius: var(--radius-sm); overflow: hidden; touch-action: none; }
@@ -98,7 +106,7 @@
   #shared-scratchpad { height: 100%; min-height: 180px; resize: none; font-family: var(--font-mono); font-size: 12px; border-radius: var(--radius-sm); touch-action: manipulation; }
 
   /* Voice Card & Chat */
-  .voice-card { background: var(--bg); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .voice-card { background: var(--bg); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 18px; display: flex; flex-direction: column; gap: 14px; }
   .pulse-dot { width:8px; height:8px; border-radius:50%; background:var(--ink-soft); }
   .pulse-dot.active { background:var(--con); box-shadow: 0 0 8px var(--con); animation: pulse 1.5s infinite; }
   @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
@@ -116,14 +124,14 @@
   .khaadi-glass-btn svg circle.hold-ring { transition: stroke-dashoffset 0.1s linear; transform: rotate(-90deg); transform-origin: 50% 50%; }
 
   /* Media UI & Co-Watching */
-  .scroll-row { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 12px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
+  .scroll-row { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 14px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
   .scroll-row::-webkit-scrollbar { height: 6px; }
   .scroll-row::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
   
-  .title-card { flex: 0 0 130px; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s; position: relative; scroll-snap-align: start; }
-  .title-card:hover { transform: translateY(-4px) scale(1.02); }
-  .poster, .book-poster { height: 195px; border-radius: var(--radius-sm); margin-bottom: 8px; background: var(--bg) center/cover no-repeat; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 13px; color: var(--ink-soft); text-align: center; padding: 10px; border: 1px solid var(--line); }
-  .title-name { font-size: 12px; font-weight: 500; margin-bottom: 4px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .title-card { flex: 0 0 140px; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s; position: relative; scroll-snap-align: start; }
+  .title-card:hover { transform: translateY(-4px) scale(1.03); }
+  .poster, .book-poster { height: 210px; border-radius: var(--radius-sm); margin-bottom: 8px; background: var(--bg) center/cover no-repeat; display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 13px; color: var(--ink-soft); text-align: center; padding: 10px; border: 1px solid var(--line); }
+  .title-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pill { display: inline-block; font-family: var(--font-mono); font-size: 10px; padding: 3px 8px; border-radius: 12px; background:var(--line); width: max-content; }
   
   /* Co-Watch Theater Frame */
@@ -202,8 +210,8 @@
 
         <div>
           <label class="field-label">Attached Video / Cloudflare Tunnel Stream URL</label>
-          <input type="text" id="modal-movie-stream-url" placeholder="https://....trycloudflare.com/video.mp4" autocomplete="off">
-          <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-top:6px;">Paste Tunnel link or R2 video URL to auto-launch this title.</p>
+          <input type="text" id="modal-movie-stream-url" placeholder="https://....trycloudflare.com/awalktoremember.mp4" autocomplete="off">
+          <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-top:6px;">Paste your Tunnel link or R2 video URL to bind this file.</p>
         </div>
 
         <button class="btn-primary" id="btn-play-movie-direct" style="background:var(--con); color:#0A0A0A;">▶ Play in Theater Now</button>
@@ -252,22 +260,22 @@
     <!-- Dashboard -->
     <section id="view-dashboard" class="view-container active">
       <div class="status-strip">
-        <div class="cmd-widget"><h3>Dubai Weather</h3><div><p id="cc-time" style="font-family:var(--font-display); font-size:24px;">--:--</p><p id="cc-weather" style="font-family:var(--font-mono); color:var(--ink-soft); font-size:11px;">Fetching data...</p></div></div>
-        <div class="cmd-widget"><h3>Active Media</h3><div style="display:flex; flex-direction:column; gap:6px;"><p style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="color:var(--ink-soft);">Watching:</span> <span id="cc-watching" style="font-weight:500;">--</span></p><p style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="color:var(--ink-soft);">Reading:</span> <span id="cc-reading" style="font-weight:500;">--</span></p></div></div>
-        <div class="cmd-widget"><h3>Public Traffic</h3><div><p id="cc-views" style="font-family:var(--font-display); font-size:24px;">--</p><p style="font-family:var(--font-mono); color:var(--ink-soft); font-size:11px;">Unique Views Tracked</p></div></div>
+        <div class="cmd-widget"><h3>Dubai Weather</h3><div><p id="cc-time" style="font-family:var(--font-display); font-size:26px;">--:--</p><p id="cc-weather" style="font-family:var(--font-mono); color:var(--ink-soft); font-size:12px;">Fetching data...</p></div></div>
+        <div class="cmd-widget"><h3>Active Media</h3><div style="display:flex; flex-direction:column; gap:6px;"><p style="font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="color:var(--ink-soft);">Watching:</span> <span id="cc-watching" style="font-weight:500;">--</span></p><p style="font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="color:var(--ink-soft);">Reading:</span> <span id="cc-reading" style="font-weight:500;">--</span></p></div></div>
+        <div class="cmd-widget"><h3>Public Traffic</h3><div><p id="cc-views" style="font-family:var(--font-display); font-size:26px;">--</p><p style="font-family:var(--font-mono); color:var(--ink-soft); font-size:12px;">Unique Views Tracked</p></div></div>
       </div>
 
       <!-- VITALITY & HYDRATION DASHBOARD CARD -->
-      <section class="card" style="margin-bottom:20px;">
+      <section class="card" style="margin-bottom:24px;">
         <div class="card-head">
-          <h2 style="font-size:16px;">Vitality & Hydration</h2>
+          <h2 style="font-size:17px;">Vitality & Hydration</h2>
           <span id="sync-status-indicator" style="font-family:var(--font-mono); font-size:11px; color:var(--con);">● Online Sync</span>
         </div>
         
         <!-- Daily Intention Line -->
         <div style="display:flex; gap:10px; margin-bottom:16px;">
           <input type="text" id="intention-input" placeholder="Set today's primary intention..." autocomplete="off" style="min-width:0;">
-          <button class="btn-secondary" id="btn-save-intention" style="width:auto; padding:0 16px;">Set</button>
+          <button class="btn-secondary" id="btn-save-intention" style="width:auto; padding:0 18px;">Set</button>
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
@@ -300,13 +308,13 @@
 
         <div style="display:flex; gap:10px;">
           <input type="text" id="meal-input" placeholder="Log a meal or vitality note..." autocomplete="off" style="min-width:0;">
-          <button class="btn-primary" id="btn-log-meal" style="width:auto; padding:0 20px;">Log</button>
+          <button class="btn-primary" id="btn-log-meal" style="width:auto; padding:0 24px;">Log</button>
         </div>
       </section>
 
-      <div class="studio-grid" style="margin-bottom:20px;">
+      <div class="studio-grid" style="margin-bottom:24px;">
         <section class="card">
-          <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Shared Sketchpad</h2><div style="display:flex; gap:8px;"><button class="btn-secondary" id="btn-undo-canvas" style="padding:4px 10px; font-size:11px;">↺</button><button class="btn-secondary" id="btn-clear-canvas" style="padding:4px 10px; font-size:11px; color:var(--err); border-color:rgba(217,83,79,0.3);">Clear</button></div></div>
+          <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Shared Sketchpad</h2><div style="display:flex; gap:8px;"><button class="btn-secondary" id="btn-undo-canvas" style="padding:4px 10px; font-size:11px;">↺</button><button class="btn-secondary" id="btn-clear-canvas" style="padding:4px 10px; font-size:11px; color:var(--err); border-color:rgba(217,83,79,0.3);">Clear</button></div></div>
           <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px; background:var(--bg); padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--line);">
             <input type="color" id="brush-color" value="#EDEDED" style="height:28px; width:36px; padding:0;">
             <input type="range" id="brush-size" min="1" max="20" value="3" style="width:80px;">
@@ -316,15 +324,15 @@
         </section>
 
         <section class="card" style="display:flex; flex-direction:column;">
-          <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Text Scratchpad</h2></div>
+          <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Text Scratchpad</h2></div>
           <textarea id="shared-scratchpad" placeholder="Drop links, code snippets, or quick notes here..."></textarea>
           <button class="btn-secondary" id="btn-save-scratchpad" style="margin-top:12px; width:100%;">Save Text</button>
         </section>
       </div>
 
       <section class="card">
-        <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Unified Activity Log</h2></div>
-        <div id="unified-activity-log" style="display:flex; flex-direction:column; max-height:250px; overflow-y:auto; padding-right:8px;">
+        <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:17px;">Unified Activity Log</h2></div>
+        <div id="unified-activity-log" style="display:flex; flex-direction:column; max-height:260px; overflow-y:auto; padding-right:8px;">
           <p style="font-size:12px; color:var(--ink-soft);">Loading ecosystem activity...</p>
         </div>
       </section>
@@ -332,7 +340,7 @@
 
     <!-- Lair Drop Bucket -->
     <section id="view-drop" class="view-container">
-      <section class="card" style="margin-bottom:20px; text-align:center;">
+      <section class="card" style="margin-bottom:24px; text-align:center;">
         <div class="card-head" style="justify-content:center; margin-bottom:24px;"><h2>R2 Storage Bucket (10GB)</h2></div>
         <div class="storage-gauge-wrapper" id="drop-gauge" style="--pct: 0;">
           <div class="storage-gauge-inner">
@@ -357,15 +365,16 @@
     <section id="view-theater" class="view-container">
       <div class="theater-grid">
         
-        <!-- Left: Main Stage (Media Player, TMDB Search, & Watchlist) -->
+        <!-- Left: Main Stage (Widescreen Player & Watchlist) -->
         <div>
-          <!-- Co-Watch Player Card with Lights Out -->
-          <section class="card theater-card" style="padding:16px;">
-            <div class="card-head" style="margin-bottom:12px;">
+          <!-- Co-Watch Player Card -->
+          <section class="card theater-card" style="padding:20px;">
+            <div class="card-head" style="margin-bottom:14px;">
               <h2>Co-Watch Theater</h2>
-              <div style="display:flex; gap:8px;">
-                <button class="btn-secondary" id="btn-lights-out" style="padding:6px 12px; font-size:11px; white-space:nowrap;">💡 Lights Out</button>
-                <button class="btn-secondary" id="btn-sync-play" style="padding:6px 12px; font-size:11px; white-space:nowrap;">Force Sync</button>
+              <div style="display:flex; gap:8px; flex-wrap: wrap;">
+                <button class="btn-secondary" id="btn-pip" title="Pop Out Video" style="white-space:nowrap;">🖼️ Pop Out</button>
+                <button class="btn-secondary" id="btn-lights-out" style="white-space:nowrap;">💡 Lights Out</button>
+                <button class="btn-secondary" id="btn-sync-play" style="white-space:nowrap;">Force Sync</button>
               </div>
             </div>
             
@@ -382,27 +391,27 @@
           </section>
 
           <!-- Watchlist & TMDB Search Card -->
-          <section class="card" style="padding:16px;">
+          <section class="card" style="padding:20px;">
             <div class="card-head" style="margin-bottom:12px;">
-              <h2 style="font-size:16px;">Find Movies (TMDB)</h2>
+              <h2 style="font-size:17px;">Find Movies & Series (TMDB)</h2>
             </div>
             
             <div style="display:flex; gap:10px; margin-bottom:14px;">
               <input type="text" id="tmdb-search-input" placeholder="Search movies or shows to add..." autocomplete="off" style="flex:1; min-width:0;">
-              <button class="btn-secondary" id="btn-tmdb-search" style="width:auto; padding:0 18px;">Search</button>
+              <button class="btn-secondary" id="btn-tmdb-search" style="width:auto; padding:0 20px;">Search</button>
             </div>
 
             <div id="tmdb-results" class="scroll-row" style="display:none; margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:16px;"></div>
 
             <div class="card-head" style="margin-bottom:12px; margin-top:8px;">
-              <h2 style="font-size:16px;">Shared Watchlist</h2>
-              <span style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft);">Tap card to play / attach stream</span>
+              <h2 style="font-size:17px;">Shared Watchlist</h2>
+              <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">Tap card to play / attach stream</span>
             </div>
             <div id="shared-watchlist" class="scroll-row"></div>
           </section>
         </div>
 
-        <!-- Right: Comms (Voice Room & Chat) -->
+        <!-- Right: Comms (Voice Room & Theater Chat) -->
         <div>
           <!-- Voice Room -->
           <div class="voice-card">
@@ -413,7 +422,7 @@
               </div>
             </div>
             <div style="display:flex; gap:8px;">
-              <button class="btn-primary" id="btn-join-voice" style="flex:2; white-space:nowrap;">🎙 Join</button>
+              <button class="btn-primary" id="btn-join-voice" style="flex:2; white-space:nowrap;">🎙 Join Room</button>
               <button class="btn-secondary" id="btn-voice-mute" style="flex:1; display:none;">Mute</button>
               <button class="btn-warn" id="btn-leave-voice" style="flex:1; display:none;">Leave</button>
             </div>
@@ -421,12 +430,12 @@
           <audio id="remote-audio" autoplay style="display:none;"></audio> 
 
           <!-- Theater Chat -->
-          <section class="card" style="padding:16px; display:flex; flex-direction:column; flex:1;">
+          <section class="card" style="padding:20px; display:flex; flex-direction:column; flex:1;">
             <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Theater Chat</h2></div>
-            <div id="chat-window" style="height:320px; flex:1; margin-bottom:12px;"></div>
+            <div id="chat-window" style="height:360px; flex:1; margin-bottom:12px;"></div>
             <div style="display:flex; gap:10px;">
               <input type="text" id="chat-input" placeholder="Message..." autocomplete="off" style="flex:1; min-width:0;">
-              <button class="btn-primary" id="btn-send-chat" style="width:auto; padding:0 16px;">Send</button>
+              <button class="btn-primary" id="btn-send-chat" style="width:auto; padding:0 20px;">Send</button>
             </div>
           </section>
         </div>
@@ -436,22 +445,22 @@
 
     <!-- Books & PDF Reader -->
     <section id="view-books" class="view-container">
-      <section class="card" style="margin-bottom:20px;">
-        <div class="card-head"><h2 style="font-size:16px;">Add PDF Book</h2></div>
+      <section class="card" style="margin-bottom:24px;">
+        <div class="card-head"><h2 style="font-size:17px;">Add PDF Book</h2></div>
         <div style="display:flex; flex-direction:column; gap:12px;">
           <input type="text" id="book-title-input" placeholder="Book Title..." autocomplete="off">
           <input type="text" id="book-pdf-url" placeholder="Paste R2 PDF file URL..." autocomplete="off">
           <button class="btn-primary" id="btn-add-pdf-book" style="width:auto;">Add to Library</button>
         </div>
       </section>
-      <section class="card"><div class="card-head"><h2 style="font-size:16px;">Library (Tap to Read)</h2></div><div id="shared-library" class="scroll-row"></div></section>
+      <section class="card"><div class="card-head"><h2 style="font-size:17px;">Library (Tap to Read)</h2></div><div id="shared-library" class="scroll-row"></div></section>
     </section>
 
     <!-- Chess -->
     <section id="view-games" class="view-container">
       <section class="card">
-        <div class="card-head"><h2 style="font-size:16px;">Lair Chess</h2><button class="btn-secondary" id="btn-reset-chess" style="width:auto; padding:6px 12px; font-size:11px;">Reset</button></div>
-        <div style="display:flex; flex-direction:column; gap:20px; align-items:center;"><div id="chess-board" style="width:100%; max-width:400px;"></div><div style="width:100%; text-align:center;"><p class="field-label">Status</p><p id="chess-status" style="margin-bottom:16px; font-weight:500;">Tap piece, then tap destination.</p></div></div>
+        <div class="card-head"><h2 style="font-size:17px;">Lair Chess</h2><button class="btn-secondary" id="btn-reset-chess" style="width:auto; padding:6px 12px; font-size:11px;">Reset</button></div>
+        <div style="display:flex; flex-direction:column; gap:20px; align-items:center;"><div id="chess-board" style="width:100%; max-width:420px;"></div><div style="width:100%; text-align:center;"><p class="field-label">Status</p><p id="chess-status" style="margin-bottom:16px; font-weight:500;">Tap piece, then tap destination.</p></div></div>
       </section>
     </section>
   </main>
@@ -757,7 +766,7 @@
   }
 
   // ==========================================
-  // CO-WATCHING, PLYR.JS & THEATER SYNC
+  // CO-WATCHING, PLYR.JS, PIP & THEATER SYNC
   // ==========================================
   const watchPartyDoc = doc(db, 'system', 'watch_party');
   let theaterPlayer = null;
@@ -768,6 +777,24 @@
     const card = document.querySelector('.theater-card');
     overlay.classList.toggle('active');
     card.classList.toggle('lights-out');
+  });
+
+  // Native Picture in Picture Handler
+  document.getElementById('btn-pip').addEventListener('click', async () => {
+    const vid = document.querySelector('#theater-video');
+    if (!vid) {
+      alert("Load a video first to pop it out.");
+      return;
+    }
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+      } else if (document.pictureInPictureEnabled) {
+        await vid.requestPictureInPicture();
+      }
+    } catch (err) {
+      console.log("PiP Error: ", err);
+    }
   });
 
   function loadMediaIntoTheater(url, type) {
@@ -784,7 +811,7 @@
     }
     
     theaterPlayer = new Plyr('#theater-video', {
-      controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
+      controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'pip', 'fullscreen'],
       keyboard: { focused: true, global: true }
     });
     
@@ -844,7 +871,7 @@
       }
       if (d.isPlaying && !theaterPlayer.playing) {
         isRemoteSyncing = true;
-        theaterPlayer.play().catch(e => console.log("Autoplay blocked."));
+        theaterPlayer.play().catch(e => console.log("Autoplay blocked. Tap video once."));
         setTimeout(() => isRemoteSyncing = false, 500);
       }
       if (!d.isPlaying && theaterPlayer.playing) {
