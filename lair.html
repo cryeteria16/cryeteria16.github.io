@@ -136,6 +136,8 @@
   /* Unified Canvas Framework */
   .theater-container { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--line); margin-bottom: 24px; }
   
+  #theater-canvas-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+  
   /* Content Dock Toggles */
   .dock-btn { font-family: var(--font-mono); font-size: 12px; background: transparent; border: none; padding: 8px 16px; color: var(--ink-soft); cursor: pointer; transition: color 0.2s; position: relative; }
   .dock-btn.active { color: var(--ink); font-weight: 600; }
@@ -355,6 +357,8 @@
             <div class="card-head" style="margin-bottom:0;">
               <h2>Theater Stage</h2>
               <div style="display:flex; gap:8px; flex-wrap: wrap;">
+                <button class="btn-secondary" id="btn-toggle-draw" title="Draw on Screen" style="white-space:nowrap;">🎨 Draw</button>
+                <button class="btn-secondary" id="btn-clear-theater-draw" style="white-space:nowrap; display:none; color:var(--err); border-color:rgba(217,83,79,0.3);">Clear</button>
                 <button class="btn-secondary" id="btn-pip" title="Pop Out Video" style="white-space:nowrap;">🖼️ Pop Out</button>
                 <button class="btn-secondary" id="btn-lights-out" style="white-space:nowrap;">💡 Lights Out</button>
                 <button class="btn-secondary" id="btn-sync-play" style="white-space:nowrap;">Force Sync</button>
@@ -362,6 +366,8 @@
             </div>
             
             <div class="theater-container" id="theater-frame-box" style="margin-bottom:0;">
+              <canvas id="theater-canvas-layer"></canvas>
+              
               <!-- 1. Video Player Container -->
               <div id="video-view" style="width:100%; height:100%; display:flex;">
                 <div id="theater-player-slot" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px; text-align:center; padding:20px;">
@@ -921,6 +927,18 @@
     });
 
     onSnapshot(doc(db, 'system', 'doodle'), (snap) => { if (snap.exists() && snap.data().image) { const img = new Image(); img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; img.src = snap.data().image; if (canvasHistory.length === 0) canvasHistory.push(snap.data().image); } });
+    
+    // THEATER CANVAS SYNC LISTENER
+    onSnapshot(doc(db, 'system', 'theater_doodle'), (snap) => { 
+      if (snap.exists() && snap.data().image) { 
+        const img = new Image(); 
+        img.onload = () => { tCtx.clearRect(0, 0, tCanvas.width, tCanvas.height); tCtx.drawImage(img, 0, 0); }; 
+        img.src = snap.data().image; 
+      } else {
+         tCtx.clearRect(0, 0, tCanvas.width, tCanvas.height);
+      }
+    });
+
     onSnapshot(doc(db, 'system', 'scratchpad'), (snap) => { if(snap.exists() && document.activeElement !== document.getElementById('shared-scratchpad')) document.getElementById('shared-scratchpad').value = snap.data().text || ''; });
     onSnapshot(query(collection(db, 'activity'), orderBy('timestamp', 'desc'), limit(20)), (snap) => { const feed = document.getElementById('unified-activity-log'); feed.innerHTML = ''; if(snap.empty) { feed.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">No activity.</p>'; return; } snap.forEach(d => { const a = d.data(); const tStr = a.timestamp ? a.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''; feed.innerHTML += `<div class="activity-log-item"><span style="font-size:16px;">${a.icon||'•'}</span><div style="flex:1;"><p style="font-size:13px;"><b>${a.user}</b> ${a.text}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${tStr}</p></div></div>`; }); });
     
@@ -943,6 +961,7 @@
   document.getElementById('lair-drop-list').addEventListener('click', async (e) => { if(e.target.classList.contains('btn-delete-drop') && confirm("Delete file?")) { await deleteDoc(doc(db, 'lairdrops', e.target.getAttribute('data-id'))); logActivity("Deleted file from Vault", "🗑"); } });
   document.getElementById('btn-save-scratchpad').addEventListener('click', async () => { const btn = document.getElementById('btn-save-scratchpad'); await setDoc(doc(db, 'system', 'scratchpad'), { text: document.getElementById('shared-scratchpad').value, updatedAt: serverTimestamp() }); btn.textContent = "Saved ✔"; setTimeout(()=> btn.textContent = "Save Text", 2000); logActivity("Updated scratchpad", "📝");});
   
+  // STUDIO SKETCHPAD ENGINE
   const canvas = document.getElementById('doodle-canvas'); const ctx = canvas.getContext('2d'); let drawing = false; let lastX=0; let lastY=0; let canvasHistory=[];
   function initCanvasResolution() { if(!canvas) return; canvas.width=800; canvas.height=600; if(canvasHistory.length>0){ const img = new Image(); img.onload=()=>ctx.drawImage(img,0,0); img.src=canvasHistory[canvasHistory.length-1];} }
   function getMousePos(e) { const r = canvas.getBoundingClientRect(); const cx = e.clientX||(e.touches?e.touches[0].clientX:0); const cy = e.clientY||(e.touches?e.touches[0].clientY:0); return {x:(cx-r.left)*(canvas.width/r.width),y:(cy-r.top)*(canvas.height/r.height)}; }
@@ -953,6 +972,58 @@
   document.getElementById('btn-save-canvas').addEventListener('click', () => { const btn = document.getElementById('btn-save-canvas'); logActivity("Archived canvas sketch", "🎨"); btn.textContent = "Saved ✔"; setTimeout(() => btn.textContent = "💾 Archive", 3000); });
   document.getElementById('btn-undo-canvas').addEventListener('click', async () => { if (canvasHistory.length > 1) { canvasHistory.pop(); let lastStateUrl = canvasHistory[canvasHistory.length - 1]; await setDoc(doc(db, 'system', 'doodle'), { image: lastStateUrl, updatedAt: serverTimestamp() }, { merge: true }); } });
   document.getElementById('btn-clear-canvas').addEventListener('click', async () => { if (confirm("Wipe canvas?")) { ctx.clearRect(0, 0, canvas.width, canvas.height); const dataUrl = canvas.toDataURL(); canvasHistory.push(dataUrl); await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); logActivity("Cleared canvas", "🧼"); } });
+  
+  // THEATER CANVAS ENGINE
+  const tCanvas = document.getElementById('theater-canvas-layer'); 
+  const tCtx = tCanvas.getContext('2d'); 
+  tCanvas.width = 1920; 
+  tCanvas.height = 1080;
+  let tDrawing = false; let tLastX = 0; let tLastY = 0;
+  let isTheaterDrawingMode = false;
+  
+  document.getElementById('btn-toggle-draw').addEventListener('click', () => {
+    isTheaterDrawingMode = !isTheaterDrawingMode;
+    tCanvas.style.pointerEvents = isTheaterDrawingMode ? 'auto' : 'none';
+    const btn = document.getElementById('btn-toggle-draw');
+    btn.style.color = isTheaterDrawingMode ? '#0A0A0A' : 'var(--ink)';
+    btn.style.background = isTheaterDrawingMode ? 'var(--accent)' : 'var(--bg)';
+    document.getElementById('btn-clear-theater-draw').style.display = isTheaterDrawingMode ? 'inline-block' : 'none';
+  });
+
+  function getTMousePos(e) { 
+    const r = tCanvas.getBoundingClientRect(); 
+    const cx = e.clientX||(e.touches?e.touches[0].clientX:0); 
+    const cy = e.clientY||(e.touches?e.touches[0].clientY:0); 
+    return {x:(cx-r.left)*(tCanvas.width/r.width), y:(cy-r.top)*(tCanvas.height/r.height)}; 
+  }
+
+  tCanvas.addEventListener('mousedown', e => { tDrawing=true; const p=getTMousePos(e); tLastX=p.x; tLastY=p.y; });
+  tCanvas.addEventListener('mousemove', e => { 
+    if(!tDrawing) return; e.preventDefault(); 
+    const p=getTMousePos(e); 
+    tCtx.beginPath(); tCtx.moveTo(tLastX,tLastY); tCtx.lineTo(p.x,p.y); 
+    tCtx.strokeStyle = document.getElementById('brush-color').value; 
+    tCtx.lineWidth = document.getElementById('brush-size').value * 2.5; 
+    tCtx.lineCap='round'; tCtx.stroke(); 
+    tLastX=p.x; tLastY=p.y; 
+  });
+
+  const stopTDraw = async () => { 
+    if(!tDrawing) return; tDrawing=false; 
+    const dataUrl = tCanvas.toDataURL(); 
+    await setDoc(doc(db, 'system', 'theater_doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); 
+  };
+  tCanvas.addEventListener('mouseup', stopTDraw); tCanvas.addEventListener('mouseleave', stopTDraw); tCanvas.addEventListener('touchend', stopTDraw);
+
+  document.getElementById('btn-clear-theater-draw').addEventListener('click', async () => { 
+    if (confirm("Wipe theater overlay?")) { 
+      tCtx.clearRect(0, 0, tCanvas.width, tCanvas.height); 
+      await setDoc(doc(db, 'system', 'theater_doodle'), { image: null, updatedAt: serverTimestamp() }, { merge: true }); 
+      logActivity("Cleared theater canvas", "🧼"); 
+    } 
+  });
+  
+  // COMMS ENGINE
   document.getElementById('btn-send-chat').addEventListener('click', () => { const text=document.getElementById('chat-input').value.trim(); if(!text)return; addDoc(collection(db, 'chat'), { user:currentUser.name, text, timestamp: serverTimestamp() }); document.getElementById('chat-input').value=''; });
   document.getElementById('chat-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') document.getElementById('btn-send-chat').click(); });
 </script>
