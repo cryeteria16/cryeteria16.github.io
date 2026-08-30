@@ -81,11 +81,23 @@
   #pub-lightbox.active { display: flex; opacity: 1; }
   .lightbox-img { max-width: 100%; max-height: 75vh; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
   
-  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
   .modal-overlay.active { opacity: 1; pointer-events: auto; }
-  .modal-content { background: var(--bg-card); border: 1px solid var(--line); border-radius: var(--radius); padding: 28px; width: 100%; max-width: 380px; transform: scale(0.95) translateY(10px); transition: transform 0.35s; text-align: center;}
-  .modal-overlay.active .modal-content { transform: scale(1) translateY(0); }
-  .field-label { display: block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; letter-spacing: 0.05em; text-align: left;}
+  
+  /* Sleek Glassmorphism Login Card */
+  .login-glass-card { background: rgba(15, 15, 15, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); box-shadow: 0 40px 100px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.05); border-radius: 24px; padding: 48px 32px; width: 100%; max-width: 360px; text-align: center; transform: scale(0.95) translateY(10px); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+  .modal-overlay.active .login-glass-card { transform: scale(1) translateY(0); }
+  .login-glass-card svg { margin-bottom: 24px; filter: drop-shadow(0 0 12px rgba(112, 148, 122, 0.4)); }
+  .login-glass-card h2 { font-family: var(--font-display); font-size: 24px; margin-bottom: 4px; letter-spacing: -0.02em; }
+  .login-glass-card p { font-size: 11px; color: var(--ink-soft); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 32px; }
+  
+  .login-glass-card input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); color: var(--ink); font-family: var(--font-mono); font-size: 14px; text-align: center; padding: 16px; border-radius: 12px; transition: all 0.3s ease; margin-bottom: 12px; width: 100%; outline: none; letter-spacing: 0.05em;}
+  .login-glass-card input::placeholder { color: #555; }
+  .login-glass-card input:focus { background: rgba(255,255,255,0.06); border-color: var(--accent); box-shadow: 0 0 0 4px rgba(112, 148, 122, 0.1); }
+  
+  .login-glass-card .btn-primary { margin-top: 12px; border-radius: 12px; padding: 16px; font-size: 14px; letter-spacing: 0.02em; }
+  .btn-ghost { background: transparent; border: none; color: var(--ink-soft); font-family: var(--font-mono); font-size: 11px; margin-top: 20px; cursor: pointer; transition: color 0.2s; outline: none; }
+  .btn-ghost:hover { color: var(--ink); }
 </style>
 </head>
 <body>
@@ -140,7 +152,7 @@
       <div class="pub-hero reveal"><h2>Connect & Inquiries</h2><p>Available for select commissions, exhibition requests, and technical collaborations.</p></div>
       <div class="contact-grid reveal">
         <a href="mailto:theibadhasan@gmail.com" id="contact-email-link" class="contact-card">
-          <div><p class="field-label">Direct Email</p><h3 id="contact-email-text" style="font-family:var(--font-display); font-size:18px;">theibadhasan@gmail.com</h3></div>
+          <div><p class="field-label" style="text-align:left;">Direct Email</p><h3 id="contact-email-text" style="font-family:var(--font-display); font-size:18px;">theibadhasan@gmail.com</h3></div>
           <p style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">Inquire for projects &rarr;</p>
         </a>
         <div class="contact-card" style="align-items:center; text-align:center;">
@@ -162,16 +174,20 @@
     </div>
   </div>
 
+  <!-- Sleek Private Gateway -->
   <div class="modal-overlay" id="modal-secret-login">
-    <div class="modal-content">
-      <div style="display:flex; justify-content:center; margin-bottom:14px;"><svg width="36" height="36" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg></div>
-      <h2 style="font-family:var(--font-display); font-size:22px; margin-bottom:6px;">The Lair</h2>
-      <p style="font-size:12px; color:var(--ink-soft); margin-bottom:24px; font-family:var(--font-mono);">Private Access Authentication</p>
-      <div style="margin-bottom:16px;"><label class="field-label">User</label><input type="text" id="login-username" autocomplete="off"></div>
-      <div style="margin-bottom:20px;"><label class="field-label">Key</label><input type="password" id="login-password"></div>
-      <button class="btn-primary" id="btn-do-login">Enter The Lair</button>
-      <button class="btn-secondary" id="btn-cancel-login" style="margin-top:8px; border:none; color:var(--ink-soft);">Cancel</button>
-      <p id="login-error-msg" style="font-size:12px; color:var(--err); margin-top:14px; display:none;"></p>
+    <div class="login-glass-card">
+      <svg width="42" height="42" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg>
+      <h2>Lair Gateway</h2>
+      <p>Identity Verification</p>
+      
+      <input type="text" id="login-username" placeholder="IDENTITY" autocomplete="off" spellcheck="false">
+      <input type="password" id="login-password" placeholder="PASSKEY">
+      
+      <button class="btn-primary" id="btn-do-login">Authenticate</button>
+      <button class="btn-ghost" id="btn-cancel-login">Abort Connection</button>
+      
+      <p id="login-error-msg" style="font-size:11px; color:var(--err); font-family:var(--font-mono); margin-top:16px; display:none;"></p>
     </div>
   </div>
 
@@ -234,7 +250,6 @@
         document.getElementById('dynamic-email-btn').href = `mailto:${d.email}`;
         document.getElementById('contact-email-link').href = `mailto:${d.email}`;
         document.getElementById('contact-email-text').textContent = d.email;
-        // Generate vCard dynamically
         document.getElementById('vcard-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3AIbad+Hasan%0AEMAIL%3A${encodeURIComponent(d.email)}%0AURL%3Ahttps%3A%2F%2Fibadhasan.com%0AEND%3AVCARD`;
       }
       if(d.timeline && Array.isArray(d.timeline)) {
@@ -279,13 +294,26 @@
   document.getElementById('brand-secret-trigger').addEventListener('dblclick', () => sm.classList.add('active'));
   window.addEventListener('keydown', (e) => { if(e.shiftKey && e.key.toLowerCase() === 'l') { sm.classList.add('active'); document.getElementById('login-username').focus();} });
   document.getElementById('btn-cancel-login').addEventListener('click', () => sm.classList.remove('active'));
+  
   document.getElementById('btn-do-login').addEventListener('click', async () => {
+    const btn = document.getElementById('btn-do-login');
+    const msg = document.getElementById('login-error-msg');
+    btn.textContent = "Authenticating...";
+    
     const usr = document.getElementById('login-username').value.trim().toLowerCase();
     const pwd = document.getElementById('login-password').value;
+    
     if(USERS[usr] && USERS[usr].pass === pwd) {
-      try { await signInWithEmailAndPassword(auth, USERS[usr].email, pwd); } catch(e) { document.getElementById('login-error-msg').textContent = e.message; document.getElementById('login-error-msg').style.display='block'; }
-    } else { document.getElementById('login-error-msg').textContent = "Invalid identity."; document.getElementById('login-error-msg').style.display='block'; }
+      try { 
+        await signInWithEmailAndPassword(auth, USERS[usr].email, pwd); 
+      } catch(e) { 
+        msg.textContent = e.message; msg.style.display='block'; btn.textContent = "Authenticate";
+      }
+    } else { 
+      msg.textContent = "Access Denied: Invalid Credentials."; msg.style.display='block'; btn.textContent = "Authenticate";
+    }
   });
+  
   onAuthStateChanged(auth, (user) => { if (user) window.location.replace("lair.html"); });
 </script>
 </body>

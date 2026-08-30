@@ -20,6 +20,16 @@
   
   .film-grain { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; opacity: var(--grain-intensity); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
   
+  /* Cinematic "Lights Out" Mode */
+  #cinematic-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 40; opacity: 0; pointer-events: none; transition: opacity 0.5s; }
+  #cinematic-overlay.active { opacity: 1; pointer-events: auto; }
+  .theater-card { transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s; }
+  .theater-card.lights-out { position: relative; z-index: 45; transform: scale(1.02); box-shadow: 0 40px 100px rgba(0,0,0,1); border-color: var(--accent); }
+
+  /* Plyr Customizations */
+  .plyr { border-radius: var(--radius-sm); overflow: hidden; height: 100%; width: 100%; }
+  .plyr__control--overlaid { background: var(--accent) !important; color: #000 !important; }
+
   input[type="text"], input[type="password"], input[type="number"], input[type="file"], select, textarea { appearance:none; font-family:var(--font-body); font-size:14px; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; width:100%; transition:border-color 0.2s; touch-action: manipulation; }
   input[type="file"]::file-selector-button { background: var(--bg-card); color: var(--ink); border: 1px solid var(--line); padding: 6px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 11px; cursor: pointer; margin-right: 12px;}
   input[type="color"] { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:2px; height: 38px; width: 48px; cursor: pointer; }
@@ -118,7 +128,6 @@
   
   /* Co-Watch Theater Frame */
   .theater-container { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--line); margin-bottom: 16px; }
-  .theater-container iframe, .theater-container video { width: 100%; height: 100%; border: none; display: block; }
 
   /* Drop */
   .storage-gauge-wrapper { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; border-radius: 50%; background: conic-gradient(var(--con) calc(var(--pct) * 1%), var(--line) 0); }
@@ -143,6 +152,7 @@
 <body>
   
   <div class="film-grain"></div>
+  <div id="cinematic-overlay"></div>
 
   <!-- Idle Lock Screen -->
   <div class="modal-overlay" id="idle-lock-modal" style="z-index:9999; backdrop-filter: blur(24px);">
@@ -349,11 +359,14 @@
         
         <!-- Left: Main Stage (Media Player, TMDB Search, & Watchlist) -->
         <div>
-          <!-- Co-Watch Player Card -->
-          <section class="card" style="padding:16px;">
+          <!-- Co-Watch Player Card with Lights Out -->
+          <section class="card theater-card" style="padding:16px;">
             <div class="card-head" style="margin-bottom:12px;">
               <h2>Co-Watch Theater</h2>
-              <button class="btn-secondary" id="btn-sync-play" style="width:auto; padding:6px 12px; font-size:11px; white-space:nowrap;">Force Sync</button>
+              <div style="display:flex; gap:8px;">
+                <button class="btn-secondary" id="btn-lights-out" style="padding:6px 12px; font-size:11px; white-space:nowrap;">💡 Lights Out</button>
+                <button class="btn-secondary" id="btn-sync-play" style="padding:6px 12px; font-size:11px; white-space:nowrap;">Force Sync</button>
+              </div>
             </div>
             
             <div class="theater-container" id="theater-frame-box">
@@ -379,7 +392,6 @@
               <button class="btn-secondary" id="btn-tmdb-search" style="width:auto; padding:0 18px;">Search</button>
             </div>
 
-            <!-- Search Results Row -->
             <div id="tmdb-results" class="scroll-row" style="display:none; margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:16px;"></div>
 
             <div class="card-head" style="margin-bottom:12px; margin-top:8px;">
@@ -745,26 +757,62 @@
   }
 
   // ==========================================
-  // CO-WATCHING & THEATER SYNC
+  // CO-WATCHING, PLYR.JS & THEATER SYNC
   // ==========================================
   const watchPartyDoc = doc(db, 'system', 'watch_party');
+  let theaterPlayer = null;
+  let isRemoteSyncing = false;
+
+  document.getElementById('btn-lights-out').addEventListener('click', () => {
+    const overlay = document.getElementById('cinematic-overlay');
+    const card = document.querySelector('.theater-card');
+    overlay.classList.toggle('active');
+    card.classList.toggle('lights-out');
+  });
 
   function loadMediaIntoTheater(url, type) {
     const slot = document.getElementById('theater-player-slot');
+    
+    if(theaterPlayer) { theaterPlayer.destroy(); theaterPlayer = null; }
     slot.innerHTML = '';
+    
     if(type === 'youtube') {
       const ytId = extractYouTubeId(url);
-      slot.innerHTML = `<iframe id="yt-iframe" src="https://www.youtube.com/embed/${ytId}?enablejsapi=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+      slot.innerHTML = `<div class="plyr__video-embed" id="theater-video"><iframe src="https://www.youtube.com/embed/${ytId}?origin=https://plyr.io&amp;iv_load_policy=3&amp;modestbranding=1&amp;playsinline=1&amp;showinfo=0&amp;rel=0&amp;enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe></div>`;
     } else {
-      slot.innerHTML = `<video id="r2-video" src="${url}" controls playsinline style="width:100%; height:100%;"></video>`;
+      slot.innerHTML = `<video id="theater-video" playsinline controls crossorigin><source src="${url}" type="video/mp4" /></video>`;
     }
+    
+    theaterPlayer = new Plyr('#theater-video', {
+      controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'fullscreen'],
+      keyboard: { focused: true, global: true }
+    });
+    
+    document.documentElement.style.setProperty('--plyr-color-main', 'var(--accent)');
     logActivity(`Loaded co-watch media`, "📺");
+    attachPlayerSyncEvents();
   }
 
   function extractYouTubeId(url) {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : url;
+  }
+
+  function attachPlayerSyncEvents() {
+    if(!theaterPlayer) return;
+    theaterPlayer.on('play', () => {
+      if(isRemoteSyncing) return;
+      updateDoc(watchPartyDoc, { isPlaying: true, currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() });
+    });
+    theaterPlayer.on('pause', () => {
+      if(isRemoteSyncing) return; 
+      updateDoc(watchPartyDoc, { isPlaying: false, currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() });
+    });
+    theaterPlayer.on('seeked', () => {
+      if(isRemoteSyncing) return;
+      updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() });
+    });
   }
 
   document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
@@ -783,45 +831,40 @@
     const slot = document.getElementById('theater-player-slot');
     const currentMedia = slot.querySelector('video') || slot.querySelector('iframe');
     
-    if(!currentMedia || currentMedia.getAttribute('src') !== d.url) {
+    if(!theaterPlayer || !currentMedia || (currentMedia.getAttribute('src') !== d.url && !currentMedia.src.includes(extractYouTubeId(d.url)))) {
       loadMediaIntoTheater(d.url, d.type);
+      return; 
     }
 
-    const vid = document.getElementById('r2-video');
-    if (vid && d.type === 'r2') {
-      if (Math.abs(vid.currentTime - d.currentTime) > 1.5) {
-        vid.currentTime = d.currentTime;
+    if (theaterPlayer) {
+      if (Math.abs(theaterPlayer.currentTime - d.currentTime) > 1.5) {
+        isRemoteSyncing = true;
+        theaterPlayer.currentTime = d.currentTime;
+        setTimeout(() => isRemoteSyncing = false, 1000);
       }
-      if (d.isPlaying && vid.paused) vid.play().catch(e => console.log("Autoplay blocked by browser. Click screen."));
-      if (!d.isPlaying && !vid.paused) vid.pause();
+      if (d.isPlaying && !theaterPlayer.playing) {
+        isRemoteSyncing = true;
+        theaterPlayer.play().catch(e => console.log("Autoplay blocked."));
+        setTimeout(() => isRemoteSyncing = false, 500);
+      }
+      if (!d.isPlaying && theaterPlayer.playing) {
+        isRemoteSyncing = true;
+        theaterPlayer.pause();
+        setTimeout(() => isRemoteSyncing = false, 500);
+      }
     }
   });
 
   document.getElementById('btn-sync-play').addEventListener('click', async () => {
-    const vid = document.getElementById('r2-video');
-    if (vid) {
+    if (theaterPlayer) {
       await updateDoc(watchPartyDoc, { 
-        currentTime: vid.currentTime, 
-        isPlaying: !vid.paused,
+        currentTime: theaterPlayer.currentTime, 
+        isPlaying: theaterPlayer.playing,
         updatedAt: serverTimestamp() 
       });
       logActivity("Forced media sync", "🔄");
-    } else {
-      alert("Note: Frame-accurate syncing currently supports Vault/Tunnel videos.");
     }
   });
-
-  document.getElementById('theater-player-slot').addEventListener('play', (e) => {
-    if (e.target.id === 'r2-video') {
-        updateDoc(watchPartyDoc, { isPlaying: true, currentTime: e.target.currentTime, updatedAt: serverTimestamp() });
-    }
-  }, true);
-  
-  document.getElementById('theater-player-slot').addEventListener('pause', (e) => {
-    if (e.target.id === 'r2-video') {
-        updateDoc(watchPartyDoc, { isPlaying: false, currentTime: e.target.currentTime, updatedAt: serverTimestamp() });
-    }
-  }, true);
 
   // ==========================================
   // TMDB SEARCH & WATCHLIST ASSIGNMENT
@@ -843,28 +886,41 @@
     const resRow = document.getElementById('tmdb-results');
     resRow.style.display = 'flex';
     resRow.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">Searching TMDB...</p>';
+    
     try {
       const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(queryStr)}`);
       const data = await res.json();
+      
+      if(data.status_code) {
+         resRow.innerHTML = `<p style="font-size:12px; color:var(--err); padding:10px;">API Error: ${data.status_message}</p>`;
+         return;
+      }
+
       if(!data.results || data.results.length === 0) {
         resRow.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">No titles found.</p>';
         return;
       }
+      
       resRow.innerHTML = '';
       data.results.forEach(item => {
+        if(item.media_type !== 'movie' && item.media_type !== 'tv') return;
+
         const title = item.title || item.name;
-        if(!title) return;
+        const mediaType = item.media_type === 'tv' ? 'TV Series' : 'Movie';
         const posterUrl = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '';
+        
         const card = document.createElement('div');
         card.className = 'title-card';
         card.innerHTML = `
           <div class="poster" style="${posterUrl ? `background-image:url('${posterUrl}')` : ''}">${!posterUrl ? title : ''}</div>
           <p class="title-name">${title}</p>
+          <span class="pill" style="margin-bottom:8px; border-color:var(--accent); color:var(--accent);">${mediaType}</span>
           <button class="btn-primary" style="padding:4px 8px; font-size:10px; width:100%;">+ Add</button>
         `;
+        
         card.querySelector('button').addEventListener('click', (e) => {
           e.stopPropagation();
-          addToWatchlist(title, posterUrl);
+          addToWatchlist(title, posterUrl, mediaType);
         });
         resRow.appendChild(card);
       });
@@ -873,16 +929,17 @@
     }
   }
 
-  async function addToWatchlist(title, poster) {
+  async function addToWatchlist(title, poster, mediaType) {
     await addDoc(collection(db, 'watchlist'), {
       title,
       poster,
+      type: mediaType,
       status: 'Want to Watch',
       streamUrl: '',
       addedBy: currentUser.name,
       timestamp: serverTimestamp()
     });
-    logActivity(`Added "${title}" to Watchlist`, "🎬");
+    logActivity(`Added ${mediaType}: "${title}"`, "🎬");
     document.getElementById('tmdb-results').style.display = 'none';
     document.getElementById('tmdb-search-input').value = '';
   }
@@ -927,7 +984,6 @@
       return;
     }
 
-    // Save and load into player simultaneously
     await updateDoc(doc(db, 'watchlist', activeSelectedMovieId), {
       status: 'Watching',
       streamUrl,
