@@ -225,7 +225,7 @@
     </div>
   </div>
 
-  <!-- FLOATING PILL NAV -->
+  <!-- FLOATING PILL NAV (Presence Updated) -->
   <div class="floating-header-wrapper">
     <header class="floating-pill">
       <div class="brand"><svg width="20" height="20" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg></div>
@@ -235,7 +235,11 @@
         <a data-target="theater" class="lair-nav-link">Theater</a>
         <a href="admin.html" class="lair-nav-link" style="color:var(--warn);">Admin</a>
       </nav>
-      <div class="top-right"><span class="chip"><span class="dot" id="me-dot"></span></span><button class="signout" id="signout" style="color:var(--ink-faint); font-family:var(--font-mono); font-size:11px;">Exit</button></div>
+      <div class="top-right">
+        <span id="partner-presence" style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); margin-right:8px; display:none;"></span>
+        <span class="chip" title="Your Status"><span class="dot" id="me-dot"></span></span>
+        <button class="signout" id="signout" style="color:var(--ink-faint); font-family:var(--font-mono); font-size:11px;">Exit</button>
+      </div>
     </header>
   </div>
 
@@ -261,7 +265,7 @@
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
-          <div class="khaadi-glass-btn" id="btn-log-ibad-water" data-target="Ibad (Ayn)">
+          <div class="khaadi-glass-btn" id="btn-log-ibad-water" data-target="Ibad">
             <svg width="44" height="54" viewBox="0 0 100 130" style="margin-bottom:8px; overflow:visible;">
               <circle cx="50" cy="65" r="54" fill="none" stroke="var(--line)" stroke-width="4"/>
               <circle class="hold-ring" cx="50" cy="65" r="54" fill="none" stroke="var(--cryeteria)" stroke-width="4" stroke-dasharray="339.29" stroke-dashoffset="339.29"/>
@@ -269,10 +273,10 @@
               <path d="M22 60 L78 60 L83 115 C83 121 77 123 70 123 L30 123 C23 123 17 121 17 115 Z" fill="var(--cryeteria)" opacity="0.4"/>
               <text x="50" y="85" font-size="44" font-family="serif" fill="var(--ink)" text-anchor="middle" font-weight="bold">ع</text>
             </svg>
-            <p style="font-weight:600; font-size:13px;">Ibad (Ayn)</p>
+            <p style="font-weight:600; font-size:13px;">Ibad</p>
             <p id="count-ibad-water" style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">0 glasses • Hold 1.5s</p>
           </div>
-          <div class="khaadi-glass-btn" id="btn-log-con-water" data-target="Con (Fe)">
+          <div class="khaadi-glass-btn" id="btn-log-con-water" data-target="Con">
             <svg width="44" height="54" viewBox="0 0 100 130" style="margin-bottom:8px; overflow:visible;">
               <circle cx="50" cy="65" r="54" fill="none" stroke="var(--line)" stroke-width="4"/>
               <circle class="hold-ring" cx="50" cy="65" r="54" fill="none" stroke="var(--con)" stroke-width="4" stroke-dasharray="339.29" stroke-dashoffset="339.29"/>
@@ -280,7 +284,7 @@
               <path d="M22 60 L78 60 L83 115 C83 121 77 123 70 123 L30 123 C23 123 17 121 17 115 Z" fill="var(--con)" opacity="0.4"/>
               <text x="50" y="85" font-size="44" font-family="serif" fill="var(--ink)" text-anchor="middle" font-weight="bold">ف</text>
             </svg>
-            <p style="font-weight:600; font-size:13px;">Con (Fe)</p>
+            <p style="font-weight:600; font-size:13px;">Con</p>
             <p id="count-con-water" style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">0 glasses • Hold 1.5s</p>
           </div>
         </div>
@@ -482,17 +486,29 @@
 
   const PEOPLE = { "justibadx@gmail.com":{name:"Con",id:"con",color:"#70947A"}, "theibadhasan@gmail.com":{name:"Cryeteria",id:"cryeteria",color:"#7A9BC2"} };
   const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
+  const presenceDoc = doc(db, 'system', 'presence');
   let currentUser = null;
   let activeSelectedMovieId = null;
 
   async function logActivity(action, icon="⚡") { await addDoc(collection(db, 'activity'), { text: action, user: currentUser.name, icon, timestamp: serverTimestamp() }); }
 
+  async function updatePresence(statusText) {
+    if(!currentUser) return;
+    await setDoc(presenceDoc, { [currentUser.id]: { status: statusText, timestamp: serverTimestamp() } }, { merge: true });
+  }
+
+  // Auto-Presence Detectors
+  window.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') updatePresence('Online'); else updatePresence('Away'); });
+  window.addEventListener('beforeunload', () => updatePresence('Offline'));
+
   onAuthStateChanged(auth, (user) => {
     if (!user || !PEOPLE[user.email]) { window.location.replace("index.html"); return; }
     currentUser = PEOPLE[user.email]; document.getElementById("me-dot").style.background = currentUser.color;
-    document.getElementById("brush-color").value = currentUser.color; initCanvasResolution(); initLiveSync(); initWidgets(); startIdleTimer(); initVitalityModule();
+    document.getElementById("brush-color").value = currentUser.color; 
+    updatePresence('Online');
+    initCanvasResolution(); initLiveSync(); initWidgets(); startIdleTimer(); initVitalityModule();
   });
-  document.getElementById("signout").addEventListener("click", async () => { await signOut(auth); window.location.replace("index.html"); });
+  document.getElementById("signout").addEventListener("click", async () => { await updatePresence('Offline'); await signOut(auth); window.location.replace("index.html"); });
 
   // Floating Nav
   const lairNavLinks = document.querySelectorAll('.lair-nav-link');
@@ -540,11 +556,11 @@
   // Idle Lock
   let idleTime = 0; const IDLE_LIMIT = 15 * 60; 
   function startIdleTimer() {
-    setInterval(() => { idleTime++; if (idleTime >= IDLE_LIMIT) document.getElementById('idle-lock-modal').classList.add('active'); }, 1000);
-    const reset = () => idleTime = 0; window.addEventListener('mousemove', reset); window.addEventListener('keypress', reset); window.addEventListener('touchstart', reset);
+    setInterval(() => { idleTime++; if (idleTime >= IDLE_LIMIT && !document.getElementById('idle-lock-modal').classList.contains('active')) { document.getElementById('idle-lock-modal').classList.add('active'); updatePresence('Idle'); } }, 1000);
+    const reset = () => { if(idleTime >= IDLE_LIMIT) updatePresence('Online'); idleTime = 0; }; window.addEventListener('mousemove', reset); window.addEventListener('keypress', reset); window.addEventListener('touchstart', reset);
   }
   document.getElementById('btn-unlock-lair').addEventListener('click', () => {
-    if(document.getElementById('idle-pin').value === '2026') { document.getElementById('idle-lock-modal').classList.remove('active'); document.getElementById('idle-pin').value = ''; document.getElementById('pin-error').style.display='none'; idleTime = 0; } else { document.getElementById('pin-error').style.display='block'; }
+    if(document.getElementById('idle-pin').value === '2026') { document.getElementById('idle-lock-modal').classList.remove('active'); document.getElementById('idle-pin').value = ''; document.getElementById('pin-error').style.display='none'; idleTime = 0; updatePresence('Online'); } else { document.getElementById('pin-error').style.display='block'; }
   });
 
   function initWidgets() {
@@ -573,9 +589,20 @@
   function updateWaterCounts() { document.getElementById('count-ibad-water').textContent = `${localStorage.getItem('ibad_water_cnt') || 0} glasses • Hold 1.5s`; document.getElementById('count-con-water').textContent = `${localStorage.getItem('con_water_cnt') || 0} glasses • Hold 1.5s`; const savedIntention = localStorage.getItem('daily_intention'); if(savedIntention) document.getElementById('intention-input').value = savedIntention; }
 
   // ==========================================
-  // DISCORD-STYLE VOICE ROOM
+  // DISCORD-STYLE VOICE ROOM & WEBRTC TURN
   // ==========================================
-  const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+  const rtcConfig = { 
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      /* TODO: To guarantee connections through strict firewalls, drop your Twilio/Metered credentials here:
+      {
+        urls: "turn:global.turn.twilio.com:3478?transport=udp",
+        username: "YOUR_TURN_USERNAME",
+        credential: "YOUR_TURN_PASSWORD"
+      }
+      */
+    ] 
+  };
   let peerConn = null; let localStream = null; let voiceData = null; const voiceDoc = doc(db, 'system', 'voice_room');
   const joinBtn = document.getElementById('btn-join-voice'); const muteBtn = document.getElementById('btn-voice-mute'); const leaveBtn = document.getElementById('btn-leave-voice');
   async function initMic() { try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); return true; } catch (e) { alert("Mic access needed."); return false; } }
@@ -647,8 +674,9 @@
   }
 
   // A. Video Mount
-  function loadMediaIntoTheater(url, type) {
+  function loadMediaIntoTheater(url, type, title) {
     setCanvasMode('video');
+    updatePresence(`Watching ${title || 'Video'}`);
     const slot = document.getElementById('theater-player-slot');
     if(theaterPlayer) { theaterPlayer.destroy(); theaterPlayer = null; }
     slot.innerHTML = '';
@@ -664,9 +692,10 @@
     theaterPlayer = new Plyr('#theater-video', { controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'pip', 'fullscreen'], keyboard: { focused: true, global: true } });
     document.documentElement.style.setProperty('--plyr-color-main', 'var(--accent)');
     
-    theaterPlayer.on('play', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { isPlaying: true, currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() }); });
-    theaterPlayer.on('pause', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { isPlaying: false, currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() }); });
-    theaterPlayer.on('seeked', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() }); });
+    // SYNC DEBOUNCING ADDED HERE (senderId payload)
+    theaterPlayer.on('play', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { isPlaying: true, currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); });
+    theaterPlayer.on('pause', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { isPlaying: false, currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); });
+    theaterPlayer.on('seeked', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); });
   }
 
   // B. PDF Mount
@@ -685,6 +714,7 @@
   window.openBookReader = async function(bookId, pdfUrl, title, startPage = 1) {
     if(!pdfUrl) { alert("No PDF file attached to this book."); return; }
     await setDoc(watchPartyDoc, { mediaType: 'pdf', url: pdfUrl, title: title, currentPage: startPage, bookId: bookId, updatedAt: serverTimestamp() });
+    updatePresence(`Reading ${title}`);
     logActivity(`Opened book: ${title}`, "📚");
   }
 
@@ -725,11 +755,14 @@
     const currentMedia = slot.querySelector('video') || slot.querySelector('iframe');
     
     if(!theaterPlayer || !currentMedia || (currentMedia.getAttribute('src') !== d.url && (!currentMedia.src || !currentMedia.src.includes(d.url.match(/([a-zA-Z0-9_-]{11})/)?.[0] || 'NONE')))) {
-      loadMediaIntoTheater(d.url, d.mediaType);
+      loadMediaIntoTheater(d.url, d.mediaType, d.title);
       return; 
     }
 
     if (theaterPlayer) {
+      // DEBOUNCING APPLIED HERE
+      if (d.senderId === currentUser.id) return; 
+
       if (Math.abs(theaterPlayer.currentTime - d.currentTime) > 1.5) { isRemoteSyncing = true; theaterPlayer.currentTime = d.currentTime; setTimeout(() => isRemoteSyncing = false, 1000); }
       if (d.isPlaying && !theaterPlayer.playing) { isRemoteSyncing = true; theaterPlayer.play().catch(e => console.log("Autoplay blocked. Tap video.")); setTimeout(() => isRemoteSyncing = false, 500); }
       if (!d.isPlaying && theaterPlayer.playing) { isRemoteSyncing = true; theaterPlayer.pause(); setTimeout(() => isRemoteSyncing = false, 500); }
@@ -737,7 +770,7 @@
   });
 
   document.getElementById('btn-sync-play').addEventListener('click', async () => {
-    if (theaterPlayer) { await updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, isPlaying: theaterPlayer.playing, updatedAt: serverTimestamp() }); logActivity("Forced media sync", "🔄"); }
+    if (theaterPlayer) { await updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, isPlaying: theaterPlayer.playing, senderId: currentUser.id, updatedAt: serverTimestamp() }); logActivity("Forced media sync", "🔄"); }
   });
 
   // ==========================================
@@ -871,6 +904,22 @@
 
   function initLiveSync() {
     onSnapshot(doc(db, 'system', 'analytics'), (snap) => { if(snap.exists()) document.getElementById('cc-views').textContent = snap.data().views || '--'; });
+    
+    // Global Presence Listener Added Here
+    onSnapshot(presenceDoc, (snap) => {
+      if(!snap.exists() || !currentUser) return;
+      const data = snap.data();
+      const partnerId = currentUser.id === 'con' ? 'cryeteria' : 'con';
+      const partnerData = data[partnerId];
+      const presenceEl = document.getElementById('partner-presence');
+      
+      if(partnerData && partnerData.status) {
+        presenceEl.style.display = 'block';
+        const isOnline = partnerData.status !== 'Offline' && partnerData.status !== 'Away';
+        presenceEl.innerHTML = `<span style="color:${isOnline ? 'var(--con)' : 'var(--ink-soft)'};">●</span> ${PEOPLE[partnerId === 'con' ? 'justibadx@gmail.com' : 'theibadhasan@gmail.com'].name}: ${partnerData.status}`;
+      }
+    });
+
     onSnapshot(doc(db, 'system', 'doodle'), (snap) => { if (snap.exists() && snap.data().image) { const img = new Image(); img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; img.src = snap.data().image; if (canvasHistory.length === 0) canvasHistory.push(snap.data().image); } });
     onSnapshot(doc(db, 'system', 'scratchpad'), (snap) => { if(snap.exists() && document.activeElement !== document.getElementById('shared-scratchpad')) document.getElementById('shared-scratchpad').value = snap.data().text || ''; });
     onSnapshot(query(collection(db, 'activity'), orderBy('timestamp', 'desc'), limit(20)), (snap) => { const feed = document.getElementById('unified-activity-log'); feed.innerHTML = ''; if(snap.empty) { feed.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">No activity.</p>'; return; } snap.forEach(d => { const a = d.data(); const tStr = a.timestamp ? a.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''; feed.innerHTML += `<div class="activity-log-item"><span style="font-size:16px;">${a.icon||'•'}</span><div style="flex:1;"><p style="font-size:13px;"><b>${a.user}</b> ${a.text}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${tStr}</p></div></div>`; }); });
