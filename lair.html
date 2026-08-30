@@ -7,7 +7,6 @@
 <title>The Lair</title>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
@@ -123,7 +122,7 @@
   .khaadi-glass-btn:hover { border-color: var(--accent); }
   .khaadi-glass-btn svg circle.hold-ring { transition: stroke-dashoffset 0.1s linear; transform: rotate(-90deg); transform-origin: 50% 50%; }
 
-  /* Media UI & Co-Watching */
+  /* Media UI & Content Dock */
   .scroll-row { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 14px; scroll-snap-type: x mandatory; scrollbar-width: thin; }
   .scroll-row::-webkit-scrollbar { height: 6px; }
   .scroll-row::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
@@ -134,21 +133,22 @@
   .title-name { font-size: 13px; font-weight: 500; margin-bottom: 4px; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pill { display: inline-block; font-family: var(--font-mono); font-size: 10px; padding: 3px 8px; border-radius: 12px; background:var(--line); width: max-content; }
   
-  /* Co-Watch Theater Frame */
-  .theater-container { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--line); margin-bottom: 16px; }
+  /* Unified Canvas Framework */
+  .theater-container { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--line); margin-bottom: 24px; }
+  
+  /* Content Dock Toggles */
+  .dock-btn { font-family: var(--font-mono); font-size: 12px; background: transparent; border: none; padding: 8px 16px; color: var(--ink-soft); cursor: pointer; transition: color 0.2s; position: relative; }
+  .dock-btn.active { color: var(--ink); font-weight: 600; }
+  .dock-btn.active::after { content: ''; position: absolute; bottom: -4px; left: 16px; right: 16px; height: 2px; background: var(--ink); border-radius: 2px; }
+  
+  .yt-thumb { width: 100%; aspect-ratio: 16/9; background: #1a1a1a center/cover; border-radius: 8px; margin-bottom: 8px; position:relative; }
+  .yt-duration { position:absolute; bottom:6px; right:6px; background:rgba(0,0,0,0.8); color:#fff; font-size:10px; font-family:var(--font-mono); padding:2px 4px; border-radius:4px; }
 
   /* Drop */
   .storage-gauge-wrapper { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; border-radius: 50%; background: conic-gradient(var(--con) calc(var(--pct) * 1%), var(--line) 0); }
   .storage-gauge-inner { width: 100px; height: 100px; background: var(--bg-card); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
   .drop-zone { border: 2px dashed var(--line); border-radius: var(--radius); padding: 40px 20px; text-align: center; transition: border-color 0.2s, background 0.2s; cursor: pointer; }
   .drop-zone.dragover { border-color: var(--accent); background: rgba(112, 148, 122, 0.05); }
-
-  /* PDF Reader Overlay */
-  #pdf-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.92); backdrop-filter: blur(16px); z-index: 1000; display: none; flex-direction: column; }
-  #pdf-modal.active { display: flex; }
-  .pdf-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; background: var(--bg-card); border-bottom: 1px solid var(--line); }
-  .pdf-canvas-container { flex: 1; overflow: auto; display: flex; justify-content: center; align-items: center; padding: 20px; }
-  #pdf-canvas { max-width: 100%; max-height: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.8); }
 
   .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(12px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
   .modal-overlay.active { opacity: 1; pointer-events: auto; }
@@ -179,8 +179,8 @@
       <input type="text" id="cmd-input" placeholder="Type a command..." autocomplete="off">
       <div id="cmd-results" style="display:flex; flex-direction:column; max-height:300px; overflow-y:auto;">
         <div class="cmd-item" data-action="nav:dashboard"><span class="cmd-item-icon">Nav</span> <span>Go to Dashboard</span></div>
-        <div class="cmd-item" data-action="nav:drop"><span class="cmd-item-icon">File</span> <span>Open Lair Drop</span></div>
-        <div class="cmd-item" data-action="nav:theater"><span class="cmd-item-icon">Watch</span> <span>Open Theater & Voice Room</span></div>
+        <div class="cmd-item" data-action="nav:theater"><span class="cmd-item-icon">Watch</span> <span>Open Theater Canvas</span></div>
+        <div class="cmd-item" data-action="nav:drop"><span class="cmd-item-icon">File</span> <span>Open Vault / Drop</span></div>
         <div class="cmd-item" data-action="link:admin.html"><span class="cmd-item-icon">CMS</span> <span>Open Admin Studio</span></div>
         <div class="cmd-item" data-action="func:signout"><span class="cmd-item-icon">Auth</span> <span>Lock Lair & Exit</span></div>
       </div>
@@ -197,25 +197,13 @@
         </div>
         <button class="btn-secondary" id="btn-close-movie-modal" style="padding:4px 10px; font-size:12px;">✕</button>
       </div>
-
       <div style="display:flex; flex-direction:column; gap:16px;">
+        <div><label class="field-label">Status</label><select id="modal-movie-status"><option value="Want to Watch">Want to Watch</option><option value="Watching">Watching</option><option value="Completed">Completed</option></select></div>
         <div>
-          <label class="field-label">Status</label>
-          <select id="modal-movie-status">
-            <option value="Want to Watch">Want to Watch</option>
-            <option value="Watching">Watching</option>
-            <option value="Completed">Completed</option>
-          </select>
-        </div>
-
-        <div>
-          <label class="field-label">Attached Video / Cloudflare Tunnel Stream URL</label>
+          <label class="field-label">Attached Video / Tunnel Stream URL</label>
           <input type="text" id="modal-movie-stream-url" placeholder="https://....trycloudflare.com/awalktoremember.mp4" autocomplete="off">
-          <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-top:6px;">Paste your Tunnel link or R2 video URL to bind this file.</p>
         </div>
-
-        <button class="btn-primary" id="btn-play-movie-direct" style="background:var(--con); color:#0A0A0A;">▶ Play in Theater Now</button>
-        
+        <button class="btn-primary" id="btn-play-movie-direct" style="background:var(--con); color:#0A0A0A;">▶ Play in Theater</button>
         <div style="display:flex; gap:10px; margin-top:4px;">
           <button class="btn-secondary" id="btn-save-movie-details" style="flex:1;">Save</button>
           <button class="btn-warn" id="btn-delete-movie" style="flex:1;">Remove</button>
@@ -224,19 +212,16 @@
     </div>
   </div>
 
-  <!-- In-Browser PDF Reader Modal -->
-  <div id="pdf-modal">
-    <div class="pdf-toolbar">
-      <div><span id="pdf-title" style="font-family:var(--font-display); font-size:16px; font-weight:600;">Reading...</span></div>
-      <div style="display:flex; gap:12px; align-items:center;">
-        <span style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft);">Page <span id="pdf-current-page">1</span> of <span id="pdf-total-pages">1</span></span>
-        <button class="btn-secondary" id="pdf-prev" style="padding:6px 12px; font-size:11px;">Prev</button>
-        <button class="btn-secondary" id="pdf-next" style="padding:6px 12px; font-size:11px;">Next</button>
-        <button class="btn-warn" id="pdf-close" style="padding:6px 12px; font-size:11px;">Close</button>
+  <!-- Add Book Modal -->
+  <div class="modal-overlay" id="add-book-modal">
+    <div class="modal-content">
+      <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:16px;">Add PDF Book</h2>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <input type="text" id="book-title-input" placeholder="Book Title..." autocomplete="off">
+        <input type="text" id="book-pdf-url" placeholder="Paste R2 PDF file URL..." autocomplete="off">
+        <button class="btn-primary" id="btn-add-pdf-book" style="margin-top:8px;">Add to Library</button>
+        <button class="btn-secondary" onclick="document.getElementById('add-book-modal').classList.remove('active');">Cancel</button>
       </div>
-    </div>
-    <div class="pdf-canvas-container">
-      <canvas id="pdf-canvas"></canvas>
     </div>
   </div>
 
@@ -246,10 +231,8 @@
       <div class="brand"><svg width="20" height="20" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg></div>
       <nav class="pill-nav">
         <a data-target="dashboard" class="lair-nav-link active">Home</a>
-        <a data-target="drop" class="lair-nav-link">Drop</a>
+        <a data-target="drop" class="lair-nav-link">Vault</a>
         <a data-target="theater" class="lair-nav-link">Theater</a>
-        <a data-target="books" class="lair-nav-link">Books</a>
-        <a data-target="games" class="lair-nav-link">Chess</a>
         <a href="admin.html" class="lair-nav-link" style="color:var(--warn);">Admin</a>
       </nav>
       <div class="top-right"><span class="chip"><span class="dot" id="me-dot"></span></span><button class="signout" id="signout" style="color:var(--ink-faint); font-family:var(--font-mono); font-size:11px;">Exit</button></div>
@@ -261,7 +244,7 @@
     <section id="view-dashboard" class="view-container active">
       <div class="status-strip">
         <div class="cmd-widget"><h3>Dubai Weather</h3><div><p id="cc-time" style="font-family:var(--font-display); font-size:26px;">--:--</p><p id="cc-weather" style="font-family:var(--font-mono); color:var(--ink-soft); font-size:12px;">Fetching data...</p></div></div>
-        <div class="cmd-widget"><h3>Active Media</h3><div style="display:flex; flex-direction:column; gap:6px;"><p style="font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="color:var(--ink-soft);">Watching:</span> <span id="cc-watching" style="font-weight:500;">--</span></p><p style="font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="color:var(--ink-soft);">Reading:</span> <span id="cc-reading" style="font-weight:500;">--</span></p></div></div>
+        <div class="cmd-widget"><h3>Active Media</h3><div style="display:flex; flex-direction:column; gap:6px;"><p style="font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="color:var(--ink-soft);">Theater:</span> <span id="cc-watching" style="font-weight:500;">--</span></p></div></div>
         <div class="cmd-widget"><h3>Public Traffic</h3><div><p id="cc-views" style="font-family:var(--font-display); font-size:26px;">--</p><p style="font-family:var(--font-mono); color:var(--ink-soft); font-size:12px;">Unique Views Tracked</p></div></div>
       </div>
 
@@ -272,14 +255,12 @@
           <span id="sync-status-indicator" style="font-family:var(--font-mono); font-size:11px; color:var(--con);">● Online Sync</span>
         </div>
         
-        <!-- Daily Intention Line -->
         <div style="display:flex; gap:10px; margin-bottom:16px;">
           <input type="text" id="intention-input" placeholder="Set today's primary intention..." autocomplete="off" style="min-width:0;">
           <button class="btn-secondary" id="btn-save-intention" style="width:auto; padding:0 18px;">Set</button>
         </div>
 
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:16px;">
-          <!-- Ibad's Glass -->
           <div class="khaadi-glass-btn" id="btn-log-ibad-water" data-target="Ibad (Ayn)">
             <svg width="44" height="54" viewBox="0 0 100 130" style="margin-bottom:8px; overflow:visible;">
               <circle cx="50" cy="65" r="54" fill="none" stroke="var(--line)" stroke-width="4"/>
@@ -291,8 +272,6 @@
             <p style="font-weight:600; font-size:13px;">Ibad (Ayn)</p>
             <p id="count-ibad-water" style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">0 glasses • Hold 1.5s</p>
           </div>
-          
-          <!-- Con's Glass -->
           <div class="khaadi-glass-btn" id="btn-log-con-water" data-target="Con (Fe)">
             <svg width="44" height="54" viewBox="0 0 100 130" style="margin-bottom:8px; overflow:visible;">
               <circle cx="50" cy="65" r="54" fill="none" stroke="var(--line)" stroke-width="4"/>
@@ -361,16 +340,16 @@
       </section>
     </section>
 
-    <!-- THEATER (Voice, Chat, Media & Watchlist) -->
+    <!-- UNIFIED THEATER CANVAS & CONTENT DOCK -->
     <section id="view-theater" class="view-container">
       <div class="theater-grid">
         
-        <!-- Left: Main Stage (Widescreen Player & Watchlist) -->
+        <!-- Left: Main Stage & Content Dock -->
         <div>
-          <!-- Co-Watch Player Card -->
-          <section class="card theater-card" style="padding:20px;">
-            <div class="card-head" style="margin-bottom:14px;">
-              <h2>Co-Watch Theater</h2>
+          <!-- Unified Canvas (Video & PDF) -->
+          <section class="card theater-card" style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+            <div class="card-head" style="margin-bottom:0;">
+              <h2>Theater Stage</h2>
               <div style="display:flex; gap:8px; flex-wrap: wrap;">
                 <button class="btn-secondary" id="btn-pip" title="Pop Out Video" style="white-space:nowrap;">🖼️ Pop Out</button>
                 <button class="btn-secondary" id="btn-lights-out" style="white-space:nowrap;">💡 Lights Out</button>
@@ -378,42 +357,85 @@
               </div>
             </div>
             
-            <div class="theater-container" id="theater-frame-box">
-              <div id="theater-player-slot" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px; text-align:center; padding:20px;">
-                Select a title from Watchlist or paste a Tunnel link below
+            <div class="theater-container" id="theater-frame-box" style="margin-bottom:0;">
+              <!-- 1. Video Player Container -->
+              <div id="video-view" style="width:100%; height:100%; display:flex;">
+                <div id="theater-player-slot" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px; text-align:center; padding:20px;">
+                  Select media from the Dock below
+                </div>
+              </div>
+              
+              <!-- 2. PDF Reader Container -->
+              <div id="pdf-view" style="width:100%; height:100%; display:none; flex-direction:column; background:var(--bg-card);">
+                <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid var(--line); background: rgba(15,15,15,0.9);">
+                    <span id="pdf-title-display" style="font-weight:600; font-family:var(--font-display); font-size:14px;">Reading...</span>
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <button id="pdf-prev" class="btn-secondary" style="padding:4px 10px;">Prev</button>
+                        <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);" id="pdf-page-info">1 / 1</span>
+                        <button id="pdf-next" class="btn-secondary" style="padding:4px 10px;">Next</button>
+                    </div>
+                </div>
+                <div style="flex:1; overflow:auto; display:flex; align-items:center; justify-content:center; padding:24px;">
+                    <canvas id="pdf-canvas" style="max-height:100%; max-width:100%; box-shadow:0 20px 60px rgba(0,0,0,0.8);"></canvas>
+                </div>
               </div>
             </div>
             
+            <!-- Manual Video Override -->
             <div style="display:flex; gap:10px;">
-              <input type="text" id="cowatch-url-input" placeholder="Paste Cloudflare Tunnel / Video URL..." autocomplete="off" style="flex:1; min-width:0;">
+              <input type="text" id="cowatch-url-input" placeholder="Paste Cloudflare Tunnel / Direct Video URL..." autocomplete="off" style="flex:1; min-width:0;">
               <button class="btn-primary" id="btn-load-cowatch" style="width:auto; padding:0 24px;">Load</button>
             </div>
           </section>
 
-          <!-- Watchlist & TMDB Search Card -->
+          <!-- THE CONTENT DOCK -->
           <section class="card" style="padding:20px;">
-            <div class="card-head" style="margin-bottom:12px;">
-              <h2 style="font-size:17px;">Find Movies & Series (TMDB)</h2>
+            <!-- Dock Tabs -->
+            <div style="display:flex; gap:8px; border-bottom:1px solid var(--line); margin-bottom:16px; padding-bottom:12px;">
+              <button class="dock-btn active" data-dock="dock-yt">YouTube Feed</button>
+              <button class="dock-btn" data-dock="dock-wl">Watchlist</button>
+              <button class="dock-btn" data-dock="dock-bk">Bookshelf</button>
+            </div>
+
+            <!-- Tab 1: YouTube Engine -->
+            <div id="dock-yt" class="dock-pane" style="display:block;">
+              <div style="display:flex; gap:10px; margin-bottom:16px; overflow-x:auto;" class="scroll-row">
+                <button class="btn-secondary yt-chip" data-q="Trending Makeup Tutorial" style="white-space:nowrap; border-radius:20px;">💄 Makeup</button>
+                <button class="btn-secondary yt-chip" data-q="Latest Technology Gadgets" style="white-space:nowrap; border-radius:20px;">💻 Tech</button>
+                <button class="btn-secondary yt-chip" data-q="Fashion Trends Runways" style="white-space:nowrap; border-radius:20px;">👗 Fashion</button>
+                <button class="btn-secondary yt-chip" data-q="Video Essays Cinematography" style="white-space:nowrap; border-radius:20px;">🎬 Essays</button>
+              </div>
+              <div style="display:flex; gap:10px; margin-bottom:16px;">
+                <input type="text" id="yt-search-input" placeholder="Search custom YouTube topics..." autocomplete="off" style="flex:1; min-width:0;">
+                <button class="btn-secondary" id="btn-yt-search" style="width:auto; padding:0 20px;">Search</button>
+              </div>
+              <div id="yt-results" class="scroll-row" style="flex-wrap:wrap; display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:16px;">
+                <p style="font-size:12px; color:var(--ink-soft); grid-column:1/-1;">Click a category chip or search to populate your feed.</p>
+              </div>
+            </div>
+
+            <!-- Tab 2: Shared Watchlist -->
+            <div id="dock-wl" class="dock-pane" style="display:none;">
+              <div style="display:flex; gap:10px; margin-bottom:16px;">
+                <input type="text" id="tmdb-search-input" placeholder="Search movies or shows globally (TMDB)..." autocomplete="off" style="flex:1; min-width:0;">
+                <button class="btn-secondary" id="btn-tmdb-search" style="width:auto; padding:0 20px;">Find</button>
+              </div>
+              <div id="tmdb-results" class="scroll-row" style="display:none; margin-bottom:20px; border-bottom:1px solid var(--line); padding-bottom:16px;"></div>
+              
+              <div id="shared-watchlist" class="scroll-row"></div>
+            </div>
+
+            <!-- Tab 3: PDF Bookshelf -->
+            <div id="dock-bk" class="dock-pane" style="display:none;">
+              <button class="btn-secondary" onclick="document.getElementById('add-book-modal').classList.add('active');" style="margin-bottom:16px; width:auto;">+ Add New Book</button>
+              <div id="shared-library" class="scroll-row"></div>
             </div>
             
-            <div style="display:flex; gap:10px; margin-bottom:14px;">
-              <input type="text" id="tmdb-search-input" placeholder="Search movies or shows to add..." autocomplete="off" style="flex:1; min-width:0;">
-              <button class="btn-secondary" id="btn-tmdb-search" style="width:auto; padding:0 20px;">Search</button>
-            </div>
-
-            <div id="tmdb-results" class="scroll-row" style="display:none; margin-bottom:16px; border-bottom:1px solid var(--line); padding-bottom:16px;"></div>
-
-            <div class="card-head" style="margin-bottom:12px; margin-top:8px;">
-              <h2 style="font-size:17px;">Shared Watchlist</h2>
-              <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">Tap card to play / attach stream</span>
-            </div>
-            <div id="shared-watchlist" class="scroll-row"></div>
           </section>
         </div>
 
         <!-- Right: Comms (Voice Room & Theater Chat) -->
         <div>
-          <!-- Voice Room -->
           <div class="voice-card">
             <div style="display:flex; justify-content:space-between; align-items:center;">
               <h2 style="font-family:var(--font-display); font-size:16px;">Voice Room</h2>
@@ -429,45 +451,21 @@
           </div>
           <audio id="remote-audio" autoplay style="display:none;"></audio> 
 
-          <!-- Theater Chat -->
           <section class="card" style="padding:20px; display:flex; flex-direction:column; flex:1;">
             <div class="card-head" style="margin-bottom:12px;"><h2 style="font-size:16px;">Theater Chat</h2></div>
-            <div id="chat-window" style="height:360px; flex:1; margin-bottom:12px;"></div>
+            <div id="chat-window" style="height:420px; flex:1; margin-bottom:12px;"></div>
             <div style="display:flex; gap:10px;">
               <input type="text" id="chat-input" placeholder="Message..." autocomplete="off" style="flex:1; min-width:0;">
-              <button class="btn-primary" id="btn-send-chat" style="width:auto; padding:0 20px;">Send</button>
+              <button class="btn-primary" id="btn-send-chat" style="width:auto; padding:0 16px;">Send</button>
             </div>
           </section>
         </div>
 
       </div>
     </section>
-
-    <!-- Books & PDF Reader -->
-    <section id="view-books" class="view-container">
-      <section class="card" style="margin-bottom:24px;">
-        <div class="card-head"><h2 style="font-size:17px;">Add PDF Book</h2></div>
-        <div style="display:flex; flex-direction:column; gap:12px;">
-          <input type="text" id="book-title-input" placeholder="Book Title..." autocomplete="off">
-          <input type="text" id="book-pdf-url" placeholder="Paste R2 PDF file URL..." autocomplete="off">
-          <button class="btn-primary" id="btn-add-pdf-book" style="width:auto;">Add to Library</button>
-        </div>
-      </section>
-      <section class="card"><div class="card-head"><h2 style="font-size:17px;">Library (Tap to Read)</h2></div><div id="shared-library" class="scroll-row"></div></section>
-    </section>
-
-    <!-- Chess -->
-    <section id="view-games" class="view-container">
-      <section class="card">
-        <div class="card-head"><h2 style="font-size:17px;">Lair Chess</h2><button class="btn-secondary" id="btn-reset-chess" style="width:auto; padding:6px 12px; font-size:11px;">Reset</button></div>
-        <div style="display:flex; flex-direction:column; gap:20px; align-items:center;"><div id="chess-board" style="width:100%; max-width:420px;"></div><div style="width:100%; text-align:center;"><p class="field-label">Status</p><p id="chess-status" style="margin-bottom:16px; font-weight:500;">Tap piece, then tap destination.</p></div></div>
-      </section>
-    </section>
   </main>
 
 <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -477,6 +475,10 @@
   const WORKER_URL = "https://portfolio-uploader.theibadhasan.workers.dev/";
   const PUBLIC_R2_URL = "https://pub-3a5505322c50496598874826433f7e72.r2.dev/";
   const GS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw8Pjcz0b4JBxKBix9RYOWHtuY5h3HJdhu4cFjLbZerFu36U-gShWz4_85sY8pFva3F/exec";
+  
+  /* IMPORTANT: You must insert your actual YouTube Data API v3 Key here to make the feed work. */
+  const YOUTUBE_API_KEY = "YOUR_YOUTUBE_API_KEY_HERE"; 
+  const TMDB_API_KEY = "4b52b76174a761002dc02aa11e0394c8";
 
   const PEOPLE = { "justibadx@gmail.com":{name:"Con",id:"con",color:"#70947A"}, "theibadhasan@gmail.com":{name:"Cryeteria",id:"cryeteria",color:"#7A9BC2"} };
   const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
@@ -503,7 +505,16 @@
       const activeLairView = document.getElementById(`view-${target}`); if (activeLairView) activeLairView.classList.add('active'); 
       window.scrollTo(0, 0); e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       if (target === 'dashboard') initCanvasResolution();
-      if (target === 'games') { initChessEngine(); if(chessBoard) setTimeout(()=>chessBoard.resize(), 100); }
+    });
+  });
+
+  // Content Dock Toggles
+  document.querySelectorAll('.dock-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.querySelectorAll('.dock-btn').forEach(b => { b.classList.remove('active'); b.style.color='var(--ink-soft)'; });
+      e.target.classList.add('active'); e.target.style.color='var(--ink)';
+      document.querySelectorAll('.dock-pane').forEach(p => p.style.display='none');
+      document.getElementById(e.target.getAttribute('data-dock')).style.display='block';
     });
   });
 
@@ -542,176 +553,52 @@
   }
 
   // ==========================================
-  // VITALITY, HOLD-TO-LOG & OFFLINE QUEUE
+  // VITALITY & HOLD-TO-LOG
   // ==========================================
-  function initVitalityModule() {
-    updateWaterCounts();
-    setupHoldToLog('btn-log-ibad-water');
-    setupHoldToLog('btn-log-con-water');
-    window.addEventListener('online', flushOfflineQueue);
-    checkOnlineStatus();
-  }
-
-  function checkOnlineStatus() {
-    const indicator = document.getElementById('sync-status-indicator');
-    if(navigator.onLine) {
-      indicator.textContent = "● Online Sync";
-      indicator.style.color = "var(--con)";
-      flushOfflineQueue();
-    } else {
-      indicator.textContent = "○ Offline Mode";
-      indicator.style.color = "var(--warn)";
-    }
-  }
-  window.addEventListener('online', checkOnlineStatus);
-  window.addEventListener('offline', checkOnlineStatus);
-
+  function initVitalityModule() { updateWaterCounts(); setupHoldToLog('btn-log-ibad-water'); setupHoldToLog('btn-log-con-water'); window.addEventListener('online', flushOfflineQueue); checkOnlineStatus(); }
+  function checkOnlineStatus() { const indicator = document.getElementById('sync-status-indicator'); if(navigator.onLine) { indicator.textContent = "● Online Sync"; indicator.style.color = "var(--con)"; flushOfflineQueue(); } else { indicator.textContent = "○ Offline Mode"; indicator.style.color = "var(--warn)"; } }
+  window.addEventListener('online', checkOnlineStatus); window.addEventListener('offline', checkOnlineStatus);
   function setupHoldToLog(elementId) {
-    const el = document.getElementById(elementId);
-    const ring = el.querySelector('.hold-ring');
-    const circumference = 339.29;
-    let timer = null;
-    let startTime = null;
-    const duration = 1500;
-
-    const startHold = (e) => {
-      e.preventDefault();
-      startTime = Date.now();
-      ring.style.strokeDashoffset = circumference;
-      
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        ring.style.strokeDashoffset = circumference - (progress * circumference);
-        
-        if (progress < 1) {
-          timer = requestAnimationFrame(animate);
-        } else {
-          triggerLog(el.getAttribute('data-target'));
-          resetHold();
-        }
-      };
-      timer = requestAnimationFrame(animate);
-    };
-
-    const resetHold = () => {
-      cancelAnimationFrame(timer);
-      ring.style.strokeDashoffset = circumference;
-      startTime = null;
-    };
-
-    el.addEventListener('mousedown', startHold);
-    el.addEventListener('touchstart', startHold);
-    el.addEventListener('mouseup', resetHold);
-    el.addEventListener('mouseleave', resetHold);
-    el.addEventListener('touchend', resetHold);
-    el.addEventListener('touchcancel', resetHold);
+    const el = document.getElementById(elementId); const ring = el.querySelector('.hold-ring'); const circumference = 339.29; let timer = null; let startTime = null; const duration = 1500;
+    const startHold = (e) => { e.preventDefault(); startTime = Date.now(); ring.style.strokeDashoffset = circumference; const animate = () => { const elapsed = Date.now() - startTime; const progress = Math.min(elapsed / duration, 1); ring.style.strokeDashoffset = circumference - (progress * circumference); if (progress < 1) { timer = requestAnimationFrame(animate); } else { triggerLog(el.getAttribute('data-target')); resetHold(); } }; timer = requestAnimationFrame(animate); };
+    const resetHold = () => { cancelAnimationFrame(timer); ring.style.strokeDashoffset = circumference; startTime = null; };
+    el.addEventListener('mousedown', startHold); el.addEventListener('touchstart', startHold); el.addEventListener('mouseup', resetHold); el.addEventListener('mouseleave', resetHold); el.addEventListener('touchend', resetHold); el.addEventListener('touchcancel', resetHold);
   }
-
-  async function triggerLog(targetName) {
-    logVitalityData('water', { target: targetName, volume: '250ml' });
-    const key = targetName.includes('Ibad') ? 'ibad_water_cnt' : 'con_water_cnt';
-    let cnt = parseInt(localStorage.getItem(key) || '0') + 1;
-    localStorage.setItem(key, cnt);
-    updateWaterCounts();
-    logActivity(`Logged water (${targetName} glass)`, "💧");
-  }
-
-  async function logVitalityData(type, payload) {
-    const record = { type, user: currentUser.name, ...payload, timestamp: new Date().toISOString() };
-    if (navigator.onLine && GS_WEBHOOK_URL) {
-      try {
-        await fetch(GS_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) });
-      } catch(e) { queueOffline(record); }
-    } else {
-      queueOffline(record);
-    }
-  }
-
-  function queueOffline(record) {
-    let queue = JSON.parse(localStorage.getItem('lair_offline_queue') || '[]');
-    queue.push(record);
-    localStorage.setItem('lair_offline_queue', JSON.stringify(queue));
-    checkOnlineStatus();
-  }
-
-  async function flushOfflineQueue() {
-    let queue = JSON.parse(localStorage.getItem('lair_offline_queue') || '[]');
-    if(queue.length === 0 || !GS_WEBHOOK_URL) return;
-    try {
-      for(let rec of queue) {
-        await fetch(GS_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rec) });
-      }
-      localStorage.removeItem('lair_offline_queue');
-      checkOnlineStatus();
-    } catch(e) {}
-  }
-
-  document.getElementById('btn-log-meal').addEventListener('click', () => {
-    const val = document.getElementById('meal-input').value.trim();
-    if(!val) return;
-    logVitalityData('meal', { note: val });
-    document.getElementById('meal-input').value = '';
-    logActivity(`Logged meal/note: ${val}`, "🥗");
-    alert("Vitality note logged!");
-  });
-
-  document.getElementById('btn-save-intention').addEventListener('click', () => {
-    const val = document.getElementById('intention-input').value.trim();
-    if(!val) return;
-    localStorage.setItem('daily_intention', val);
-    logActivity(`Set daily intention: ${val}`, "🎯");
-    alert("Intention saved!");
-  });
-
-  function updateWaterCounts() {
-    document.getElementById('count-ibad-water').textContent = `${localStorage.getItem('ibad_water_cnt') || 0} glasses • Hold 1.5s`;
-    document.getElementById('count-con-water').textContent = `${localStorage.getItem('con_water_cnt') || 0} glasses • Hold 1.5s`;
-    const savedIntention = localStorage.getItem('daily_intention');
-    if(savedIntention) document.getElementById('intention-input').value = savedIntention;
-  }
+  async function triggerLog(targetName) { logVitalityData('water', { target: targetName, volume: '250ml' }); const key = targetName.includes('Ibad') ? 'ibad_water_cnt' : 'con_water_cnt'; let cnt = parseInt(localStorage.getItem(key) || '0') + 1; localStorage.setItem(key, cnt); updateWaterCounts(); logActivity(`Logged water (${targetName} glass)`, "💧"); }
+  async function logVitalityData(type, payload) { const record = { type, user: currentUser.name, ...payload, timestamp: new Date().toISOString() }; if (navigator.onLine && GS_WEBHOOK_URL) { try { await fetch(GS_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(record) }); } catch(e) { queueOffline(record); } } else { queueOffline(record); } }
+  function queueOffline(record) { let queue = JSON.parse(localStorage.getItem('lair_offline_queue') || '[]'); queue.push(record); localStorage.setItem('lair_offline_queue', JSON.stringify(queue)); checkOnlineStatus(); }
+  async function flushOfflineQueue() { let queue = JSON.parse(localStorage.getItem('lair_offline_queue') || '[]'); if(queue.length === 0 || !GS_WEBHOOK_URL) return; try { for(let rec of queue) { await fetch(GS_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rec) }); } localStorage.removeItem('lair_offline_queue'); checkOnlineStatus(); } catch(e) {} }
+  document.getElementById('btn-log-meal').addEventListener('click', () => { const val = document.getElementById('meal-input').value.trim(); if(!val) return; logVitalityData('meal', { note: val }); document.getElementById('meal-input').value = ''; logActivity(`Logged meal/note: ${val}`, "🥗"); });
+  document.getElementById('btn-save-intention').addEventListener('click', () => { const val = document.getElementById('intention-input').value.trim(); if(!val) return; localStorage.setItem('daily_intention', val); logActivity(`Set intention: ${val}`, "🎯"); });
+  function updateWaterCounts() { document.getElementById('count-ibad-water').textContent = `${localStorage.getItem('ibad_water_cnt') || 0} glasses • Hold 1.5s`; document.getElementById('count-con-water').textContent = `${localStorage.getItem('con_water_cnt') || 0} glasses • Hold 1.5s`; const savedIntention = localStorage.getItem('daily_intention'); if(savedIntention) document.getElementById('intention-input').value = savedIntention; }
 
   // ==========================================
   // DISCORD-STYLE VOICE ROOM
   // ==========================================
   const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
-  let peerConn = null; let localStream = null; let voiceData = null;
-  const voiceDoc = doc(db, 'system', 'voice_room');
-  const joinBtn = document.getElementById('btn-join-voice'); 
-  const muteBtn = document.getElementById('btn-voice-mute'); 
-  const leaveBtn = document.getElementById('btn-leave-voice');
-  
+  let peerConn = null; let localStream = null; let voiceData = null; const voiceDoc = doc(db, 'system', 'voice_room');
+  const joinBtn = document.getElementById('btn-join-voice'); const muteBtn = document.getElementById('btn-voice-mute'); const leaveBtn = document.getElementById('btn-leave-voice');
   async function initMic() { try { localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false }); return true; } catch (e) { alert("Mic access needed."); return false; } }
   
   async function joinVoiceRoom() {
     if (!await initMic()) return;
-    
     if (!voiceData || voiceData.status === 'idle') {
       updateVoiceUI('connecting', 'Opening Room...');
-      peerConn = new RTCPeerConnection(rtcConfig); 
-      localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
+      peerConn = new RTCPeerConnection(rtcConfig); localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
       peerConn.ontrack = e => { document.getElementById('remote-audio').srcObject = e.streams[0]; };
-      
       const offer = await peerConn.createOffer(); await peerConn.setLocalDescription(offer);
       await setDoc(voiceDoc, { offer: { type: offer.type, sdp: offer.sdp }, host: currentUser.name, status: 'waiting', updatedAt: serverTimestamp() });
       peerConn.onicecandidate = e => { if (e.candidate) updateDoc(voiceDoc, { [`hostIce_${Date.now()}`]: e.candidate.toJSON() }, {merge:true}); };
-      
-      updateVoiceUI('waiting', 'In Room (Alone)');
-      logActivity("Opened the voice room", "🎙");
-      
+      updateVoiceUI('waiting', 'In Room (Alone)'); logActivity("Opened the voice room", "🎙");
     } else if (voiceData.status === 'waiting' && voiceData.host !== currentUser.name) {
       updateVoiceUI('connecting', 'Joining Room...');
-      peerConn = new RTCPeerConnection(rtcConfig); 
-      localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
+      peerConn = new RTCPeerConnection(rtcConfig); localStream.getTracks().forEach(t => peerConn.addTrack(t, localStream));
       peerConn.ontrack = e => { document.getElementById('remote-audio').srcObject = e.streams[0]; };
-      
       await peerConn.setRemoteDescription(new RTCSessionDescription(voiceData.offer));
       const answer = await peerConn.createAnswer(); await peerConn.setLocalDescription(answer);
       await updateDoc(voiceDoc, { answer: { type: answer.type, sdp: answer.sdp }, status: 'connected', updatedAt: serverTimestamp() }, {merge:true});
       peerConn.onicecandidate = e => { if (e.candidate) updateDoc(voiceDoc, { [`guestIce_${Date.now()}`]: e.candidate.toJSON() }, {merge:true}); };
-      
-      updateVoiceUI('connected', `In Room with ${voiceData.host}`);
-      logActivity(`Joined ${voiceData.host} in voice`, "🎙");
+      updateVoiceUI('connected', `In Room with ${voiceData.host}`); logActivity(`Joined ${voiceData.host} in voice`, "🎙");
     }
   }
 
@@ -723,379 +610,250 @@
   }
 
   onSnapshot(voiceDoc, async (snap) => {
-    if (!snap.exists()) return; 
-    voiceData = snap.data();
-    
+    if (!snap.exists()) return; voiceData = snap.data();
     if (voiceData.status === 'idle' && peerConn) leaveVoiceRoom(false);
-    
-    if (voiceData.status === 'waiting' && voiceData.host !== currentUser.name && !peerConn) {
-      document.getElementById('voice-status-text').textContent = `${voiceData.host} is in the room`;
-      document.getElementById('voice-indicator').style.background = 'var(--warn)';
-    }
-
-    if (voiceData.status === 'connected' && voiceData.host === currentUser.name && peerConn && !peerConn.currentRemoteDescription && voiceData.answer) { 
-      await peerConn.setRemoteDescription(new RTCSessionDescription(voiceData.answer)); 
-      updateVoiceUI('connected', 'Live Sync Active'); 
-    }
-    
-    if (peerConn && peerConn.remoteDescription) { 
-      Object.keys(voiceData).forEach(key => { 
-        if ((voiceData.host === currentUser.name && key.startsWith('guestIce_')) || (voiceData.host !== currentUser.name && key.startsWith('hostIce_'))) { 
-          peerConn.addIceCandidate(new RTCIceCandidate(voiceData[key])).catch(e=>{}); 
-        } 
-      }); 
-    }
+    if (voiceData.status === 'waiting' && voiceData.host !== currentUser.name && !peerConn) { document.getElementById('voice-status-text').textContent = `${voiceData.host} is in the room`; document.getElementById('voice-indicator').style.background = 'var(--warn)'; }
+    if (voiceData.status === 'connected' && voiceData.host === currentUser.name && peerConn && !peerConn.currentRemoteDescription && voiceData.answer) { await peerConn.setRemoteDescription(new RTCSessionDescription(voiceData.answer)); updateVoiceUI('connected', 'Live Sync Active'); }
+    if (peerConn && peerConn.remoteDescription) { Object.keys(voiceData).forEach(key => { if ((voiceData.host === currentUser.name && key.startsWith('guestIce_')) || (voiceData.host !== currentUser.name && key.startsWith('hostIce_'))) { peerConn.addIceCandidate(new RTCIceCandidate(voiceData[key])).catch(e=>{}); } }); }
   });
 
-  joinBtn.addEventListener('click', joinVoiceRoom);
-  leaveBtn.addEventListener('click', () => leaveVoiceRoom(true));
-  muteBtn.addEventListener('click', () => { 
-    if (localStream) { 
-      const audioTrack = localStream.getAudioTracks()[0]; 
-      audioTrack.enabled = !audioTrack.enabled; 
-      muteBtn.textContent = audioTrack.enabled ? 'Mute' : 'Unmute'; 
-      muteBtn.style.color = audioTrack.enabled ? 'var(--ink)' : 'var(--warn)'; 
-    } 
-  });
-
-  function updateVoiceUI(state, text) {
-    document.getElementById('voice-status-text').textContent = text; const ind = document.getElementById('voice-indicator');
-    if (state === 'idle') { joinBtn.style.display = 'block'; muteBtn.style.display = 'none'; leaveBtn.style.display = 'none'; ind.classList.remove('active'); ind.style.background = 'var(--ink-soft)'; } 
-    else if (state === 'waiting') { joinBtn.style.display = 'none'; leaveBtn.style.display = 'block'; ind.classList.add('active'); ind.style.background = 'var(--warn)'; } 
-    else if (state === 'connected') { joinBtn.style.display = 'none'; leaveBtn.style.display = 'block'; muteBtn.style.display = 'block'; muteBtn.textContent = 'Mute'; muteBtn.style.color='var(--ink)'; ind.classList.add('active'); ind.style.background = 'var(--con)'; }
-  }
+  joinBtn.addEventListener('click', joinVoiceRoom); leaveBtn.addEventListener('click', () => leaveVoiceRoom(true));
+  muteBtn.addEventListener('click', () => { if (localStream) { const audioTrack = localStream.getAudioTracks()[0]; audioTrack.enabled = !audioTrack.enabled; muteBtn.textContent = audioTrack.enabled ? 'Mute' : 'Unmute'; muteBtn.style.color = audioTrack.enabled ? 'var(--ink)' : 'var(--warn)'; } });
+  function updateVoiceUI(state, text) { document.getElementById('voice-status-text').textContent = text; const ind = document.getElementById('voice-indicator'); if (state === 'idle') { joinBtn.style.display = 'block'; muteBtn.style.display = 'none'; leaveBtn.style.display = 'none'; ind.classList.remove('active'); ind.style.background = 'var(--ink-soft)'; } else if (state === 'waiting') { joinBtn.style.display = 'none'; leaveBtn.style.display = 'block'; ind.classList.add('active'); ind.style.background = 'var(--warn)'; } else if (state === 'connected') { joinBtn.style.display = 'none'; leaveBtn.style.display = 'block'; muteBtn.style.display = 'block'; muteBtn.textContent = 'Mute'; muteBtn.style.color='var(--ink)'; ind.classList.add('active'); ind.style.background = 'var(--con)'; } }
 
   // ==========================================
-  // CO-WATCHING, PLYR.JS, PIP & THEATER SYNC
+  // UNIFIED CANVAS ENGINE (VIDEO + PDF)
   // ==========================================
   const watchPartyDoc = doc(db, 'system', 'watch_party');
-  let theaterPlayer = null;
-  let isRemoteSyncing = false;
+  let theaterPlayer = null; let isRemoteSyncing = false;
+  let pdfDoc_ = null, pageNum_ = 1, pageRendering_ = false, pageNumPending_ = null, scale_ = 1.3;
+  const canvas_ = document.getElementById('pdf-canvas'); const ctx_ = canvas_.getContext('2d');
 
   document.getElementById('btn-lights-out').addEventListener('click', () => {
-    const overlay = document.getElementById('cinematic-overlay');
-    const card = document.querySelector('.theater-card');
-    overlay.classList.toggle('active');
-    card.classList.toggle('lights-out');
+    document.getElementById('cinematic-overlay').classList.toggle('active');
+    document.querySelector('.theater-card').classList.toggle('lights-out');
   });
 
-  // Native Picture in Picture Handler
   document.getElementById('btn-pip').addEventListener('click', async () => {
     const vid = document.querySelector('#theater-video');
-    if (!vid) {
-      alert("Load a video first to pop it out.");
-      return;
-    }
-    try {
-      if (document.pictureInPictureElement) {
-        await document.exitPictureInPicture();
-      } else if (document.pictureInPictureEnabled) {
-        await vid.requestPictureInPicture();
-      }
-    } catch (err) {
-      console.log("PiP Error: ", err);
-    }
+    if (!vid) { alert("Load a video first."); return; }
+    try { if (document.pictureInPictureElement) { await document.exitPictureInPicture(); } else if (document.pictureInPictureEnabled) { await vid.requestPictureInPicture(); } } catch (err) {}
   });
 
+  // Switcher Logic
+  function setCanvasMode(mode) {
+    if(mode === 'pdf') { document.getElementById('video-view').style.display = 'none'; document.getElementById('pdf-view').style.display = 'flex'; if(theaterPlayer){ theaterPlayer.pause(); } }
+    else { document.getElementById('pdf-view').style.display = 'none'; document.getElementById('video-view').style.display = 'flex'; }
+  }
+
+  // A. Video Mount
   function loadMediaIntoTheater(url, type) {
+    setCanvasMode('video');
     const slot = document.getElementById('theater-player-slot');
-    
     if(theaterPlayer) { theaterPlayer.destroy(); theaterPlayer = null; }
     slot.innerHTML = '';
     
     if(type === 'youtube') {
-      const ytId = extractYouTubeId(url);
-      slot.innerHTML = `<div class="plyr__video-embed" id="theater-video"><iframe src="https://www.youtube.com/embed/${ytId}?origin=https://plyr.io&amp;iv_load_policy=3&amp;modestbranding=1&amp;playsinline=1&amp;showinfo=0&amp;rel=0&amp;enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe></div>`;
+      const ytId = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+      const parsedId = (ytId && ytId[2].length === 11) ? ytId[2] : url;
+      slot.innerHTML = `<div class="plyr__video-embed" id="theater-video"><iframe src="https://www.youtube.com/embed/${parsedId}?origin=https://plyr.io&amp;iv_load_policy=3&amp;modestbranding=1&amp;playsinline=1&amp;showinfo=0&amp;rel=0&amp;enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe></div>`;
     } else {
       slot.innerHTML = `<video id="theater-video" playsinline controls crossorigin><source src="${url}" type="video/mp4" /></video>`;
     }
     
-    theaterPlayer = new Plyr('#theater-video', {
-      controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'pip', 'fullscreen'],
-      keyboard: { focused: true, global: true }
-    });
-    
+    theaterPlayer = new Plyr('#theater-video', { controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'pip', 'fullscreen'], keyboard: { focused: true, global: true } });
     document.documentElement.style.setProperty('--plyr-color-main', 'var(--accent)');
-    logActivity(`Loaded co-watch media`, "📺");
-    attachPlayerSyncEvents();
-  }
-
-  function extractYouTubeId(url) {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : url;
-  }
-
-  function attachPlayerSyncEvents() {
-    if(!theaterPlayer) return;
-    theaterPlayer.on('play', () => {
-      if(isRemoteSyncing) return;
-      updateDoc(watchPartyDoc, { isPlaying: true, currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() });
-    });
-    theaterPlayer.on('pause', () => {
-      if(isRemoteSyncing) return; 
-      updateDoc(watchPartyDoc, { isPlaying: false, currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() });
-    });
-    theaterPlayer.on('seeked', () => {
-      if(isRemoteSyncing) return;
-      updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() });
-    });
-  }
-
-  document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
-    const url = document.getElementById('cowatch-url-input').value.trim();
-    if(!url) return;
-    const type = url.includes('youtube.com') || url.includes('youtu.be') ? 'youtube' : 'r2';
-    await setDoc(watchPartyDoc, { url, type, isPlaying: true, currentTime: 0, updatedAt: serverTimestamp() });
-    loadMediaIntoTheater(url, type);
-  });
-
-  onSnapshot(watchPartyDoc, (snap) => {
-    if(!snap.exists()) return;
-    const d = snap.data();
-    if(!d.url) return;
     
-    const slot = document.getElementById('theater-player-slot');
-    const currentMedia = slot.querySelector('video') || slot.querySelector('iframe');
-    
-    if(!theaterPlayer || !currentMedia || (currentMedia.getAttribute('src') !== d.url && !currentMedia.src.includes(extractYouTubeId(d.url)))) {
-      loadMediaIntoTheater(d.url, d.type);
-      return; 
-    }
-
-    if (theaterPlayer) {
-      if (Math.abs(theaterPlayer.currentTime - d.currentTime) > 1.5) {
-        isRemoteSyncing = true;
-        theaterPlayer.currentTime = d.currentTime;
-        setTimeout(() => isRemoteSyncing = false, 1000);
-      }
-      if (d.isPlaying && !theaterPlayer.playing) {
-        isRemoteSyncing = true;
-        theaterPlayer.play().catch(e => console.log("Autoplay blocked. Tap video once."));
-        setTimeout(() => isRemoteSyncing = false, 500);
-      }
-      if (!d.isPlaying && theaterPlayer.playing) {
-        isRemoteSyncing = true;
-        theaterPlayer.pause();
-        setTimeout(() => isRemoteSyncing = false, 500);
-      }
-    }
-  });
-
-  document.getElementById('btn-sync-play').addEventListener('click', async () => {
-    if (theaterPlayer) {
-      await updateDoc(watchPartyDoc, { 
-        currentTime: theaterPlayer.currentTime, 
-        isPlaying: theaterPlayer.playing,
-        updatedAt: serverTimestamp() 
-      });
-      logActivity("Forced media sync", "🔄");
-    }
-  });
-
-  // ==========================================
-  // TMDB SEARCH & WATCHLIST ASSIGNMENT
-  // ==========================================
-  const TMDB_API_KEY = "4b52b76174a761002dc02aa11e0394c8";
-
-  document.getElementById('btn-tmdb-search').addEventListener('click', () => {
-    const q = document.getElementById('tmdb-search-input').value.trim();
-    if(q) searchTMDB(q);
-  });
-  document.getElementById('tmdb-search-input').addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') {
-      const q = e.target.value.trim();
-      if(q) searchTMDB(q);
-    }
-  });
-
-  async function searchTMDB(queryStr) {
-    const resRow = document.getElementById('tmdb-results');
-    resRow.style.display = 'flex';
-    resRow.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">Searching TMDB...</p>';
-    
-    try {
-      const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(queryStr)}`);
-      const data = await res.json();
-      
-      if(data.status_code) {
-         resRow.innerHTML = `<p style="font-size:12px; color:var(--err); padding:10px;">API Error: ${data.status_message}</p>`;
-         return;
-      }
-
-      if(!data.results || data.results.length === 0) {
-        resRow.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">No titles found.</p>';
-        return;
-      }
-      
-      resRow.innerHTML = '';
-      data.results.forEach(item => {
-        if(item.media_type !== 'movie' && item.media_type !== 'tv') return;
-
-        const title = item.title || item.name;
-        const mediaType = item.media_type === 'tv' ? 'TV Series' : 'Movie';
-        const posterUrl = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '';
-        
-        const card = document.createElement('div');
-        card.className = 'title-card';
-        card.innerHTML = `
-          <div class="poster" style="${posterUrl ? `background-image:url('${posterUrl}')` : ''}">${!posterUrl ? title : ''}</div>
-          <p class="title-name">${title}</p>
-          <span class="pill" style="margin-bottom:8px; border-color:var(--accent); color:var(--accent);">${mediaType}</span>
-          <button class="btn-primary" style="padding:4px 8px; font-size:10px; width:100%;">+ Add</button>
-        `;
-        
-        card.querySelector('button').addEventListener('click', (e) => {
-          e.stopPropagation();
-          addToWatchlist(title, posterUrl, mediaType);
-        });
-        resRow.appendChild(card);
-      });
-    } catch(err) {
-      resRow.innerHTML = '<p style="font-size:12px; color:var(--err); padding:10px;">Search error. Check network.</p>';
-    }
+    theaterPlayer.on('play', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { isPlaying: true, currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() }); });
+    theaterPlayer.on('pause', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { isPlaying: false, currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() }); });
+    theaterPlayer.on('seeked', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, updatedAt: serverTimestamp() }); });
   }
 
-  async function addToWatchlist(title, poster, mediaType) {
-    await addDoc(collection(db, 'watchlist'), {
-      title,
-      poster,
-      type: mediaType,
-      status: 'Want to Watch',
-      streamUrl: '',
-      addedBy: currentUser.name,
-      timestamp: serverTimestamp()
-    });
-    logActivity(`Added ${mediaType}: "${title}"`, "🎬");
-    document.getElementById('tmdb-results').style.display = 'none';
-    document.getElementById('tmdb-search-input').value = '';
-  }
-
-  // Movie Details & Stream Link Modal Handlers
-  window.openMovieActionModal = function(id) {
-    const movie = window.watchlistData[id];
-    if(!movie) return;
-    activeSelectedMovieId = id;
-    document.getElementById('modal-movie-title').textContent = movie.title;
-    document.getElementById('modal-movie-id').textContent = `ID: ${id}`;
-    document.getElementById('modal-movie-status').value = movie.status || 'Want to Watch';
-    document.getElementById('modal-movie-stream-url').value = movie.streamUrl || '';
-    document.getElementById('movie-action-modal').classList.add('active');
-  };
-
-  document.getElementById('btn-close-movie-modal').addEventListener('click', () => {
-    document.getElementById('movie-action-modal').classList.remove('active');
-    activeSelectedMovieId = null;
-  });
-
-  document.getElementById('btn-save-movie-details').addEventListener('click', async () => {
-    if(!activeSelectedMovieId) return;
-    const status = document.getElementById('modal-movie-status').value;
-    const streamUrl = document.getElementById('modal-movie-stream-url').value.trim();
-    await updateDoc(doc(db, 'watchlist', activeSelectedMovieId), {
-      status,
-      streamUrl,
-      updatedAt: serverTimestamp()
-    });
-    document.getElementById('movie-action-modal').classList.remove('active');
-    logActivity(`Updated details for "${window.watchlistData[activeSelectedMovieId].title}"`, "⚙️");
-  });
-
-  document.getElementById('btn-play-movie-direct').addEventListener('click', async () => {
-    if(!activeSelectedMovieId) return;
-    const streamUrl = document.getElementById('modal-movie-stream-url').value.trim();
-    const movieTitle = window.watchlistData[activeSelectedMovieId].title;
-    
-    if(!streamUrl) {
-      alert("Please paste a Cloudflare Tunnel or video URL first.");
-      return;
-    }
-
-    await updateDoc(doc(db, 'watchlist', activeSelectedMovieId), {
-      status: 'Watching',
-      streamUrl,
-      updatedAt: serverTimestamp()
-    });
-
-    document.getElementById('cowatch-url-input').value = streamUrl;
-    const type = streamUrl.includes('youtube.com') || streamUrl.includes('youtu.be') ? 'youtube' : 'r2';
-    await setDoc(watchPartyDoc, { url: streamUrl, type, isPlaying: true, currentTime: 0, title: movieTitle, updatedAt: serverTimestamp() });
-    loadMediaIntoTheater(streamUrl, type);
-
-    document.getElementById('movie-action-modal').classList.remove('active');
-  });
-
-  document.getElementById('btn-delete-movie').addEventListener('click', async () => {
-    if(!activeSelectedMovieId) return;
-    if(confirm(`Remove "${window.watchlistData[activeSelectedMovieId].title}" from Watchlist?`)) {
-      await deleteDoc(doc(db, 'watchlist', activeSelectedMovieId));
-      document.getElementById('movie-action-modal').classList.remove('active');
-      logActivity("Removed movie from Watchlist", "🗑");
-    }
-  });
-
-  // ==========================================
-  // IN-BROWSER PDF READER & SYNCED BOOKMARKS
-  // ==========================================
-  let pdfDoc_ = null, pageNum_ = 1, pageRendering_ = false, pageNumPending_ = null, scale_ = 1.2, currentBookId_ = null;
-  const canvas_ = document.getElementById('pdf-canvas');
-  const ctx_ = canvas_.getContext('2d');
-
+  // B. PDF Mount
   function renderPage(num) {
     pageRendering_ = true;
     pdfDoc_.getPage(num).then(function(page) {
       const viewport = page.getViewport({scale: scale_});
-      canvas_.height = viewport.height;
-      canvas_.width = viewport.width;
+      canvas_.height = viewport.height; canvas_.width = viewport.width;
       const renderContext = { canvasContext: ctx_, viewport: viewport };
-      const renderTask = page.render(renderContext);
-      renderTask.promise.then(function() {
-        pageRendering_ = false;
-        if (pageNumPending_ !== null) { renderPage(pageNumPending_); pageNumPending_ = null; }
-      });
+      page.render(renderContext).promise.then(function() { pageRendering_ = false; if (pageNumPending_ !== null) { renderPage(pageNumPending_); pageNumPending_ = null; } });
     });
-    document.getElementById('pdf-current-page').textContent = num;
-    if(currentBookId_) {
-      updateDoc(doc(db, 'books', currentBookId_), { currentPage: num, updatedAt: serverTimestamp() });
-    }
+    document.getElementById('pdf-page-info').textContent = `${num} / ${pdfDoc_.numPages}`;
   }
-
-  function queueRenderPage(num) {
-    if (pageRendering_) { pageNumPending_ = num; } else { renderPage(num); }
-  }
+  function queueRenderPage(num) { if (pageRendering_) { pageNumPending_ = num; } else { renderPage(num); } }
 
   window.openBookReader = async function(bookId, pdfUrl, title, startPage = 1) {
     if(!pdfUrl) { alert("No PDF file attached to this book."); return; }
-    currentBookId_ = bookId;
-    document.getElementById('pdf-title').textContent = title;
-    document.getElementById('pdf-modal').classList.add('active');
-    try {
-      const loadingTask = pdfjsLib.getDocument(pdfUrl);
-      pdfDoc_ = await loadingTask.promise;
-      document.getElementById('pdf-total-pages').textContent = pdfDoc_.numPages;
-      pageNum_ = startPage || 1;
-      renderPage(pageNum_);
-    } catch(e) { alert("Failed to load PDF: " + e.message); }
+    await setDoc(watchPartyDoc, { mediaType: 'pdf', url: pdfUrl, title: title, currentPage: startPage, bookId: bookId, updatedAt: serverTimestamp() });
+    logActivity(`Opened book: ${title}`, "📚");
   }
 
-  document.getElementById('pdf-prev').addEventListener('click', () => { if (pageNum_ <= 1) return; pageNum_--; queueRenderPage(pageNum_); });
-  document.getElementById('pdf-next').addEventListener('click', () => { if (pageNum_ >= pdfDoc_.numPages) return; pageNum_++; queueRenderPage(pageNum_); });
-  document.getElementById('pdf-close').addEventListener('click', () => { document.getElementById('pdf-modal').classList.remove('active'); currentBookId_ = null; });
+  document.getElementById('pdf-prev').addEventListener('click', () => { if (pageNum_ <= 1) return; pageNum_--; updateDoc(watchPartyDoc, { currentPage: pageNum_, updatedAt: serverTimestamp() }); });
+  document.getElementById('pdf-next').addEventListener('click', () => { if (pageNum_ >= pdfDoc_.numPages) return; pageNum_++; updateDoc(watchPartyDoc, { currentPage: pageNum_, updatedAt: serverTimestamp() }); });
+
+  // Native Load Bar Overrides
+  document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
+    const url = document.getElementById('cowatch-url-input').value.trim();
+    if(!url) return;
+    const type = url.includes('youtube.com') || url.includes('youtu.be') ? 'youtube' : 'r2';
+    await setDoc(watchPartyDoc, { mediaType: type, url: url, title: 'Direct Load', isPlaying: true, currentTime: 0, updatedAt: serverTimestamp() });
+  });
+
+  // Database Syncer
+  onSnapshot(watchPartyDoc, async (snap) => {
+    if(!snap.exists()) return;
+    const d = snap.data();
+    if(!d.url) return;
+    
+    document.getElementById('cc-watching').textContent = d.title || 'Media Playing';
+
+    if(d.mediaType === 'pdf') {
+       setCanvasMode('pdf');
+       if(document.getElementById('pdf-title-display').textContent !== d.title) {
+          document.getElementById('pdf-title-display').textContent = d.title;
+          pdfDoc_ = await pdfjsLib.getDocument(d.url).promise;
+       }
+       pageNum_ = d.currentPage || 1;
+       if(pdfDoc_) queueRenderPage(pageNum_);
+       if(d.bookId) updateDoc(doc(db, 'books', d.bookId), { currentPage: pageNum_ }); // Save local progress
+       return;
+    }
+
+    // Must be video/youtube
+    setCanvasMode('video');
+    const slot = document.getElementById('theater-player-slot');
+    const currentMedia = slot.querySelector('video') || slot.querySelector('iframe');
+    
+    if(!theaterPlayer || !currentMedia || (currentMedia.getAttribute('src') !== d.url && (!currentMedia.src || !currentMedia.src.includes(d.url.match(/([a-zA-Z0-9_-]{11})/)?.[0] || 'NONE')))) {
+      loadMediaIntoTheater(d.url, d.mediaType);
+      return; 
+    }
+
+    if (theaterPlayer) {
+      if (Math.abs(theaterPlayer.currentTime - d.currentTime) > 1.5) { isRemoteSyncing = true; theaterPlayer.currentTime = d.currentTime; setTimeout(() => isRemoteSyncing = false, 1000); }
+      if (d.isPlaying && !theaterPlayer.playing) { isRemoteSyncing = true; theaterPlayer.play().catch(e => console.log("Autoplay blocked. Tap video.")); setTimeout(() => isRemoteSyncing = false, 500); }
+      if (!d.isPlaying && theaterPlayer.playing) { isRemoteSyncing = true; theaterPlayer.pause(); setTimeout(() => isRemoteSyncing = false, 500); }
+    }
+  });
+
+  document.getElementById('btn-sync-play').addEventListener('click', async () => {
+    if (theaterPlayer) { await updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, isPlaying: theaterPlayer.playing, updatedAt: serverTimestamp() }); logActivity("Forced media sync", "🔄"); }
+  });
 
   // ==========================================
-  // LAIR DROP & STORAGE
+  // IN-HOUSE YOUTUBE ENGINE & API
+  // ==========================================
+  document.querySelectorAll('.yt-chip').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      document.getElementById('yt-search-input').value = e.target.getAttribute('data-q');
+      fetchYouTube(e.target.getAttribute('data-q'));
+    });
+  });
+
+  document.getElementById('btn-yt-search').addEventListener('click', () => fetchYouTube(document.getElementById('yt-search-input').value.trim()));
+  document.getElementById('yt-search-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') fetchYouTube(e.target.value.trim()); });
+
+  async function fetchYouTube(query, isRecommendation = false) {
+    if(!query) return;
+    const grid = document.getElementById('yt-results');
+    grid.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); grid-column:1/-1;">Fetching feed...</p>';
+
+    if(YOUTUBE_API_KEY === "YOUR_YOUTUBE_API_KEY_HERE") {
+        grid.innerHTML = '<p style="font-size:12px; color:var(--err); grid-column:1/-1;">Missing Google API Key. Please insert YOUTUBE_API_KEY in the script.</p>';
+        return;
+    }
+
+    try {
+      const res = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=12&q=${encodeURIComponent(query)}&type=video&key=${YOUTUBE_API_KEY}`);
+      const data = await res.json();
+      if(!data.items) { grid.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); grid-column:1/-1;">No results found.</p>'; return; }
+      
+      grid.innerHTML = isRecommendation ? `<h3 style="grid-column:1/-1; font-size:14px; margin-bottom:8px; color:var(--con);">✨ Up Next / Related</h3>` : '';
+      
+      data.items.forEach(item => {
+        const title = item.snippet.title.replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+        const channel = item.snippet.channelTitle;
+        const thumb = item.snippet.thumbnails.high.url;
+        const vidId = item.id.videoId;
+
+        const card = document.createElement('div');
+        card.style.cssText = "cursor:pointer; transition:transform 0.2s; display:flex; flex-direction:column; gap:4px;";
+        card.onmouseover = () => card.style.transform = "scale(1.03)";
+        card.onmouseout = () => card.style.transform = "scale(1)";
+        card.innerHTML = `<div class="yt-thumb" style="background-image:url('${thumb}')"></div><p style="font-size:12px; font-weight:600; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${title}</p><p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft);">${channel}</p>`;
+        
+        card.addEventListener('click', async () => {
+           const url = `https://www.youtube.com/watch?v=${vidId}`;
+           await setDoc(watchPartyDoc, { mediaType: 'youtube', url: url, title: title, isPlaying: true, currentTime: 0, updatedAt: serverTimestamp() });
+           // Smart Recommendation Trigger: Extract words and re-search
+           const keywords = title.replace(/[^a-zA-Z0-9 ]/g, "").split(" ").filter(w => w.length > 3).slice(0, 3).join(" ");
+           fetchYouTube(keywords, true);
+        });
+        grid.appendChild(card);
+      });
+    } catch(e) { grid.innerHTML = '<p style="font-size:12px; color:var(--err); grid-column:1/-1;">Network error fetching feed.</p>'; }
+  }
+
+  // ==========================================
+  // TMDB SEARCH & WATCHLIST
+  // ==========================================
+  document.getElementById('btn-tmdb-search').addEventListener('click', () => { const q = document.getElementById('tmdb-search-input').value.trim(); if(q) searchTMDB(q); });
+  document.getElementById('tmdb-search-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') { const q = e.target.value.trim(); if(q) searchTMDB(q); } });
+
+  async function searchTMDB(queryStr) {
+    const resRow = document.getElementById('tmdb-results'); resRow.style.display = 'flex'; resRow.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">Searching TMDB...</p>';
+    try {
+      const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(queryStr)}`);
+      const data = await res.json();
+      if(!data.results || data.results.length === 0) { resRow.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">No titles found.</p>'; return; }
+      resRow.innerHTML = '';
+      data.results.forEach(item => {
+        if(item.media_type !== 'movie' && item.media_type !== 'tv') return;
+        const title = item.title || item.name; const mediaType = item.media_type === 'tv' ? 'TV Series' : 'Movie'; const posterUrl = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '';
+        const card = document.createElement('div'); card.className = 'title-card';
+        card.innerHTML = `<div class="poster" style="${posterUrl ? `background-image:url('${posterUrl}')` : ''}">${!posterUrl ? title : ''}</div><p class="title-name">${title}</p><span class="pill" style="margin-bottom:8px; border-color:var(--accent); color:var(--accent);">${mediaType}</span><button class="btn-primary" style="padding:4px 8px; font-size:10px; width:100%;">+ Add</button>`;
+        card.querySelector('button').addEventListener('click', (e) => { e.stopPropagation(); addToWatchlist(title, posterUrl, mediaType); });
+        resRow.appendChild(card);
+      });
+    } catch(err) { resRow.innerHTML = '<p style="font-size:12px; color:var(--err); padding:10px;">Search error. Check network.</p>'; }
+  }
+
+  async function addToWatchlist(title, poster, mediaType) {
+    await addDoc(collection(db, 'watchlist'), { title, poster, type: mediaType, status: 'Want to Watch', streamUrl: '', addedBy: currentUser.name, timestamp: serverTimestamp() });
+    logActivity(`Added ${mediaType}: "${title}"`, "🎬"); document.getElementById('tmdb-results').style.display = 'none'; document.getElementById('tmdb-search-input').value = '';
+  }
+
+  window.openMovieActionModal = function(id) {
+    const movie = window.watchlistData[id]; if(!movie) return; activeSelectedMovieId = id;
+    document.getElementById('modal-movie-title').textContent = movie.title; document.getElementById('modal-movie-id').textContent = `ID: ${id}`;
+    document.getElementById('modal-movie-status').value = movie.status || 'Want to Watch'; document.getElementById('modal-movie-stream-url').value = movie.streamUrl || '';
+    document.getElementById('movie-action-modal').classList.add('active');
+  };
+
+  document.getElementById('btn-close-movie-modal').addEventListener('click', () => { document.getElementById('movie-action-modal').classList.remove('active'); activeSelectedMovieId = null; });
+  document.getElementById('btn-save-movie-details').addEventListener('click', async () => {
+    if(!activeSelectedMovieId) return; const status = document.getElementById('modal-movie-status').value; const streamUrl = document.getElementById('modal-movie-stream-url').value.trim();
+    await updateDoc(doc(db, 'watchlist', activeSelectedMovieId), { status, streamUrl, updatedAt: serverTimestamp() }); document.getElementById('movie-action-modal').classList.remove('active'); logActivity(`Updated "${window.watchlistData[activeSelectedMovieId].title}"`, "⚙️");
+  });
+
+  document.getElementById('btn-play-movie-direct').addEventListener('click', async () => {
+    if(!activeSelectedMovieId) return; const streamUrl = document.getElementById('modal-movie-stream-url').value.trim(); const movieTitle = window.watchlistData[activeSelectedMovieId].title;
+    if(!streamUrl) { alert("Please paste a Cloudflare Tunnel or video URL first."); return; }
+    await updateDoc(doc(db, 'watchlist', activeSelectedMovieId), { status: 'Watching', streamUrl, updatedAt: serverTimestamp() });
+    document.getElementById('movie-action-modal').classList.remove('active');
+    const type = streamUrl.includes('youtube.com') || streamUrl.includes('youtu.be') ? 'youtube' : 'r2';
+    await setDoc(watchPartyDoc, { mediaType: type, url: streamUrl, title: movieTitle, isPlaying: true, currentTime: 0, updatedAt: serverTimestamp() });
+  });
+
+  document.getElementById('btn-delete-movie').addEventListener('click', async () => { if(!activeSelectedMovieId) return; if(confirm(`Remove "${window.watchlistData[activeSelectedMovieId].title}"?`)) { await deleteDoc(doc(db, 'watchlist', activeSelectedMovieId)); document.getElementById('movie-action-modal').classList.remove('active'); logActivity("Removed movie from Watchlist", "🗑"); } });
+
+  // ==========================================
+  // LAIR DROP STORAGE & CHAT SYNC
   // ==========================================
   let totalStorageBytes = 0;
-  function updateStorageGauge() {
-    let pct = Math.min((totalStorageBytes / 10737418240) * 100, 100); document.getElementById('drop-gauge').style.setProperty('--pct', pct);
-    document.getElementById('drop-usage-text').textContent = `${(totalStorageBytes / (1024*1024)).toFixed(1)} MB`;
-  }
+  function updateStorageGauge() { let pct = Math.min((totalStorageBytes / 10737418240) * 100, 100); document.getElementById('drop-gauge').style.setProperty('--pct', pct); document.getElementById('drop-usage-text').textContent = `${(totalStorageBytes / (1024*1024)).toFixed(1)} MB`; }
   const dropZone = document.getElementById('drop-zone-ui'); const fileInput = document.getElementById('drop-file-input');
-  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-  dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleDropUpload(e.dataTransfer.files[0]); });
-  fileInput.addEventListener('change', (e) => handleDropUpload(e.target.files[0]));
-
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); }); dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover')); dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleDropUpload(e.dataTransfer.files[0]); }); fileInput.addEventListener('change', (e) => handleDropUpload(e.target.files[0]));
   async function handleDropUpload(file) {
     if(!file) return; const statusText = document.getElementById('drop-upload-status'); statusText.style.display = 'block'; statusText.style.color = 'var(--ink-soft)'; statusText.textContent = `Uploading ${file.name}...`;
     const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
@@ -1107,85 +865,33 @@
     } catch (err) { statusText.style.color = 'var(--err)'; statusText.textContent = 'Upload failed.'; }
   }
 
-  onSnapshot(query(collection(db, 'lairdrops'), orderBy('timestamp', 'desc')), (snap) => {
-    const list = document.getElementById('lair-drop-list'); let dropBytes = 0;
-    if(snap.empty) { list.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Bucket is empty.</p>'; } else {
-      list.innerHTML = '';
-      snap.forEach(d => { const file = d.data(); dropBytes += (file.size || 0); list.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:12px; border-radius:8px; border:1px solid var(--line);"><div style="min-width:0;"><p style="font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${file.name}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${(file.size/1024/1024).toFixed(2)} MB • ${file.uploader}</p></div><div style="display:flex; gap:8px;"><a href="${file.url}" target="_blank" class="btn-secondary" style="padding:6px 12px; font-size:11px; width:auto;">View</a><button class="btn-warn btn-delete-drop" data-id="${d.id}" style="padding:6px 12px; font-size:11px; width:auto;">Del</button></div></div>`; });
-    }
-    getDocs(collection(db, 'portfolio')).then(pSnap => { totalStorageBytes = dropBytes + (pSnap.size * 400 * 1024); updateStorageGauge(); });
-  });
-  document.getElementById('lair-drop-list').addEventListener('click', async (e) => { if(e.target.classList.contains('btn-delete-drop') && confirm("Delete file?")) { await deleteDoc(doc(db, 'lairdrops', e.target.getAttribute('data-id'))); logActivity("Deleted file from Vault", "🗑"); } });
+  document.getElementById('btn-add-pdf-book').addEventListener('click', async () => { const title = document.getElementById('book-title-input').value.trim(); const pdfUrl = document.getElementById('book-pdf-url').value.trim(); if(!title) return; await addDoc(collection(db, 'books'), { title, pdfUrl, status: 'Want to Read', currentPage: 1, timestamp: serverTimestamp() }); document.getElementById('book-title-input').value = ''; document.getElementById('book-pdf-url').value = ''; document.getElementById('add-book-modal').classList.remove('active'); logActivity(`Added book: ${title}`, "📚"); });
 
-  // Add PDF Book Handler
-  document.getElementById('btn-add-pdf-book').addEventListener('click', async () => {
-    const title = document.getElementById('book-title-input').value.trim();
-    const pdfUrl = document.getElementById('book-pdf-url').value.trim();
-    if(!title) return;
-    await addDoc(collection(db, 'books'), { title, pdfUrl, status: 'Want to Read', currentPage: 1, timestamp: serverTimestamp() });
-    document.getElementById('book-title-input').value = ''; document.getElementById('book-pdf-url').value = '';
-    logActivity(`Added book: ${title}`, "📚"); alert("Book added to library!");
-  });
-
-  // Sync Data
   function initLiveSync() {
     onSnapshot(doc(db, 'system', 'analytics'), (snap) => { if(snap.exists()) document.getElementById('cc-views').textContent = snap.data().views || '--'; });
     onSnapshot(doc(db, 'system', 'doodle'), (snap) => { if (snap.exists() && snap.data().image) { const img = new Image(); img.onload = () => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.drawImage(img, 0, 0); }; img.src = snap.data().image; if (canvasHistory.length === 0) canvasHistory.push(snap.data().image); } });
     onSnapshot(doc(db, 'system', 'scratchpad'), (snap) => { if(snap.exists() && document.activeElement !== document.getElementById('shared-scratchpad')) document.getElementById('shared-scratchpad').value = snap.data().text || ''; });
     onSnapshot(query(collection(db, 'activity'), orderBy('timestamp', 'desc'), limit(20)), (snap) => { const feed = document.getElementById('unified-activity-log'); feed.innerHTML = ''; if(snap.empty) { feed.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">No activity.</p>'; return; } snap.forEach(d => { const a = d.data(); const tStr = a.timestamp ? a.timestamp.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''; feed.innerHTML += `<div class="activity-log-item"><span style="font-size:16px;">${a.icon||'•'}</span><div style="flex:1;"><p style="font-size:13px;"><b>${a.user}</b> ${a.text}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${tStr}</p></div></div>`; }); });
     
-    // Watchlist Snapshot
     onSnapshot(collection(db, 'watchlist'), (snap) => { 
-      let activeShow = '--'; 
-      window.watchlistData = {}; 
-      const wList = document.getElementById('shared-watchlist'); 
-      wList.innerHTML = ''; 
-      if(snap.empty) {
-        wList.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">No titles in watchlist. Search TMDB above to add!</p>';
-        return;
-      }
-      snap.forEach(d => { 
-        const v = d.data(); 
-        window.watchlistData[d.id] = v; 
-        if(v.status === 'Watching') activeShow = v.title; 
-        wList.innerHTML += `
-          <div class="title-card" onclick="openMovieActionModal('${d.id}')">
-            <div class="poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div>
-            <p class="title-name">${v.title}</p>
-            <span class="pill">${v.status || 'Want to Watch'}</span>
-          </div>`; 
-      }); 
-      document.getElementById('cc-watching').textContent = activeShow; 
+      window.watchlistData = {}; const wList = document.getElementById('shared-watchlist'); wList.innerHTML = ''; 
+      if(snap.empty) { wList.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">No titles in watchlist. Search TMDB above to add!</p>'; return; }
+      snap.forEach(d => { const v = d.data(); window.watchlistData[d.id] = v; wList.innerHTML += `<div class="title-card" onclick="openMovieActionModal('${d.id}')"><div class="poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div><p class="title-name">${v.title}</p><span class="pill">${v.status || 'Want to Watch'}</span></div>`; }); 
     });
     
     onSnapshot(collection(db, 'books'), (snap) => { 
-      let activeBook = '--'; window.libraryData = {}; const bList = document.getElementById('shared-library'); bList.innerHTML = '';
-      snap.forEach(d => { 
-        const v = d.data(); window.libraryData[d.id] = v; 
-        if(v.status === 'Reading') activeBook = v.title; 
-        bList.innerHTML += `<div class="title-card" onclick="openBookReader('${d.id}', '${v.pdfUrl||''}', '${v.title.replace(/'/g, "\\'")}', ${v.currentPage||1})"><div class="book-poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div><p class="title-name">${v.title}</p><span class="pill">Pg ${v.currentPage||1}</span></div>`; 
-      });
-      document.getElementById('cc-reading').textContent = activeBook;
+      window.libraryData = {}; const bList = document.getElementById('shared-library'); bList.innerHTML = '';
+      if(snap.empty) { bList.innerHTML = '<p style="font-size:12px; color:var(--ink-soft); padding:10px;">No books added yet.</p>'; return; }
+      snap.forEach(d => { const v = d.data(); window.libraryData[d.id] = v; bList.innerHTML += `<div class="title-card" onclick="openBookReader('${d.id}', '${v.pdfUrl||''}', '${v.title.replace(/'/g, "\\'")}', ${v.currentPage||1})"><div class="book-poster" style="${v.poster ? `background-image:url('${v.poster}')` : ''}">${!v.poster ? v.title : ''}</div><p class="title-name">${v.title}</p><span class="pill">Pg ${v.currentPage||1}</span></div>`; });
     });
 
     onSnapshot(query(collection(db, 'chat'), orderBy('timestamp', 'asc')), (snap) => { const cw = document.getElementById('chat-window'); const isAtBottom = cw.scrollHeight - cw.scrollTop <= cw.clientHeight + 50; cw.innerHTML = ''; snap.forEach(docSnap => { const msg = docSnap.data(); const msgClass = (currentUser && msg.user === currentUser.name) ? 'mine' : 'theirs'; const timeStr = msg.timestamp ? msg.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ''; cw.innerHTML += `<div class="chat-msg ${msgClass}"><div class="chat-meta" style="font-family:var(--font-mono); font-size:10px; color:var(--ink-faint); margin-bottom:2px;">${msgClass === 'theirs' ? msg.user + ' • ' : ''}${timeStr}</div><div class="chat-bubble">${msg.text}</div></div>`; }); if (isAtBottom) cw.scrollTop = cw.scrollHeight; });
-    
-    onSnapshot(doc(db, 'system', 'config'), (snap) => {
-      if(snap.exists()) {
-        const d = snap.data();
-        if(d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
-        if(d.grainOpacity) document.documentElement.style.setProperty('--grain-intensity', d.grainOpacity);
-        if(d.fontDisplay && d.fontBody) {
-          const fontLink = document.getElementById('dynamic-fonts');
-          if(fontLink) fontLink.href = `https://fonts.googleapis.com/css2?family=${d.fontDisplay.replace(/ /g, '+')}:wght@400;500;600&family=${d.fontBody.replace(/ /g, '+')}:wght@300;400;500&display=swap`;
-          document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay}', serif`); document.documentElement.style.setProperty('--font-body', `'${d.fontBody}', sans-serif`);
-        }
-      }
-    });
+    onSnapshot(query(collection(db, 'lairdrops'), orderBy('timestamp', 'desc')), (snap) => { const list = document.getElementById('lair-drop-list'); let dropBytes = 0; if(snap.empty) { list.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Bucket is empty.</p>'; } else { list.innerHTML = ''; snap.forEach(d => { const file = d.data(); dropBytes += (file.size || 0); list.innerHTML += `<div style="display:flex; justify-content:space-between; align-items:center; background:var(--bg); padding:12px; border-radius:8px; border:1px solid var(--line);"><div style="min-width:0;"><p style="font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${file.name}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${(file.size/1024/1024).toFixed(2)} MB • ${file.uploader}</p></div><div style="display:flex; gap:8px;"><a href="${file.url}" target="_blank" class="btn-secondary" style="padding:6px 12px; font-size:11px; width:auto;">View</a><button class="btn-warn btn-delete-drop" data-id="${d.id}" style="padding:6px 12px; font-size:11px; width:auto;">Del</button></div></div>`; }); } getDocs(collection(db, 'portfolio')).then(pSnap => { totalStorageBytes = dropBytes + (pSnap.size * 400 * 1024); updateStorageGauge(); }); });
   }
 
-  // Tools & Canvas
+  document.getElementById('lair-drop-list').addEventListener('click', async (e) => { if(e.target.classList.contains('btn-delete-drop') && confirm("Delete file?")) { await deleteDoc(doc(db, 'lairdrops', e.target.getAttribute('data-id'))); logActivity("Deleted file from Vault", "🗑"); } });
   document.getElementById('btn-save-scratchpad').addEventListener('click', async () => { const btn = document.getElementById('btn-save-scratchpad'); await setDoc(doc(db, 'system', 'scratchpad'), { text: document.getElementById('shared-scratchpad').value, updatedAt: serverTimestamp() }); btn.textContent = "Saved ✔"; setTimeout(()=> btn.textContent = "Save Text", 2000); logActivity("Updated scratchpad", "📝");});
+  
   const canvas = document.getElementById('doodle-canvas'); const ctx = canvas.getContext('2d'); let drawing = false; let lastX=0; let lastY=0; let canvasHistory=[];
   function initCanvasResolution() { if(!canvas) return; canvas.width=800; canvas.height=600; if(canvasHistory.length>0){ const img = new Image(); img.onload=()=>ctx.drawImage(img,0,0); img.src=canvasHistory[canvasHistory.length-1];} }
   function getMousePos(e) { const r = canvas.getBoundingClientRect(); const cx = e.clientX||(e.touches?e.touches[0].clientX:0); const cy = e.clientY||(e.touches?e.touches[0].clientY:0); return {x:(cx-r.left)*(canvas.width/r.width),y:(cy-r.top)*(canvas.height/r.height)}; }
@@ -1196,37 +902,8 @@
   document.getElementById('btn-save-canvas').addEventListener('click', () => { const btn = document.getElementById('btn-save-canvas'); logActivity("Archived canvas sketch", "🎨"); btn.textContent = "Saved ✔"; setTimeout(() => btn.textContent = "💾 Archive", 3000); });
   document.getElementById('btn-undo-canvas').addEventListener('click', async () => { if (canvasHistory.length > 1) { canvasHistory.pop(); let lastStateUrl = canvasHistory[canvasHistory.length - 1]; await setDoc(doc(db, 'system', 'doodle'), { image: lastStateUrl, updatedAt: serverTimestamp() }, { merge: true }); } });
   document.getElementById('btn-clear-canvas').addEventListener('click', async () => { if (confirm("Wipe canvas?")) { ctx.clearRect(0, 0, canvas.width, canvas.height); const dataUrl = canvas.toDataURL(); canvasHistory.push(dataUrl); await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); logActivity("Cleared canvas", "🧼"); } });
-
   document.getElementById('btn-send-chat').addEventListener('click', () => { const text=document.getElementById('chat-input').value.trim(); if(!text)return; addDoc(collection(db, 'chat'), { user:currentUser.name, text, timestamp: serverTimestamp() }); document.getElementById('chat-input').value=''; });
-  
-  // Chess Engine
-  const chessGame = new Chess(); let chessBoard = null; let selectedSquare = null;
-  async function onSquareClick(square) {
-    if (!selectedSquare) {
-      const piece = chessGame.get(square);
-      if (piece && piece.color === chessGame.turn()) {
-        selectedSquare = square;
-        document.getElementById('chess-status').textContent = `Selected ${square}. Tap destination.`;
-      }
-    } else {
-      const move = chessGame.move({ from: selectedSquare, to: square, promotion: 'q' });
-      if (move) {
-        chessBoard.position(chessGame.fen());
-        document.getElementById('chess-status').textContent = chessGame.turn() === 'w' ? 'White to move' : 'Black to move';
-        await setDoc(doc(db, 'system', 'chess'), { fen: chessGame.fen(), lastMoveBy: currentUser.name, updatedAt: serverTimestamp() }, { merge: true });
-        logActivity("Moved chess piece", "♟");
-      } else {
-        document.getElementById('chess-status').textContent = "Invalid move. Tap piece to reselect.";
-      }
-      selectedSquare = null;
-    }
-  }
-  function initChessEngine(){ 
-    if(!chessBoard) { 
-      chessBoard = Chessboard('chess-board', { position: 'start', onSquareClick: onSquareClick }); 
-      setTimeout(() => chessBoard.resize(), 100); 
-    } 
-  }
+  document.getElementById('chat-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') document.getElementById('btn-send-chat').click(); });
 </script>
 </body>
 </html>

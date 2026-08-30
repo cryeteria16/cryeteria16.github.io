@@ -120,7 +120,6 @@
   </div>
 
   <main class="pub-content">
-    <!-- Work / Gallery -->
     <section id="pub-view-work" class="view-container active">
       <div class="pub-hero reveal visible">
         <h2 id="dynamic-hero-title">Visual Archival & Photography</h2>
@@ -129,7 +128,6 @@
       <div class="photo-grid reveal" id="public-photo-grid"><p style="color:var(--ink-soft); font-family:var(--font-mono); font-size:12px;">Loading archive...</p></div>
     </section>
 
-    <!-- Resume -->
     <section id="pub-view-about" class="view-container">
       <div class="pub-hero reveal"><h2>About & Experience</h2><p>Creative direction, visual storytelling, and software systems engineering.</p></div>
       <div class="resume-section reveal">
@@ -141,13 +139,10 @@
             <button class="btn-secondary" onclick="window.print()">Print / Save PDF</button>
           </div>
         </div>
-        <div class="timeline" id="dynamic-timeline">
-          <p style="color:var(--ink-soft); font-family:var(--font-mono); font-size:12px;">Loading records...</p>
-        </div>
+        <div class="timeline" id="dynamic-timeline"><p style="color:var(--ink-soft); font-family:var(--font-mono); font-size:12px;">Loading records...</p></div>
       </div>
     </section>
 
-    <!-- Contact -->
     <section id="pub-view-contact" class="view-container">
       <div class="pub-hero reveal"><h2>Connect & Inquiries</h2><p>Available for select commissions, exhibition requests, and technical collaborations.</p></div>
       <div class="contact-grid reveal">
@@ -200,15 +195,11 @@
   const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
   const USERS = { "con": { pass: "confusicus", email: "justibadx@gmail.com" }, "cryeteria": { pass: "cryeteria", email: "theibadhasan@gmail.com" } };
 
-  // Scroll Reveals
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
-  }, { threshold: 0.1 });
+  const observer = new IntersectionObserver((entries) => { entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } }); }, { threshold: 0.1 });
   function triggerReveal() { document.querySelectorAll('.reveal:not(.visible)').forEach(el => observer.observe(el)); }
 
   try { setDoc(doc(db, 'system', 'analytics'), { views: increment(1) }, { merge: true }); } catch(e){}
 
-  // Navigation
   const pubNavLinks = document.querySelectorAll('.pub-nav-link');
   pubNavLinks.forEach(link => {
     link.addEventListener('click', (e) => {
@@ -216,20 +207,15 @@
       pubNavLinks.forEach(l => l.classList.remove('active')); e.currentTarget.classList.add('active');
       document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
       const targetView = document.getElementById(`pub-view-${target}`); 
-      if (targetView) {
-        targetView.classList.add('active');
-        targetView.querySelectorAll('.reveal').forEach(el => { el.classList.remove('visible'); observer.observe(el); });
-      }
+      if (targetView) { targetView.classList.add('active'); targetView.querySelectorAll('.reveal').forEach(el => { el.classList.remove('visible'); observer.observe(el); }); }
     });
   });
 
-  // Dynamic Fonts & System Config
   onSnapshot(doc(db, 'system', 'config'), (snap) => {
     if(snap.exists()) {
       const d = snap.data();
       if(d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
       if(d.grainOpacity) document.documentElement.style.setProperty('--grain-intensity', d.grainOpacity);
-      
       if(d.fontDisplay && d.fontBody) {
         const fontLink = document.getElementById('dynamic-fonts');
         if(fontLink) fontLink.href = `https://fonts.googleapis.com/css2?family=${d.fontDisplay.replace(/ /g, '+')}:wght@400;500;600&family=${d.fontBody.replace(/ /g, '+')}:wght@300;400;500&display=swap`;
@@ -239,7 +225,6 @@
     }
   });
 
-  // Dynamic Profile & Hero Text
   onSnapshot(doc(db, 'system', 'profile'), (snap) => {
     if(snap.exists()) {
       const d = snap.data();
@@ -254,25 +239,18 @@
       }
       if(d.timeline && Array.isArray(d.timeline)) {
         const tlContainer = document.getElementById('dynamic-timeline'); tlContainer.innerHTML = '';
-        d.timeline.forEach(item => {
-          tlContainer.innerHTML += `<div class="timeline-block"><p class="timeline-date">${item.date}</p><h4 class="timeline-title">${item.title}</h4><p class="timeline-desc">${item.desc}</p></div>`;
-        });
+        d.timeline.forEach(item => { tlContainer.innerHTML += `<div class="timeline-block"><p class="timeline-date">${item.date}</p><h4 class="timeline-title">${item.title}</h4><p class="timeline-desc">${item.desc}</p></div>`; });
       }
     }
   });
 
-  // Portfolio Engine
   onSnapshot(query(collection(db, 'portfolio'), orderBy('timestamp', 'desc')), (snap) => {
     const pubGrid = document.getElementById('public-photo-grid');
     if (snap.empty) { pubGrid.innerHTML = '<p style="color:var(--ink-soft); grid-column: 1 / -1; text-align:center;">No photos published yet.</p>'; return; }
     pubGrid.innerHTML = '';
     snap.forEach(docSnap => {
       const p = docSnap.data();
-      pubGrid.innerHTML += `
-        <div class="photo-card reveal" data-title="${p.title.replace(/"/g, '&quot;')}" data-exif="${(p.exif||'').replace(/"/g, '&quot;')}" data-img="${p.imgUrl}" data-accent="${p.accent||'#70947A'}">
-          <img src="${p.imgUrl}" alt="${p.title.replace(/"/g, '&quot;')}">
-          <div class="photo-overlay"><span class="photo-title">${p.title}</span><span class="photo-exif">${p.exif||''}</span></div>
-        </div>`;
+      pubGrid.innerHTML += `<div class="photo-card reveal" data-title="${p.title.replace(/"/g, '&quot;')}" data-exif="${(p.exif||'').replace(/"/g, '&quot;')}" data-img="${p.imgUrl}" data-accent="${p.accent||'#70947A'}"><img src="${p.imgUrl}" alt="${p.title.replace(/"/g, '&quot;')}"><div class="photo-overlay"><span class="photo-title">${p.title}</span><span class="photo-exif">${p.exif||''}</span></div></div>`;
     });
     triggerReveal();
 
@@ -289,7 +267,6 @@
     lightbox.addEventListener('click', (e) => { if(e.target.id === 'pub-lightbox') lightbox.classList.remove('active'); });
   });
 
-  // Gateway
   const sm = document.getElementById('modal-secret-login');
   document.getElementById('brand-secret-trigger').addEventListener('dblclick', () => sm.classList.add('active'));
   window.addEventListener('keydown', (e) => { if(e.shiftKey && e.key.toLowerCase() === 'l') { sm.classList.add('active'); document.getElementById('login-username').focus();} });
@@ -299,19 +276,12 @@
     const btn = document.getElementById('btn-do-login');
     const msg = document.getElementById('login-error-msg');
     btn.textContent = "Authenticating...";
-    
     const usr = document.getElementById('login-username').value.trim().toLowerCase();
     const pwd = document.getElementById('login-password').value;
     
     if(USERS[usr] && USERS[usr].pass === pwd) {
-      try { 
-        await signInWithEmailAndPassword(auth, USERS[usr].email, pwd); 
-      } catch(e) { 
-        msg.textContent = e.message; msg.style.display='block'; btn.textContent = "Authenticate";
-      }
-    } else { 
-      msg.textContent = "Access Denied: Invalid Credentials."; msg.style.display='block'; btn.textContent = "Authenticate";
-    }
+      try { await signInWithEmailAndPassword(auth, USERS[usr].email, pwd); } catch(e) { msg.textContent = e.message; msg.style.display='block'; btn.textContent = "Authenticate"; }
+    } else { msg.textContent = "Access Denied: Invalid Credentials."; msg.style.display='block'; btn.textContent = "Authenticate"; }
   });
   
   onAuthStateChanged(auth, (user) => { if (user) window.location.replace("lair.html"); });
