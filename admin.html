@@ -7,11 +7,10 @@
 <title>Admin Studio | The Lair</title>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-  :root{ --bg:#0A0A0A; --bg-card:#121212; --ink:#EDEDED; --ink-soft:#A3A3A3; --line:#262626; --con:#70947A; --warn:#A9803F; --err:#D9534F; --radius:16px; --radius-sm:10px; --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; --accent:var(--con); --grain-intensity:0.04;}
+  :root{ --bg:#0A0A0A; --bg-card:#121212; --ink:#EDEDED; --ink-soft:#A3A3A3; --line:#262626; --con:#70947A; --warn:#A9803F; --err:#D9534F; --radius:16px; --radius-sm:10px; --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; --accent:var(--con);}
   *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   body{ background:var(--bg); color:var(--ink); font-family:var(--font-body); padding-bottom:140px; }
   a{ color:inherit; text-decoration:none; cursor:pointer; }
-  .film-grain { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; opacity: var(--grain-intensity); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
   
   input[type="text"], input[type="password"], select, textarea { appearance:none; font-family:var(--font-body); font-size:14px; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; width:100%; transition:border-color 0.2s; }
   input[type="file"] { font-family: var(--font-body); font-size: 13px; color: var(--ink-soft); cursor: pointer; }
@@ -27,7 +26,6 @@
   .btn-warn{ background:rgba(217,83,79,0.1); color:var(--err); border: 1px solid rgba(217,83,79,0.3); padding:8px 14px; border-radius:8px; font-size:11px; cursor:pointer; }
   .btn-primary:active, .btn-warn:active { transform: scale(0.96); }
 
-  /* Floating Pill Header */
   .floating-header-wrapper { position: sticky; top: env(safe-area-inset-top, 10px); z-index: 50; padding: 10px 20px 20px; display: flex; justify-content: center; pointer-events: none; }
   .floating-pill { background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); border-radius: 50px; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; gap: 32px; width: 100%; max-width: 700px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); pointer-events: auto; }
   .brand { display:flex; align-items:center; gap:8px;}
@@ -42,8 +40,6 @@
 </head>
 <body>
 
-  <div class="film-grain"></div>
-
   <div class="floating-header-wrapper">
     <header class="floating-pill">
       <div class="brand"><svg width="20" height="20" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg><span class="brand-name">CMS</span></div>
@@ -52,9 +48,22 @@
   </div>
 
   <main>
+    <!-- OS Nav Icons Uploader -->
+    <section class="card">
+      <div class="card-head"><h2 style="color:var(--accent);">OS Navigation Icons</h2></div>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <p style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">Upload custom logos (.png/.webp) for the main Lair Dock. The OS defaults to text if an icon is missing.</p>
+        <div><label class="field-label">Dashboard Icon</label><input type="file" id="icon-dashboard" accept="image/*"></div>
+        <div><label class="field-label">Vault Icon</label><input type="file" id="icon-vault" accept="image/*"></div>
+        <div><label class="field-label">Theater Icon</label><input type="file" id="icon-theater" accept="image/*"></div>
+        <button class="btn-primary" id="btn-save-icons">Upload & Sync Icons</button>
+        <p id="icon-upload-status" style="font-family:var(--font-mono); font-size:11px; text-align:center; display:none;"></p>
+      </div>
+    </section>
+
     <!-- Batch Upload Studio with WebP Compression -->
     <section class="card">
-      <div class="card-head"><h2 style="color:var(--accent);">Portfolio Upload Studio</h2></div>
+      <div class="card-head"><h2>Portfolio Upload Studio</h2></div>
       <div style="display:flex; flex-direction:column; gap:16px;">
         <p style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">Select multiple files. Heavy RAW/JPEGs automatically convert to lightweight WebP.</p>
         <div><label class="field-label">Select Photos (Batch)</label><input type="file" id="upload-photo-file" accept="image/*" multiple></div>
@@ -178,6 +187,49 @@
       img.onerror = (err) => reject(err);
     });
   }
+
+  // Handle Dock Icon Uploads to R2 and Firestore
+  document.getElementById('btn-save-icons').addEventListener('click', async () => {
+    const statusText = document.getElementById('icon-upload-status');
+    statusText.style.display = 'block'; 
+    statusText.style.color = 'var(--ink-soft)';
+    statusText.textContent = `Processing icons...`;
+
+    const files = {
+      dashboard: document.getElementById('icon-dashboard').files[0],
+      drop: document.getElementById('icon-vault').files[0],
+      theater: document.getElementById('icon-theater').files[0]
+    };
+
+    let updates = {};
+    const idToken = await auth.currentUser.getIdToken();
+
+    try {
+      for (const [key, file] of Object.entries(files)) {
+        if (file) {
+          statusText.textContent = `Uploading ${key} icon...`;
+          const webpBlob = await compressImageToWebP(file);
+          const uniqueFileName = `os-icon-${key}-${Date.now()}.webp`;
+          const uploadRes = await fetch(WORKER_URL, { method: 'POST', headers: { 'X-Lair-Auth': idToken, 'X-File-Name': uniqueFileName }, body: webpBlob });
+          if (uploadRes.ok) {
+             updates[key] = `${PUBLIC_R2_URL}${uniqueFileName}`;
+          } else {
+             throw new Error(`Failed to upload ${key}`);
+          }
+        }
+      }
+
+      if(Object.keys(updates).length > 0) {
+         await setDoc(doc(db, 'system', 'icons'), updates, { merge: true });
+         logActivity("Updated OS Navigation Icons", "🖼️");
+      }
+      statusText.style.color = 'var(--con)'; statusText.textContent = 'Icons Synced Successfully ✔';
+    } catch (err) {
+      statusText.style.color = 'var(--err)'; statusText.textContent = err.message;
+    }
+    
+    setTimeout(() => { statusText.style.display = 'none'; }, 4000);
+  });
 
   // Batch Upload Handler
   document.getElementById('btn-upload-photo').addEventListener('click', async () => {
