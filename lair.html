@@ -469,7 +469,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, collection, onSnapshot, query, orderBy, limit, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, query, orderBy, limit, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
   const WORKER_URL = "https://portfolio-uploader.theibadhasan.workers.dev/";
@@ -481,7 +481,7 @@
   const TMDB_API_KEY = "4b52b76174a761002dc02aa11e0394c8";
 
   const PEOPLE = { "justibadx@gmail.com":{name:"Con",id:"con",color:"#70947A"}, "theibadhasan@gmail.com":{name:"Cryeteria",id:"cryeteria",color:"#7A9BC2"} };
-  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
   let currentUser = null;
   let activeSelectedMovieId = null;
 
@@ -854,11 +854,13 @@
   function updateStorageGauge() { let pct = Math.min((totalStorageBytes / 10737418240) * 100, 100); document.getElementById('drop-gauge').style.setProperty('--pct', pct); document.getElementById('drop-usage-text').textContent = `${(totalStorageBytes / (1024*1024)).toFixed(1)} MB`; }
   const dropZone = document.getElementById('drop-zone-ui'); const fileInput = document.getElementById('drop-file-input');
   dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); }); dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover')); dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); handleDropUpload(e.dataTransfer.files[0]); }); fileInput.addEventListener('change', (e) => handleDropUpload(e.target.files[0]));
+  
   async function handleDropUpload(file) {
     if(!file) return; const statusText = document.getElementById('drop-upload-status'); statusText.style.display = 'block'; statusText.style.color = 'var(--ink-soft)'; statusText.textContent = `Uploading ${file.name}...`;
     const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '')}`;
     try {
-      const uploadRes = await fetch(WORKER_URL, { method: 'POST', headers: { 'X-Lair-Auth': 'lair-master-key-2026', 'X-File-Name': safeName }, body: file });
+      const idToken = await auth.currentUser.getIdToken();
+      const uploadRes = await fetch(WORKER_URL, { method: 'POST', headers: { 'X-Lair-Auth': idToken, 'X-File-Name': safeName }, body: file });
       if (!uploadRes.ok) throw new Error('Worker rejected');
       await addDoc(collection(db, 'lairdrops'), { name: file.name, url: `${PUBLIC_R2_URL}${safeName}`, size: file.size, type: file.type || 'file', uploader: currentUser.name, timestamp: serverTimestamp() });
       statusText.style.color = 'var(--con)'; statusText.textContent = 'Upload complete.'; logActivity(`Dropped file: ${file.name}`, "📁"); setTimeout(()=> statusText.style.display='none', 3000);
