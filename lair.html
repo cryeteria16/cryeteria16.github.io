@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0A0A0A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
 <title>The Lair OS</title>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
@@ -33,12 +36,12 @@
     --glass-glow: inset 0 1px 1px rgba(255, 255, 255, 0.4), inset 0 -1px 1px rgba(255, 255, 255, 0.05), 0 20px 60px rgba(0, 0, 0, 0.5);
   }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
-  body { background:var(--bg); color:var(--ink); font-family:var(--font-body); overflow-x:hidden; padding-bottom: 120px;}
+  body { background:var(--bg); color:var(--ink); font-family:var(--font-body); overflow-x:hidden; padding-bottom: 140px; transition: background 0.6s ease;}
   a { color:inherit; text-decoration:none; cursor:pointer; }
   ul { list-style:none; } button { font-family:inherit; border:none; background:none; cursor:pointer; outline:none; }
   
   /* Dynamic OS Fluid Wallpaper */
-  .os-wallpaper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; background: #08080C; overflow: hidden; pointer-events: none;}
+  .os-wallpaper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; background: #08080C; overflow: hidden; pointer-events: none; transition: opacity 0.6s ease;}
   .os-blob { position: absolute; filter: blur(90px); border-radius: 50%; opacity: 0.8; animation: floatBlob 25s infinite alternate cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
   .blob-1 { width: 60vw; height: 60vh; background: var(--accent); top: -10%; left: -10%; }
   .blob-2 { width: 50vw; height: 50vh; background: #1a364a; bottom: -10%; right: -10%; animation-delay: -7s; }
@@ -50,7 +53,15 @@
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 8px; }
   ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
 
-  /* Cinematic "Lights Out" Mode */
+  /* Cinematic Ambient Dimming */
+  body.dimmed { background: #000; }
+  body.dimmed .card:not(.theater-card) { opacity: 0.15; transition: opacity 0.6s; pointer-events: none; }
+  body.dimmed .os-dock-wrapper { opacity: 0.15; transition: opacity 0.6s; }
+  body.dimmed .os-dock-wrapper:hover { opacity: 1; }
+  body.dimmed .os-wallpaper { opacity: 0.2; }
+  body.dimmed .os-menubar { opacity: 0.15; transition: opacity 0.6s; }
+
+  /* Manual "Lights Out" Mode Overlay */
   #cinematic-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.96); z-index: 40; opacity: 0; pointer-events: none; transition: opacity 0.6s cubic-bezier(0.32, 0.72, 0, 1); }
   #cinematic-overlay.active { opacity: 1; pointer-events: auto; }
   .theater-card { transition: transform 0.6s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.6s, border-color 0.6s; }
@@ -96,6 +107,10 @@
   .card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(30px) saturate(150%); -webkit-backdrop-filter: blur(30px) saturate(150%); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius); padding: 32px; max-width: 100%; overflow:hidden; box-shadow: var(--glass-glow); }
   .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; gap: 12px; }
   .card-head h2 { font-family:var(--font-display); font-size:20px; font-weight:600; text-shadow: 0 2px 4px rgba(0,0,0,0.6); letter-spacing: -0.01em;}
+  
+  /* Mobile Scroller for Theater Utilities */
+  .utility-row { display: flex; gap: 12px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .utility-row::-webkit-scrollbar { display: none; }
 
   /* Inputs & Buttons */
   input[type="text"], input[type="password"], input[type="number"], select, textarea { appearance:none; font-family:var(--font-body); font-size:14px; color:var(--ink); background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.1); border-radius:12px; padding:14px 18px; width:100%; transition:all 0.3s; box-shadow: inset 0 2px 5px rgba(0,0,0,0.4); text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
@@ -311,12 +326,12 @@
           <section class="card theater-card" style="padding:28px; display:flex; flex-direction:column; gap:24px;">
             <div class="card-head" style="margin-bottom:0;">
               <h2 style="font-size:22px;">Theater Stage</h2>
-              <div style="display:flex; gap:12px; flex-wrap: wrap;">
+              <!-- Scrollable Utility Row for Mobile -->
+              <div class="utility-row">
                 <button class="btn-secondary" id="btn-toggle-draw" title="Draw on Screen" style="white-space:nowrap; padding:10px 16px;">🎨 Draw</button>
                 <button class="btn-secondary" id="btn-clear-theater-draw" style="white-space:nowrap; display:none; color:var(--err); padding:10px 16px;">Clear</button>
                 <button class="btn-secondary" id="btn-pip" title="Pop Out Video" style="white-space:nowrap; padding:10px 16px;">🖼️ Pop Out</button>
                 <button class="btn-secondary" id="btn-lights-out" style="white-space:nowrap; padding:10px 16px;">💡 Lights Out</button>
-                <button class="btn-secondary" id="btn-sync-play" style="white-space:nowrap; padding:10px 16px;">Force Sync</button>
               </div>
             </div>
             
@@ -676,15 +691,28 @@
       const parsedId = (ytId && ytId[2].length === 11) ? ytId[2] : url;
       slot.innerHTML = `<div class="plyr__video-embed" id="theater-video"><iframe src="https://www.youtube.com/embed/${parsedId}?origin=https://plyr.io&amp;iv_load_policy=3&amp;modestbranding=1&amp;playsinline=1&amp;showinfo=0&amp;rel=0&amp;enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe></div>`;
     } else {
-      slot.innerHTML = `<video id="theater-video" playsinline controls crossorigin><source src="${url}" type="video/mp4" /></video>`;
+      // Added crossorigin="anonymous" to bypass local streaming CORS block
+      slot.innerHTML = `<video id="theater-video" playsinline controls crossorigin="anonymous"><source src="${url}" type="video/mp4" /></video>`;
     }
     
     theaterPlayer = new Plyr('#theater-video', { controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'pip', 'fullscreen'], keyboard: { focused: true, global: true } });
     document.documentElement.style.setProperty('--plyr-color-main', 'var(--accent)');
     
-    theaterPlayer.on('play', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { isPlaying: true, currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); });
-    theaterPlayer.on('pause', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { isPlaying: false, currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); });
-    theaterPlayer.on('seeked', () => { if(isRemoteSyncing) return; updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); });
+    // Ambient Dimming & Realtime Sync Handlers
+    theaterPlayer.on('play', () => { 
+        document.body.classList.add('dimmed');
+        if(isRemoteSyncing) return; 
+        updateDoc(watchPartyDoc, { isPlaying: true, currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); 
+    });
+    theaterPlayer.on('pause', () => { 
+        document.body.classList.remove('dimmed');
+        if(isRemoteSyncing) return; 
+        updateDoc(watchPartyDoc, { isPlaying: false, currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); 
+    });
+    theaterPlayer.on('seeked', () => { 
+        if(isRemoteSyncing) return; 
+        updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); 
+    });
   }
 
   function renderPage(num) {
@@ -751,10 +779,6 @@
       if (d.isPlaying && !theaterPlayer.playing) { isRemoteSyncing = true; theaterPlayer.play().catch(e => console.log("Autoplay blocked. Tap video.")); setTimeout(() => isRemoteSyncing = false, 500); }
       if (!d.isPlaying && theaterPlayer.playing) { isRemoteSyncing = true; theaterPlayer.pause(); setTimeout(() => isRemoteSyncing = false, 500); }
     }
-  });
-
-  document.getElementById('btn-sync-play').addEventListener('click', async () => {
-    if (theaterPlayer) { await updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, isPlaying: theaterPlayer.playing, senderId: currentUser.id, updatedAt: serverTimestamp() }); logActivity("Forced media sync", "🔄"); }
   });
 
   document.querySelectorAll('.yt-chip').forEach(btn => {
@@ -962,7 +986,33 @@
   canvas.addEventListener('mousemove', e=>{ if(!drawing)return; e.preventDefault(); const p=getMousePos(e); ctx.beginPath(); ctx.moveTo(lastX,lastY); ctx.lineTo(p.x,p.y); ctx.strokeStyle=document.getElementById('brush-color').value; ctx.lineWidth=document.getElementById('brush-size').value; ctx.lineCap='round'; ctx.stroke(); lastX=p.x; lastY=p.y; });
   const stopDraw = async () => { if(!drawing)return; drawing=false; const dataUrl = canvas.toDataURL(); canvasHistory.push(dataUrl); await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); };
   canvas.addEventListener('mouseup', stopDraw); canvas.addEventListener('mouseleave', stopDraw); canvas.addEventListener('touchend', stopDraw);
-  document.getElementById('btn-save-canvas').addEventListener('click', () => { const btn = document.getElementById('btn-save-canvas'); logActivity("Archived canvas sketch", "🎨"); btn.textContent = "Saved ✔"; setTimeout(() => btn.textContent = "💾 Archive", 3000); });
+  
+  // Google Apps Script Drive Export for Sketchpad
+  document.getElementById('btn-save-canvas').addEventListener('click', async () => { 
+    const btn = document.getElementById('btn-save-canvas'); 
+    btn.textContent = "Saving...";
+    try {
+        const dataUrl = canvas.toDataURL('image/png');
+        await fetch(GS_WEBHOOK_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                type: 'sketch',
+                user: currentUser.name,
+                image: dataUrl,
+                timestamp: new Date().toISOString()
+            })
+        });
+        logActivity("Archived canvas sketch to Drive", "🎨"); 
+        btn.textContent = "Saved ✔"; 
+    } catch (err) {
+        console.error('Export failed:', err);
+        btn.textContent = "Error ❌";
+    }
+    setTimeout(() => btn.textContent = "💾 Archive", 3000); 
+  });
+
   document.getElementById('btn-undo-canvas').addEventListener('click', async () => { if (canvasHistory.length > 1) { canvasHistory.pop(); let lastStateUrl = canvasHistory[canvasHistory.length - 1]; await setDoc(doc(db, 'system', 'doodle'), { image: lastStateUrl, updatedAt: serverTimestamp() }, { merge: true }); } });
   document.getElementById('btn-clear-canvas').addEventListener('click', async () => { if (confirm("Wipe canvas?")) { ctx.clearRect(0, 0, canvas.width, canvas.height); const dataUrl = canvas.toDataURL(); canvasHistory.push(dataUrl); await setDoc(doc(db, 'system', 'doodle'), { image: dataUrl, updatedAt: serverTimestamp() }, { merge: true }); logActivity("Cleared canvas", "🧼"); } });
   
