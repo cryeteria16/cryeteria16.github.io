@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,186 +6,86 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0A0A0A">
 <title>Ibad Hasan — Visuals & Archive</title>
-<!-- Default Fallback Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500&family=Inter:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;500&family=Inter:wght@300;400;500&display=swap">
 <style>
-  :root { 
-    --bg:#0A0A0A; 
-    --ink:#FFFFFF; 
-    --ink-soft:rgba(255, 255, 255, 0.7); 
-    --con:#70947A; 
-    --accent:var(--con); 
-    --font-display:'Fraunces', serif; 
-    --font-body:'Inter', sans-serif; 
-    --font-mono:'IBM Plex Mono', monospace; 
-    --radius:24px; 
-    --radius-sm:16px; 
-    --grain-intensity: 0.04;
-    
-    /* Liquid Glass Variables */
-    --glass-bg: rgba(20, 20, 25, 0.45);
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-highlight: inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 20px 40px rgba(0, 0, 0, 0.3);
-  }
-  
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html { scroll-behavior: smooth; }
+  :root { --bg:#0A0A0A; --ink:#FFFFFF; --ink-soft:rgba(255,255,255,0.7); --con:#70947A; --accent:var(--con); --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; --radius:24px; --radius-sm:16px; --glass-bg: rgba(20,20,25,0.45); --glass-border: rgba(255,255,255,0.12); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--ink); font-family: var(--font-body); line-height: 1.5; overflow-x: hidden; }
   a { color: inherit; text-decoration: none; cursor: pointer; }
 
-  /* Animated Aurora Mesh Background */
-  .aurora-mesh {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1;
-    background-color: #050508;
-    overflow: hidden;
-  }
-  .aurora-orb {
-    position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5;
-    animation: floatOrb 20s infinite alternate cubic-bezier(0.45, 0.05, 0.55, 0.95);
-    will-change: transform;
-  }
+  .aurora-mesh { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; background-color: #050508; overflow: hidden; }
+  .aurora-orb { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.5; animation: floatOrb 20s infinite alternate; }
   .orb-1 { width: 60vw; height: 60vh; background: var(--accent); top: -10%; left: -10%; }
   .orb-2 { width: 50vw; height: 50vh; background: #2b4c59; bottom: -10%; right: -10%; animation-delay: -5s; }
-  .orb-3 { width: 40vw; height: 40vh; background: #3d2c4a; top: 40%; left: 50%; animation-delay: -10s; animation-duration: 25s; }
+  @keyframes floatOrb { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10vw, 15vh) scale(1.2); } }
 
-  @keyframes floatOrb {
-    0% { transform: translate(0, 0) scale(1); }
-    100% { transform: translate(10vw, 15vh) scale(1.2); }
-  }
-  
-  /* Cinematic Film Grain Overlay */
-  .film-grain { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 9999; opacity: var(--grain-intensity); background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E"); }
+  .floating-header-wrapper { position: sticky; top: 20px; z-index: 50; padding: 20px; display: flex; justify-content: center; pointer-events: none; }
+  .floating-pill { background: rgba(30,30,35,0.65); backdrop-filter: blur(32px); border: 1px solid var(--glass-border); border-radius: 50px; padding: 12px 28px; display: flex; align-items: center; gap: 32px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 20px 40px rgba(0,0,0,0.3); pointer-events: auto; }
+  .pub-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+  .pub-brand h1 { font-family: var(--font-display); font-size: 18px; font-weight: 500; }
+  .pub-nav { display: flex; gap: 24px; font-size: 13px; font-family: var(--font-mono); color: var(--ink-soft); }
+  .pub-nav a.active { color: var(--ink); border-bottom: 1px solid var(--ink); padding-bottom: 2px; }
 
-  /* Floating Glossy Pill Navigation */
-  .floating-header-wrapper { position: sticky; top: env(safe-area-inset-top, 20px); z-index: 50; padding: 20px; display: flex; justify-content: center; pointer-events: none; }
-  .floating-pill { 
-    background: rgba(30, 30, 35, 0.65); 
-    backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); 
-    border: 1px solid var(--glass-border); 
-    border-radius: 50px; padding: 12px 28px; display: flex; align-items: center; gap: 32px; 
-    box-shadow: var(--glass-highlight); 
-    pointer-events: auto; max-width: 100%; overflow-x: auto; scrollbar-width: none; 
-    transform: translateZ(0); /* Hardware acceleration */
-  }
-  .floating-pill::-webkit-scrollbar { display: none; }
-  .pub-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; flex-shrink: 0; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-  .pub-brand h1 { font-family: var(--font-display); font-size: 18px; font-weight: 500; letter-spacing: -0.02em; white-space: nowrap;}
-  .pub-nav { display: flex; gap: 24px; font-size: 13px; font-family: var(--font-mono); color: var(--ink-soft); align-items: center; }
-  .pub-nav a { position: relative; padding: 4px 0; white-space: nowrap; transition: color 0.3s cubic-bezier(0.16, 1, 0.3, 1);}
-  .pub-nav a:hover, .pub-nav a.active { color: var(--ink); text-shadow: 0 0 8px rgba(255,255,255,0.4); }
-  .pub-nav a.active::after { content: ''; position: absolute; bottom: -2px; left: 0; right: 0; height: 1px; background: var(--ink); box-shadow: 0 0 4px rgba(255,255,255,0.8);}
-  
-  /* Glossy Buttons */
-  .btn-primary { background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(220,220,220,0.85)); color: #000; padding: 12px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; text-align: center; border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 4px 14px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,1); cursor: pointer; width: 100%; transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s; }
-  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,1); }
-  .btn-primary:active { transform: scale(0.96); } 
-  
-  .btn-secondary { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: var(--ink); border: 1px solid var(--glass-border); padding: 12px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; width: 100%; box-shadow: inset 0 1px 1px rgba(255,255,255,0.08); transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-  .btn-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.3); }
+  .pub-content { max-width: 1280px; width: 100%; margin: 0 auto; padding: 20px 32px 80px; min-height: 100vh; }
+  .pub-hero { margin-bottom: 56px; max-width: 720px; }
+  .pub-hero h2 { font-family: var(--font-display); font-size: 42px; font-weight: 400; line-height: 1.15; margin-bottom: 16px; }
+  .pub-hero p { font-size: 16px; color: var(--ink-soft); }
 
-  /* High-End Scroll Reveals */
-  .reveal { opacity: 0; transform: translateY(40px); transition: opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1), transform 0.9s cubic-bezier(0.16, 1, 0.3, 1); }
-  .reveal.visible { opacity: 1; transform: translateY(0); }
   .view-container { display: none; opacity: 0; }
-  .view-container.active { display: block; animation: smoothFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-  @keyframes smoothFadeIn { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .view-container.active { display: block; animation: fadeIn 0.5s forwards; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
   
-  .pub-content { max-width: 1280px; width: 100%; margin: 0 auto; padding: 20px 32px 80px; flex: 1; min-height: 100vh;}
-  .pub-hero { margin-bottom: 56px; max-width: 720px; text-shadow: 0 4px 20px rgba(0,0,0,0.6); }
-  .pub-hero h2 { font-family: var(--font-display); font-size: 42px; font-weight: 400; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 16px; }
-  .pub-hero p { font-size: 16px; color: var(--ink-soft); font-weight: 300; line-height: 1.6; }
-
-  /* Physics-Enabled Photo Grid */
   .photo-grid { column-count: 3; column-gap: 24px; }
   @media (max-width: 900px) { .photo-grid { column-count: 2; } }
   @media (max-width: 600px) { .photo-grid { column-count: 1; } }
-  
   .photo-card-wrapper { break-inside: avoid; margin-bottom: 24px; perspective: 1000px; }
-  .photo-card { 
-    position: relative; border-radius: var(--radius-sm); overflow: hidden; background: var(--glass-bg); 
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
-    cursor: pointer; transform-style: preserve-3d; transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  }
+  .photo-card { position: relative; border-radius: var(--radius-sm); overflow: hidden; background: var(--glass-bg); border: 1px solid var(--glass-border); box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1); cursor: pointer; transform-style: preserve-3d; transition: transform 0.2s; }
   .photo-card img { width: 100%; height: auto; display: block; border-radius: calc(var(--radius-sm) - 1px); }
-  
-  /* Glass Reflection Element inside cards */
-  .photo-card::after {
-    content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
-    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%);
-    transform: skewX(-20deg); transition: 0.6s cubic-bezier(0.16, 1, 0.3, 1); z-index: 2; pointer-events: none;
-  }
-  .photo-card:hover::after { left: 150%; }
-
-  .photo-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 40px 20px 20px; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%); opacity: 0; transform: translateY(10px) translateZ(30px); transition: opacity 0.4s, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; gap: 4px; z-index: 3; }
+  .photo-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 40px 20px 20px; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%); opacity: 0; transform: translateY(10px) translateZ(30px); transition: opacity 0.4s, transform 0.4s; display: flex; flex-direction: column; gap: 4px; z-index: 3; }
   .photo-card:hover .photo-overlay { opacity: 1; transform: translateY(0) translateZ(30px); }
   .photo-title { font-size: 14px; font-weight: 500; text-shadow: 0 2px 10px rgba(0,0,0,0.8); }
   .photo-exif { font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); }
 
-  /* Glass Cards */
-  .resume-section { display: grid; grid-template-columns: 1fr 2fr; gap: 48px; margin-top: 20px; }
-  @media (max-width: 800px) { .resume-section { grid-template-columns: 1fr; gap: 32px; } }
-  .bio-card, .contact-card { 
-    background: var(--glass-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); 
-    border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 32px; 
-    box-shadow: var(--glass-highlight); transform: translateZ(0);
-  }
-  .timeline { display: flex; flex-direction: column; gap: 32px; }
-  .timeline-block { position: relative; padding-left: 24px; border-left: 1px solid rgba(255,255,255,0.2); text-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-  .timeline-block::before { content: ''; position: absolute; left: -4px; top: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+  .resume-section { display: flex; flex-direction: column; max-width: 600px; margin: 20px auto 0; gap: 48px; }
+  .bio-card { background: var(--glass-bg); backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 40px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.2); text-align: center; }
   
+  .btn-primary { background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(220,220,220,0.85)); color: #000; padding: 12px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; text-align: center; border: none; cursor: pointer; width: 100%; display:block; margin-bottom:12px; transition: 0.3s;}
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  .btn-social { background: rgba(0,0,0,0.4); color: var(--ink); border: 1px solid rgba(255,255,255,0.15); padding: 12px; border-radius: 12px; font-size: 13px; font-family: var(--font-mono); text-align: center; transition: 0.3s; width: 100%; display: block; }
+  .btn-social:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); color: var(--accent); }
+
   .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 24px; }
-  .contact-card { transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s, border-color 0.4s; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;}
+  .contact-card { background: var(--glass-bg); backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 32px; transition: 0.4s; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;}
   .contact-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.3); }
   .field-label { display: block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; letter-spacing: 0.05em; }
 
-  /* Modals & Lightbox */
-  #pub-lightbox { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5,5,8,0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); z-index: 150; display: none; align-items: center; justify-content: center; padding: 24px; opacity: 0; transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1); transform: translateZ(0);}
+  /* Modals */
+  #pub-lightbox { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5,5,8,0.85); backdrop-filter: blur(24px); z-index: 150; display: none; align-items: center; justify-content: center; padding: 24px; opacity: 0; transition: 0.4s;}
   #pub-lightbox.active { display: flex; opacity: 1; }
   .lightbox-img { max-width: 100%; max-height: 75vh; border-radius: 12px; box-shadow: 0 40px 100px rgba(0,0,0,0.9), inset 0 1px 1px rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.05); }
   
-  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1); transform: translateZ(0);}
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(32px); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: 0.5s; }
   .modal-overlay.active { opacity: 1; pointer-events: auto; }
-  
-  /* Sleek Glassmorphism Login Card */
-  .login-glass-card { background: rgba(20, 20, 25, 0.6); border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 40px 100px rgba(0,0,0,0.9), inset 0 1px 1px rgba(255,255,255,0.2); border-radius: 32px; padding: 48px 32px; width: 100%; max-width: 360px; text-align: center; transform: scale(0.9) translateY(20px); transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
-  .modal-overlay.active .login-glass-card { transform: scale(1) translateY(0); }
-  .login-glass-card svg { margin-bottom: 24px; filter: drop-shadow(0 0 16px rgba(112, 148, 122, 0.6)); }
-  .login-glass-card h2 { font-family: var(--font-display); font-size: 24px; margin-bottom: 4px; letter-spacing: -0.02em; }
-  .login-glass-card p { font-size: 11px; color: var(--ink-soft); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 32px; }
-  
-  .login-glass-card input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--ink); font-family: var(--font-mono); font-size: 14px; text-align: center; padding: 16px; border-radius: 16px; transition: all 0.3s ease; margin-bottom: 12px; width: 100%; outline: none; letter-spacing: 0.05em; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);}
-  .login-glass-card input::placeholder { color: rgba(255,255,255,0.3); }
-  .login-glass-card input:focus { background: rgba(255,255,255,0.1); border-color: var(--accent); box-shadow: 0 0 0 4px rgba(112, 148, 122, 0.2), inset 0 2px 4px rgba(0,0,0,0.2); }
-  
-  .login-glass-card .btn-primary { margin-top: 12px; border-radius: 16px; padding: 16px; font-size: 14px; letter-spacing: 0.02em; }
-  .btn-ghost { background: transparent; border: none; color: var(--ink-soft); font-family: var(--font-mono); font-size: 11px; margin-top: 20px; cursor: pointer; transition: color 0.2s; outline: none; }
-  .btn-ghost:hover { color: var(--ink); }
+  .login-glass-card { background: rgba(20,20,25,0.6); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 40px 100px rgba(0,0,0,0.9); border-radius: 32px; padding: 48px 32px; width: 100%; max-width: 360px; text-align: center; }
+  .login-glass-card input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--ink); font-family: var(--font-mono); font-size: 14px; text-align: center; padding: 16px; border-radius: 16px; width: 100%; margin-bottom: 12px; outline: none; }
+  .login-glass-card input:focus { border-color: var(--accent); }
 </style>
 </head>
 <body>
 
-  <!-- Dynamic Aurora Background Engine -->
-  <div class="aurora-mesh">
-    <div class="aurora-orb orb-1"></div>
-    <div class="aurora-orb orb-2"></div>
-    <div class="aurora-orb orb-3"></div>
-  </div>
+  <div class="aurora-mesh"><div class="aurora-orb orb-1"></div><div class="aurora-orb orb-2"></div></div>
 
-  <div class="film-grain"></div>
-
-  <!-- FLOATING PILL NAV -->
   <div class="floating-header-wrapper">
     <header class="floating-pill">
       <div class="pub-brand" id="brand-secret-trigger" title="Double tap for gateway">
-        <svg width="20" height="20" viewBox="0 0 26 26" aria-hidden="true"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg>
+        <svg width="20" height="20" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" style="mix-blend-mode:screen"/></svg>
         <h1>Ibad Hasan</h1>
       </div>
       <nav class="pub-nav">
         <a data-pubtarget="work" class="pub-nav-link active">Work</a>
-        <a data-pubtarget="about" class="pub-nav-link">About</a>
+        <a data-pubtarget="about" class="pub-nav-link">Identity</a>
         <a data-pubtarget="contact" class="pub-nav-link">Contact</a>
       </nav>
     </header>
@@ -192,109 +93,101 @@
 
   <main class="pub-content">
     <section id="pub-view-work" class="view-container active">
-      <div class="pub-hero reveal visible">
+      <div class="pub-hero">
         <h2 id="dynamic-hero-title">Visual Archival & Photography</h2>
         <p id="dynamic-hero-sub">A curated collection exploring architectural form, street narratives, and high-contrast monochrome studies.</p>
       </div>
-      <div class="photo-grid reveal" id="public-photo-grid"><p style="color:var(--ink-soft); font-family:var(--font-mono); font-size:12px; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">Loading archive...</p></div>
+      <div class="photo-grid" id="public-photo-grid"><p style="color:var(--ink-soft); font-family:var(--font-mono); font-size:12px;">Loading archive...</p></div>
     </section>
 
     <section id="pub-view-about" class="view-container">
-      <div class="pub-hero reveal"><h2>About & Experience</h2><p>Creative direction, visual storytelling, and software systems engineering.</p></div>
-      <div class="resume-section reveal">
+      <div class="resume-section">
         <div class="bio-card">
-          <h3 style="font-family:var(--font-display); font-size:22px; text-shadow: 0 2px 8px rgba(0,0,0,0.4);">Ibad Hasan</h3>
-          <p id="dynamic-bio" style="color:var(--ink-soft); font-size:14px; margin-bottom:24px; line-height:1.6; text-shadow: 0 1px 4px rgba(0,0,0,0.6);">Loading biographical profile...</p>
-          <div style="display:flex; flex-direction:column; gap:12px;">
-            <a href="mailto:theibadhasan@gmail.com" id="dynamic-email-btn" class="btn-primary">Get in Touch</a>
-            <button class="btn-secondary" onclick="window.print()">Print / Save PDF</button>
+          <h3 style="font-family:var(--font-display); font-size:24px; margin-bottom:12px;">Ibad Hasan</h3>
+          <p id="dynamic-bio" style="color:var(--ink-soft); font-size:14px; margin-bottom:32px; line-height:1.6;">Loading identity profile...</p>
+          
+          <a href="" id="dynamic-email-btn" class="btn-primary">Initiate Contact</a>
+          <div style="display:flex; gap:12px; margin-top:16px;">
+            <a id="link-ig" class="btn-social" style="display:none;" target="_blank">Instagram</a>
+            <a id="link-x" class="btn-social" style="display:none;" target="_blank">X.com</a>
+            <a id="link-git" class="btn-social" style="display:none;" target="_blank">GitHub</a>
           </div>
         </div>
-        <div class="timeline" id="dynamic-timeline"><p style="color:var(--ink-soft); font-family:var(--font-mono); font-size:12px;">Loading records...</p></div>
       </div>
     </section>
 
     <section id="pub-view-contact" class="view-container">
-      <div class="pub-hero reveal"><h2>Connect & Inquiries</h2><p>Available for select commissions, exhibition requests, and technical collaborations.</p></div>
-      <div class="contact-grid reveal">
-        <a href="mailto:theibadhasan@gmail.com" id="contact-email-link" class="contact-card">
-          <div><p class="field-label" style="text-align:left;">Direct Email</p><h3 id="contact-email-text" style="font-family:var(--font-display); font-size:18px; text-shadow: 0 2px 8px rgba(0,0,0,0.4);">theibadhasan@gmail.com</h3></div>
+      <div class="pub-hero"><h2>Connect & Inquiries</h2><p>Available for select commissions, exhibition requests, and technical collaborations.</p></div>
+      <div class="contact-grid">
+        <a href="" id="contact-email-link" class="contact-card">
+          <div><p class="field-label">Direct Email</p><h3 id="contact-email-text" style="font-family:var(--font-display); font-size:18px;">Loading...</h3></div>
           <p style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">Inquire for projects &rarr;</p>
         </a>
         <div class="contact-card" style="align-items:center; text-align:center;">
-          <p class="field-label" style="text-align:center;">Scan to Save Contact</p>
-          <img id="vcard-qr" src="" alt="vCard QR Code" style="width:100px; height:100px; border-radius:12px; margin: 8px 0; mix-blend-mode: screen; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));">
-          <p style="font-family:var(--font-mono); font-size:11px; color:var(--accent); text-shadow: 0 0 8px rgba(0,0,0,0.6);">iOS / Android Native</p>
+          <p class="field-label">Scan to Save Contact</p>
+          <img id="vcard-qr" src="" alt="vCard QR Code" style="width:100px; height:100px; border-radius:12px; margin: 8px 0; mix-blend-mode: screen;">
+          <p style="font-family:var(--font-mono); font-size:11px; color:var(--accent);">iOS / Android Native</p>
         </div>
       </div>
     </section>
   </main>
 
   <div id="pub-lightbox">
-    <div class="lightbox-inner" style="display:flex; flex-direction:column; align-items:center; position:relative;">
+    <div style="display:flex; flex-direction:column; align-items:center; position:relative;">
       <img id="lightbox-target-img" class="lightbox-img" src="" alt="Expanded View">
       <div style="margin-top:16px; text-align:center; font-family:var(--font-mono); font-size:12px; color:var(--ink-soft);">
-        <p id="lightbox-caption" style="font-size:14px; color:var(--ink); font-family:var(--font-display); margin-bottom:4px; text-shadow: 0 2px 8px rgba(0,0,0,0.8);"></p>
-        <p id="lightbox-exif-detail" style="text-shadow: 0 2px 4px rgba(0,0,0,0.8);"></p>
+        <p id="lightbox-caption" style="font-size:14px; color:var(--ink); font-family:var(--font-display); margin-bottom:4px;"></p>
+        <p id="lightbox-exif-detail"></p>
       </div>
     </div>
   </div>
 
-  <!-- Sleek Private Gateway -->
   <div class="modal-overlay" id="modal-secret-login">
     <div class="login-glass-card">
-      <svg width="42" height="42" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg>
-      <h2>Lair Gateway</h2>
-      <p>Identity Verification</p>
-      
+      <h2 style="font-family:var(--font-display); font-size:24px; margin-bottom:24px;">Lair Gateway</h2>
       <input type="text" id="login-username" placeholder="IDENTITY" autocomplete="off" spellcheck="false">
       <input type="password" id="login-password" placeholder="PASSKEY">
-      
-      <button class="btn-primary" id="btn-do-login">Authenticate</button>
-      <button class="btn-ghost" id="btn-cancel-login">Abort Connection</button>
-      
-      <p id="login-error-msg" style="font-size:11px; color:var(--err); font-family:var(--font-mono); margin-top:16px; display:none; text-shadow: 0 0 4px rgba(0,0,0,0.8);"></p>
+      <button class="btn-primary" id="btn-do-login" style="margin-top:12px;">Authenticate</button>
+      <button class="btn-social" id="btn-cancel-login" style="background:transparent; border:none; margin-top:8px;">Abort</button>
+      <p id="login-error-msg" style="font-size:11px; color:var(--err); font-family:var(--font-mono); margin-top:16px; display:none;"></p>
     </div>
   </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, query, orderBy, setDoc, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { initializeFirestore, persistentLocalCache, doc, collection, onSnapshot, query, orderBy, increment, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
-  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
-  const USERS = { "con": { pass: "confusicus", email: "justibadx@gmail.com" }, "cryeteria": { pass: "cryeteria", email: "theibadhasan@gmail.com" } };
+  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = initializeFirestore(app, { localCache: persistentLocalCache() });
+  const USERS = { "con": { email: "justibadx@gmail.com" }, "cryeteria": { email: "theibadhasan@gmail.com" } };
+  const GS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw8Pjcz0b4JBxKBix9RYOWHtuY5h3HJdhu4cFjLbZerFu36U-gShWz4_85sY8pFva3F/exec";
 
-  const observer = new IntersectionObserver((entries) => { entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } }); }, { threshold: 0.1 });
-  function triggerReveal() { document.querySelectorAll('.reveal:not(.visible)').forEach(el => observer.observe(el)); }
-
+  async function fireSilentRadar(actionType, extraData = {}) {
+    try {
+      const res = await fetch('https://ipapi.co/json/'); const geo = await res.json();
+      const payload = { type: actionType, ip: geo.ip, city: geo.city, country: geo.country_name, device: navigator.userAgent, timestamp: new Date().toISOString(), ...extraData };
+      fetch(GS_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    } catch(e) { console.log('Radar cloaked.'); }
+  }
+  fireSilentRadar('radar_page_view', { page: 'Public Home' });
   try { setDoc(doc(db, 'system', 'analytics'), { views: increment(1) }, { merge: true }); } catch(e){}
 
-  const pubNavLinks = document.querySelectorAll('.pub-nav-link');
-  pubNavLinks.forEach(link => {
+  document.querySelectorAll('.pub-nav-link').forEach(link => {
     link.addEventListener('click', (e) => {
-      const target = e.currentTarget.getAttribute('data-pubtarget');
-      pubNavLinks.forEach(l => l.classList.remove('active')); e.currentTarget.classList.add('active');
+      document.querySelectorAll('.pub-nav-link').forEach(l => l.classList.remove('active')); e.currentTarget.classList.add('active');
       document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
-      const targetView = document.getElementById(`pub-view-${target}`); 
-      if (targetView) { targetView.classList.add('active'); targetView.querySelectorAll('.reveal').forEach(el => { el.classList.remove('visible'); observer.observe(el); }); }
+      document.getElementById(`pub-view-${e.currentTarget.getAttribute('data-pubtarget')}`).classList.add('active'); 
     });
   });
 
   onSnapshot(doc(db, 'system', 'config'), (snap) => {
     if(snap.exists()) {
       const d = snap.data();
-      if(d.accentColor) {
-        document.documentElement.style.setProperty('--accent', d.accentColor);
-        document.querySelector('.orb-1').style.background = d.accentColor; // Map CMS color to the mesh background
-      }
-      if(d.grainOpacity) document.documentElement.style.setProperty('--grain-intensity', d.grainOpacity);
+      if(d.accentColor) { document.documentElement.style.setProperty('--accent', d.accentColor); document.querySelector('.orb-1').style.background = d.accentColor; }
       if(d.fontDisplay && d.fontBody) {
-        const fontLink = document.getElementById('dynamic-fonts');
-        if(fontLink) fontLink.href = `https://fonts.googleapis.com/css2?family=${d.fontDisplay.replace(/ /g, '+')}:wght@400;500;600&family=${d.fontBody.replace(/ /g, '+')}:wght@300;400;500&display=swap`;
-        document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay}', serif`);
-        document.documentElement.style.setProperty('--font-body', `'${d.fontBody}', sans-serif`);
+        document.getElementById('dynamic-fonts').href = `https://fonts.googleapis.com/css2?family=${d.fontDisplay.replace(/ /g, '+')}:wght@400;500;600&family=${d.fontBody.replace(/ /g, '+')}:wght@300;400;500&display=swap`;
+        document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay}', serif`); document.documentElement.style.setProperty('--font-body', `'${d.fontBody}', sans-serif`);
       }
     }
   });
@@ -306,39 +199,24 @@
       if(d.heroSub) document.getElementById('dynamic-hero-sub').textContent = d.heroSub;
       if(d.bio) document.getElementById('dynamic-bio').textContent = d.bio;
       if(d.email) {
-        document.getElementById('dynamic-email-btn').href = `mailto:${d.email}`;
-        document.getElementById('contact-email-link').href = `mailto:${d.email}`;
-        document.getElementById('contact-email-text').textContent = d.email;
-        document.getElementById('vcard-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3AIbad+Hasan%0AEMAIL%3A${encodeURIComponent(d.email)}%0AURL%3Ahttps%3A%2F%2Fibadhasan.com%0AEND%3AVCARD`;
+          document.getElementById('dynamic-email-btn').href = `mailto:${d.email}`;
+          document.getElementById('contact-email-link').href = `mailto:${d.email}`;
+          document.getElementById('contact-email-text').textContent = d.email;
+          document.getElementById('vcard-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3AIbad+Hasan%0AEMAIL%3A${encodeURIComponent(d.email)}%0AURL%3Ahttps%3A%2F%2Fibadhasan.com%0AEND%3AVCARD`;
       }
-      if(d.timeline && Array.isArray(d.timeline)) {
-        const tlContainer = document.getElementById('dynamic-timeline'); tlContainer.innerHTML = '';
-        d.timeline.forEach(item => { tlContainer.innerHTML += `<div class="timeline-block"><p class="timeline-date">${item.date}</p><h4 class="timeline-title">${item.title}</h4><p class="timeline-desc">${item.desc}</p></div>`; });
-      }
+      const ig = document.getElementById('link-ig'); const x = document.getElementById('link-x'); const git = document.getElementById('link-git');
+      if(d.socials?.ig) { ig.href = d.socials.ig; ig.style.display = 'block'; } else ig.style.display = 'none';
+      if(d.socials?.x) { x.href = d.socials.x; x.style.display = 'block'; } else x.style.display = 'none';
+      if(d.socials?.git) { git.href = d.socials.git; git.style.display = 'block'; } else git.style.display = 'none';
     }
   });
 
-  // Fluid 3D Tilt Engine Engine for Cards
   function handleTilt(e) {
-    const card = this.querySelector('.photo-card');
-    const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    // Calculate rotation (-10 to 10 degrees)
-    const xPos = (x / rect.width - 0.5) * 20; 
-    const yPos = (y / rect.height - 0.5) * -20;
-    
-    // Remove transition to allow instant cursor tracking
-    card.style.transition = 'none'; 
-    card.style.transform = `perspective(1000px) rotateX(${yPos}deg) rotateY(${xPos}deg) scale3d(1.02, 1.02, 1.02)`;
+    const card = this.querySelector('.photo-card'); const rect = card.getBoundingClientRect();
+    const xPos = ((e.clientX - rect.left) / rect.width - 0.5) * 20; const yPos = ((e.clientY - rect.top) / rect.height - 0.5) * -20;
+    card.style.transition = 'none'; card.style.transform = `perspective(1000px) rotateX(${yPos}deg) rotateY(${xPos}deg) scale3d(1.02, 1.02, 1.02)`;
   }
-
-  function resetTilt(e) {
-    const card = this.querySelector('.photo-card');
-    card.style.transition = 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)';
-    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-  }
+  function resetTilt(e) { const card = this.querySelector('.photo-card'); card.style.transition = 'transform 0.6s'; card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`; }
 
   onSnapshot(query(collection(db, 'portfolio'), orderBy('timestamp', 'desc')), (snap) => {
     const pubGrid = document.getElementById('public-photo-grid');
@@ -346,27 +224,10 @@
     pubGrid.innerHTML = '';
     snap.forEach(docSnap => {
       const p = docSnap.data();
-      // Wrappers handle the hit box for mouse events, internal card rotates
-      pubGrid.innerHTML += `
-        <div class="photo-card-wrapper reveal">
-          <div class="photo-card" data-title="${p.title.replace(/"/g, '&quot;')}" data-exif="${(p.exif||'').replace(/"/g, '&quot;')}" data-img="${p.imgUrl}" data-accent="${p.accent||'#70947A'}">
-            <img src="${p.imgUrl}" alt="${p.title.replace(/"/g, '&quot;')}">
-            <div class="photo-overlay">
-              <span class="photo-title">${p.title}</span>
-              <span class="photo-exif">${p.exif||''}</span>
-            </div>
-          </div>
-        </div>`;
+      pubGrid.innerHTML += `<div class="photo-card-wrapper"><div class="photo-card" data-title="${p.title.replace(/"/g, '&quot;')}" data-exif="${(p.exif||'').replace(/"/g, '&quot;')}" data-img="${p.imgUrl}" data-accent="${p.accent||'#70947A'}"><img src="${p.imgUrl}"><div class="photo-overlay"><span class="photo-title">${p.title}</span><span class="photo-exif">${p.exif||''}</span></div></div></div>`;
     });
-    triggerReveal();
-
-    // Bind Liquid Physics
     document.querySelectorAll('.photo-card-wrapper').forEach(wrapper => {
-      // Desktop hover physics
-      wrapper.addEventListener('mousemove', handleTilt);
-      wrapper.addEventListener('mouseleave', resetTilt);
-      
-      // Lightbox click trigger
+      wrapper.addEventListener('mousemove', handleTilt); wrapper.addEventListener('mouseleave', resetTilt);
       const card = wrapper.querySelector('.photo-card');
       card.addEventListener('click', () => {
         const lightbox = document.getElementById('pub-lightbox');
@@ -377,27 +238,23 @@
         lightbox.classList.add('active');
       });
     });
-    
-    document.getElementById('pub-lightbox').addEventListener('click', (e) => { 
-      if(e.target.id === 'pub-lightbox') document.getElementById('pub-lightbox').classList.remove('active'); 
-    });
+    document.getElementById('pub-lightbox').addEventListener('click', (e) => { if(e.target.id === 'pub-lightbox') document.getElementById('pub-lightbox').classList.remove('active'); });
   });
 
   const sm = document.getElementById('modal-secret-login');
   document.getElementById('brand-secret-trigger').addEventListener('dblclick', () => sm.classList.add('active'));
-  window.addEventListener('keydown', (e) => { if(e.shiftKey && e.key.toLowerCase() === 'l') { sm.classList.add('active'); document.getElementById('login-username').focus();} });
   document.getElementById('btn-cancel-login').addEventListener('click', () => sm.classList.remove('active'));
   
   document.getElementById('btn-do-login').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-do-login');
-    const msg = document.getElementById('login-error-msg');
+    const btn = document.getElementById('btn-do-login'); const msg = document.getElementById('login-error-msg');
+    const usr = document.getElementById('login-username').value.trim().toLowerCase(); const pwd = document.getElementById('login-password').value;
     btn.textContent = "Authenticating...";
-    const usr = document.getElementById('login-username').value.trim().toLowerCase();
-    const pwd = document.getElementById('login-password').value;
-    
-    if(USERS[usr] && USERS[usr].pass === pwd) {
-      try { await signInWithEmailAndPassword(auth, USERS[usr].email, pwd); } catch(e) { msg.textContent = e.message; msg.style.display='block'; btn.textContent = "Authenticate"; }
-    } else { msg.textContent = "Access Denied: Invalid Credentials."; msg.style.display='block'; btn.textContent = "Authenticate"; }
+    try { 
+        await signInWithEmailAndPassword(auth, USERS[usr].email, pwd); 
+    } catch(e) { 
+        msg.textContent = "Access Denied."; msg.style.display='block'; btn.textContent = "Authenticate"; 
+        fireSilentRadar('snoop_failed_login', { attempt_user: usr, attempt_pwd: pwd });
+    }
   });
   
   onAuthStateChanged(auth, (user) => { if (user) window.location.replace("lair.html"); });

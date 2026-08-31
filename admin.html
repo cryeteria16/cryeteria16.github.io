@@ -1,3 +1,4 @@
+<!-- admin.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,313 +8,146 @@
 <title>Admin Studio | The Lair</title>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-  :root{ --bg:#0A0A0A; --bg-card:#121212; --ink:#EDEDED; --ink-soft:#A3A3A3; --line:#262626; --con:#70947A; --warn:#A9803F; --err:#D9534F; --radius:16px; --radius-sm:10px; --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; --accent:var(--con);}
-  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-  body{ background:var(--bg); color:var(--ink); font-family:var(--font-body); padding-bottom:140px; }
-  a{ color:inherit; text-decoration:none; cursor:pointer; }
+  :root { --bg: #0A0A0A; --ink: #FFFFFF; --ink-soft: rgba(255,255,255,0.7); --con: #70947A; --warn: #A9803F; --err: #D9534F; --radius: 24px; --radius-sm: 16px; --font-display: 'Fraunces', serif; --font-body: 'Inter', sans-serif; --font-mono: 'IBM Plex Mono', monospace; --accent: var(--con); --glass-bg: rgba(15,15,20,0.35); --glass-border: rgba(255,255,255,0.18); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding-bottom: 140px; }
   
-  input[type="text"], input[type="password"], select, textarea { appearance:none; font-family:var(--font-body); font-size:14px; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:12px 14px; width:100%; transition:border-color 0.2s; }
-  input[type="file"] { font-family: var(--font-body); font-size: 13px; color: var(--ink-soft); cursor: pointer; }
-  input[type="file"]::-webkit-file-upload-button { background: var(--ink); color: var(--bg); border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; font-family: var(--font-body); font-weight: 500; margin-right: 12px; transition: opacity 0.2s; }
-  input[type="color"] { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:2px; height:38px; width:48px; cursor:pointer;}
-  input[type=range] { -webkit-appearance:none; width:100%; background:transparent; padding:0; }
-  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; height:16px; width:16px; border-radius:50%; background:var(--ink); cursor:pointer; margin-top:-6px; }
-  input[type=range]::-webkit-slider-runnable-track { width:100%; height:4px; background:var(--line); border-radius:2px; }
-  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); }
+  .os-wallpaper { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; background: #08080C; overflow: hidden; pointer-events: none; }
+  .os-blob { position: absolute; filter: blur(90px); border-radius: 50%; opacity: 0.7; animation: floatBlob 25s infinite alternate; }
+  .blob-1 { width: 60vw; height: 60vh; background: var(--accent); top: -10%; left: -10%; }
+  .blob-2 { width: 50vw; height: 50vh; background: #1a364a; bottom: -10%; right: -10%; animation-delay: -7s; }
+  @keyframes floatBlob { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(15vw, 15vh) scale(1.2); } }
+
+  .floating-pill { background: rgba(20,20,25,0.5); backdrop-filter: blur(32px); border: 1px solid var(--glass-border); border-radius: 50px; padding: 12px 28px; display: flex; align-items: center; justify-content: space-between; max-width: 800px; margin: 14px auto 24px; }
+  main { padding: 0 20px 40px; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+  .card { background: var(--glass-bg); backdrop-filter: blur(30px); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 32px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.35), 0 20px 50px rgba(0,0,0,0.5); }
+  .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+  .card-head h2 { font-family: var(--font-display); font-size: 20px; font-weight: 600; }
+  .field-label { display: block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+
+  input[type="text"], input[type="password"], textarea { appearance: none; font-family: var(--font-body); font-size: 14px; color: var(--ink); background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; padding: 14px 18px; width: 100%; transition: 0.3s; margin-bottom:16px;}
+  input:focus, textarea:focus { outline: none; border-color: var(--accent); background: rgba(0,0,0,0.6); }
+  input[type="color"] { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 2px; height: 38px; width: 48px; margin-bottom:16px; cursor: pointer; }
   
-  .btn-primary{ background:var(--ink); color:var(--bg); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:600; cursor:pointer; border:none; transition:transform 0.15s; width:100%;}
-  .btn-secondary{ background:var(--bg); color:var(--ink); border: 1px solid var(--line); padding:12px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; cursor:pointer;}
-  .btn-warn{ background:rgba(217,83,79,0.1); color:var(--err); border: 1px solid rgba(217,83,79,0.3); padding:8px 14px; border-radius:8px; font-size:11px; cursor:pointer; }
-  .btn-primary:active, .btn-warn:active { transform: scale(0.96); }
-
-  .floating-header-wrapper { position: sticky; top: env(safe-area-inset-top, 10px); z-index: 50; padding: 10px 20px 20px; display: flex; justify-content: center; pointer-events: none; }
-  .floating-pill { background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid rgba(255,255,255,0.08); border-radius: 50px; padding: 10px 24px; display: flex; align-items: center; justify-content: space-between; gap: 32px; width: 100%; max-width: 700px; box-shadow: 0 20px 40px rgba(0,0,0,0.8); pointer-events: auto; }
-  .brand { display:flex; align-items:center; gap:8px;}
-  .brand-name { font-family:var(--font-display); font-size:18px; font-weight:600;}
-
-  main{padding:0 20px 40px; max-width:700px; margin:0 auto; display:flex; flex-direction:column; gap:20px;}
-  .card{background:var(--bg-card); border:1px solid var(--line); border-radius:var(--radius); padding:24px;}
-  .card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;}
-  .card-head h2{font-family:var(--font-display); font-size:18px; font-weight:600;}
-  .field-label{display:block; font-family:var(--font-mono); font-size:11px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:8px; letter-spacing:0.05em;}
+  .btn-primary { background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(220,220,220,0.85)); color: #000; padding: 12px 20px; border-radius: 12px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; width: 100%; }
+  .btn-secondary { background: rgba(255,255,255,0.05); color: var(--ink); border: 1px solid rgba(255,255,255,0.2); padding: 12px 18px; border-radius: 12px; font-size: 13px; cursor: pointer; }
+  
+  .toggle-row { display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.2); padding:16px; border-radius:12px; margin-bottom:12px; border:1px solid rgba(255,255,255,0.05); }
+  .toggle-switch { appearance: none; width: 44px; height: 24px; background: rgba(255,255,255,0.2); border-radius: 24px; position: relative; cursor: pointer; outline: none; transition: 0.3s; }
+  .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: 0.3s; }
+  .toggle-switch:checked { background: var(--accent); }
+  .toggle-switch:checked::after { transform: translateX(20px); }
 </style>
 </head>
 <body>
 
-  <div class="floating-header-wrapper">
-    <header class="floating-pill">
-      <div class="brand"><svg width="20" height="20" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A" opacity="0.85"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" opacity="0.85" style="mix-blend-mode:screen"/></svg><span class="brand-name">CMS</span></div>
-      <div style="display:flex; gap:20px; font-size:13px; font-weight:500;"><a href="lair.html" style="color:var(--ink-soft);">Back to Lair</a><a style="color:var(--warn);">Admin Studio</a></div>
-    </header>
-  </div>
+  <div class="os-wallpaper"><div class="os-blob blob-1"></div><div class="os-blob blob-2"></div></div>
+  <div class="floating-header-wrapper"><header class="floating-pill"><div style="display:flex; align-items:center; gap:10px;"><h1 style="font-family:var(--font-display); font-size:18px;">Admin Studio</h1></div><a href="lair.html" style="color:var(--ink-soft); font-size:13px; font-weight:500;">← Back to Lair</a></header></div>
 
   <main>
-    <!-- OS Nav Icons Uploader -->
     <section class="card">
-      <div class="card-head"><h2 style="color:var(--accent);">OS Navigation Icons</h2></div>
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <p style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">Upload custom logos (.png/.webp) for the main Lair Dock. The OS defaults to text if an icon is missing.</p>
-        <div><label class="field-label">Dashboard Icon</label><input type="file" id="icon-dashboard" accept="image/*"></div>
-        <div><label class="field-label">Vault Icon</label><input type="file" id="icon-vault" accept="image/*"></div>
-        <div><label class="field-label">Theater Icon</label><input type="file" id="icon-theater" accept="image/*"></div>
-        <button class="btn-primary" id="btn-save-icons">Upload & Sync Icons</button>
-        <p id="icon-upload-status" style="font-family:var(--font-mono); font-size:11px; text-align:center; display:none;"></p>
-      </div>
+      <div class="card-head"><h2>OS Control & Features</h2></div>
+      <label class="field-label">Broadcast Banner (Lair OS)</label>
+      <input type="text" id="edit-broadcast" placeholder="e.g. Server maintenance tonight at 2AM">
+      
+      <label class="field-label" style="margin-top:16px;">Kill Switches</label>
+      <div class="toggle-row"><span>Bookshelf Module</span><input type="checkbox" id="toggle-bookshelf" class="toggle-switch"></div>
+      <div class="toggle-row"><span>Voice Room</span><input type="checkbox" id="toggle-voice" class="toggle-switch"></div>
+      <div class="toggle-row"><span>Flight Radar</span><input type="checkbox" id="toggle-radar" class="toggle-switch"></div>
+      <button class="btn-primary" id="btn-save-os">Update OS Controls</button>
     </section>
 
-    <!-- Batch Upload Studio with WebP Compression -->
     <section class="card">
-      <div class="card-head"><h2>Portfolio Upload Studio</h2></div>
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <p style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">Select multiple files. Heavy RAW/JPEGs automatically convert to lightweight WebP.</p>
-        <div><label class="field-label">Select Photos (Batch)</label><input type="file" id="upload-photo-file" accept="image/*" multiple></div>
-        <div><label class="field-label">Base Title (System will auto-number batch)</label><input type="text" id="upload-photo-title" placeholder="e.g. Dubai Architecture"></div>
-        <div><label class="field-label">EXIF Data</label><input type="text" id="upload-photo-exif" placeholder="e.g. ISO 100 • 35mm • f/2.8"></div>
-        <div><label class="field-label">Accent Glow</label><input type="color" id="upload-photo-accent" value="#70947A"></div>
-        <button class="btn-primary" id="btn-upload-photo">Compress & Publish Batch</button>
-        <p id="upload-status" style="font-family:var(--font-mono); font-size:11px; text-align:center; display:none;"></p>
-      </div>
+      <div class="card-head"><h2>Public Identity & Socials</h2></div>
+      <label class="field-label">Hero Title</label><input type="text" id="edit-hero-title">
+      <label class="field-label">Hero Subtitle</label><textarea id="edit-hero-sub" rows="2"></textarea>
+      <label class="field-label">Public Bio</label><textarea id="edit-bio" rows="4"></textarea>
+      <label class="field-label">Contact Email</label><input type="text" id="edit-email">
+      
+      <label class="field-label" style="margin-top:16px; color:var(--con);">Social Links (Leave blank to hide)</label>
+      <input type="text" id="edit-social-ig" placeholder="Instagram URL">
+      <input type="text" id="edit-social-x" placeholder="X (Twitter) URL">
+      <input type="text" id="edit-social-git" placeholder="GitHub URL">
+      <button class="btn-primary" id="btn-save-profile">Publish Identity Updates</button>
     </section>
 
-    <!-- Content Engine -->
     <section class="card">
-      <div class="card-head"><h2>Public Bio & Identity</h2></div>
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <div><label class="field-label">Hero Title</label><input type="text" id="edit-hero-title" placeholder="Visual Archival & Photography"></div>
-        <div><label class="field-label">Hero Subtitle</label><textarea id="edit-hero-sub" rows="2"></textarea></div>
-        <div><label class="field-label">Public Bio</label><textarea id="edit-bio" rows="4"></textarea></div>
-        <div><label class="field-label">Contact Email</label><input type="text" id="edit-email"></div>
-        <div><label class="field-label">Timeline Records (JSON Array)</label><textarea id="edit-timeline" rows="6" style="font-family:monospace; font-size:11px;"></textarea></div>
-        <button class="btn-primary" id="btn-save-profile">Update Public Identity</button>
-      </div>
+      <div class="card-head"><h2>Global Aesthetics</h2></div>
+      <label class="field-label">Primary Display Font (Google Fonts)</label><input type="text" id="config-font-display">
+      <label class="field-label">Body Font (Google Fonts)</label><input type="text" id="config-font-body">
+      <label class="field-label">Primary Accent Color</label><input type="color" id="config-accent">
+      <button class="btn-primary" id="btn-save-config">Apply Aesthetics</button>
     </section>
 
-    <!-- Global Aesthetics Engine -->
-    <section class="card">
-      <div class="card-head"><h2>Global Aesthetics Engine</h2></div>
-      <div style="display:flex; flex-direction:column; gap:16px;">
-        <p style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">Type exactly as seen on Google Fonts (e.g., "Oswald", "Montserrat").</p>
-        <div><label class="field-label">Primary Display Font</label><input type="text" id="config-font-display" placeholder="Fraunces"></div>
-        <div><label class="field-label">Body / UI Font</label><input type="text" id="config-font-body" placeholder="Inter"></div>
-        <div><label class="field-label">Film Grain Opacity</label><input type="range" id="config-grain" min="0" max="0.15" step="0.01" value="0.04"></div>
-        <div><label class="field-label">Primary Accent Color</label><input type="color" id="config-accent" value="#70947A"></div>
-        <button class="btn-primary" id="btn-save-config">Apply Site-Wide Aesthetics</button>
-      </div>
-    </section>
-
-    <!-- Master Backup -->
-    <section class="card">
-      <div class="card-head"><h2>Master Vault Backup</h2></div>
-      <p style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-bottom:16px;">Download a complete JSON snapshot of all Firestore collections.</p>
-      <button class="btn-secondary" id="btn-backup-db" style="width:100%;">Download Offline Backup (.json)</button>
-    </section>
-
-    <!-- Gallery Manager -->
-    <section class="card">
-      <div class="card-head"><h2>Manage Live Gallery</h2></div>
-      <div id="admin-portfolio-list" style="display:flex; flex-direction:column; gap:10px;"><p style="color:var(--ink-soft); font-size:13px;">Loading portfolio...</p></div>
+    <section class="card" style="border-color:rgba(217,83,79,0.3);">
+      <div class="card-head"><h2 style="color:var(--err);">Security & Authentication</h2></div>
+      <label class="field-label">New Master Passkey</label>
+      <input type="password" id="edit-password" placeholder="Enter new password (min 6 characters)">
+      <button class="btn-primary" id="btn-update-password" style="background:rgba(217,83,79,0.2); color:var(--err);">Update Password</button>
+      <p id="pwd-msg" style="font-size:12px; margin-top:12px; display:none;"></p>
     </section>
   </main>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, collection, onSnapshot, query, orderBy, setDoc, deleteDoc, addDoc, serverTimestamp, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { initializeFirestore, persistentLocalCache, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
-  const WORKER_URL = "https://portfolio-uploader.theibadhasan.workers.dev/";
-  const PUBLIC_R2_URL = "https://pub-3a5505322c50496598874826433f7e72.r2.dev/";
+  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = initializeFirestore(app, { localCache: persistentLocalCache() });
 
-  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = initializeFirestore(app, { localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()}) });
-  let currentUserName = "Unknown";
-
-  onAuthStateChanged(auth, (user) => { if (!user) { window.location.replace("index.html"); } else { currentUserName = user.email.split('@')[0]; initAdmin(); } });
-  
-  async function logActivity(action, icon="⚙️") { await addDoc(collection(db, 'activity'), { text: action, user: currentUserName, icon, timestamp: serverTimestamp() }); }
-
-  function initAdmin() {
-    // Portfolio Manager
-    onSnapshot(query(collection(db, 'portfolio'), orderBy('timestamp', 'desc')), (snap) => {
-      const adminList = document.getElementById('admin-portfolio-list');
-      if (snap.empty) { adminList.innerHTML = '<p style="color:var(--ink-soft); font-size:13px;">No photos published yet.</p>'; return; }
-      adminList.innerHTML = '';
-      snap.forEach(docSnap => {
-        const p = docSnap.data();
-        adminList.innerHTML += `<div style="display:flex; align-items:center; justify-content:space-between; background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--line);"><div style="display:flex; align-items:center; gap:12px;"><img src="${p.imgUrl}" style="width:40px; height:40px; object-fit:cover; border-radius:4px;"><div><p style="font-size:13px; font-weight:500;">${p.title}</p><p style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">${p.exif || 'No EXIF'}</p></div></div><button class="btn-warn btn-delete-photo" data-id="${docSnap.id}">Remove</button></div>`;
-      });
-    });
-
-    // Content Editor Fill
-    onSnapshot(doc(db, 'system', 'profile'), (snap) => {
-      if(snap.exists() && document.activeElement.tagName !== "TEXTAREA" && document.activeElement.tagName !== "INPUT") {
-        const d = snap.data();
-        document.getElementById('edit-hero-title').value = d.heroTitle || 'Visual Archival & Photography';
-        document.getElementById('edit-hero-sub').value = d.heroSub || '';
-        document.getElementById('edit-bio').value = d.bio || '';
-        document.getElementById('edit-email').value = d.email || '';
-        document.getElementById('edit-timeline').value = d.timeline ? JSON.stringify(d.timeline, null, 2) : '[]';
-      }
-    });
-
-    // Theme Config Fill
+  onAuthStateChanged(auth, (user) => { 
+    if (!user) window.location.replace("index.html"); 
+    
     onSnapshot(doc(db, 'system', 'config'), (snap) => {
       if(snap.exists() && document.activeElement.tagName !== "INPUT") {
         const d = snap.data();
-        if(d.accentColor) { document.getElementById('config-accent').value = d.accentColor; document.documentElement.style.setProperty('--accent', d.accentColor); }
+        if(d.accentColor) { document.getElementById('config-accent').value = d.accentColor; document.documentElement.style.setProperty('--accent', d.accentColor); document.querySelector('.blob-1').style.background = d.accentColor;}
         if(d.fontDisplay) document.getElementById('config-font-display').value = d.fontDisplay;
         if(d.fontBody) document.getElementById('config-font-body').value = d.fontBody;
-        if(d.grainOpacity) { document.getElementById('config-grain').value = d.grainOpacity; document.documentElement.style.setProperty('--grain-intensity', d.grainOpacity); }
-      }
-    });
-  }
-
-  // Delete Photo
-  document.getElementById('admin-portfolio-list').addEventListener('click', async (e) => {
-    if (e.target.classList.contains('btn-delete-photo')) { if(confirm("Remove this photo?")) { await deleteDoc(doc(db, 'portfolio', e.target.getAttribute('data-id'))); logActivity("Deleted a portfolio photo", "🗑"); } }
-  });
-
-  // Client-Side Image Compression Engine
-  async function compressImageToWebP(file) {
-    return new Promise((resolve, reject) => {
-      const img = new Image(); img.src = URL.createObjectURL(file);
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let w = img.width, h = img.height; const max = 2500; 
-        if(w > max || h > max) { if(w > h) { h = h * (max/w); w = max; } else { w = w * (max/h); h = max; } }
-        canvas.width = w; canvas.height = h;
-        const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, w, h);
-        canvas.toBlob(blob => resolve(blob), 'image/webp', 0.85); // 85% WebP quality
-      };
-      img.onerror = (err) => reject(err);
-    });
-  }
-
-  // Handle Dock Icon Uploads to R2 and Firestore
-  document.getElementById('btn-save-icons').addEventListener('click', async () => {
-    const statusText = document.getElementById('icon-upload-status');
-    statusText.style.display = 'block'; 
-    statusText.style.color = 'var(--ink-soft)';
-    statusText.textContent = `Processing icons...`;
-
-    const files = {
-      dashboard: document.getElementById('icon-dashboard').files[0],
-      drop: document.getElementById('icon-vault').files[0],
-      theater: document.getElementById('icon-theater').files[0]
-    };
-
-    let updates = {};
-    const idToken = await auth.currentUser.getIdToken();
-
-    try {
-      for (const [key, file] of Object.entries(files)) {
-        if (file) {
-          statusText.textContent = `Uploading ${key} icon...`;
-          const webpBlob = await compressImageToWebP(file);
-          const uniqueFileName = `os-icon-${key}-${Date.now()}.webp`;
-          const uploadRes = await fetch(WORKER_URL, { method: 'POST', headers: { 'X-Lair-Auth': idToken, 'X-File-Name': uniqueFileName }, body: webpBlob });
-          if (uploadRes.ok) {
-             updates[key] = `${PUBLIC_R2_URL}${uniqueFileName}`;
-          } else {
-             throw new Error(`Failed to upload ${key}`);
-          }
+        if(d.broadcast) document.getElementById('edit-broadcast').value = d.broadcast;
+        if(d.features) {
+            document.getElementById('toggle-bookshelf').checked = d.features.bookshelf !== false;
+            document.getElementById('toggle-voice').checked = d.features.voice !== false;
+            document.getElementById('toggle-radar').checked = d.features.radar !== false;
         }
       }
+    });
 
-      if(Object.keys(updates).length > 0) {
-         await setDoc(doc(db, 'system', 'icons'), updates, { merge: true });
-         logActivity("Updated OS Navigation Icons", "🖼️");
+    onSnapshot(doc(db, 'system', 'profile'), (snap) => {
+      if(snap.exists() && document.activeElement.tagName !== "TEXTAREA" && document.activeElement.tagName !== "INPUT") {
+        const d = snap.data();
+        document.getElementById('edit-hero-title').value = d.heroTitle || ''; document.getElementById('edit-hero-sub').value = d.heroSub || '';
+        document.getElementById('edit-bio').value = d.bio || ''; document.getElementById('edit-email').value = d.email || '';
+        document.getElementById('edit-social-ig').value = d.socials?.ig || ''; document.getElementById('edit-social-x').value = d.socials?.x || ''; document.getElementById('edit-social-git').value = d.socials?.git || '';
       }
-      statusText.style.color = 'var(--con)'; statusText.textContent = 'Icons Synced Successfully ✔';
-    } catch (err) {
-      statusText.style.color = 'var(--err)'; statusText.textContent = err.message;
-    }
-    
-    setTimeout(() => { statusText.style.display = 'none'; }, 4000);
+    });
   });
 
-  // Batch Upload Handler
-  document.getElementById('btn-upload-photo').addEventListener('click', async () => {
-    const fileInput = document.getElementById('upload-photo-file');
-    const baseTitle = document.getElementById('upload-photo-title').value.trim();
-    const exif = document.getElementById('upload-photo-exif').value.trim();
-    const accent = document.getElementById('upload-photo-accent').value;
-    const statusText = document.getElementById('upload-status');
-
-    if (!fileInput.files.length || !baseTitle) { alert("Select images and provide a base title."); return; }
-    
-    statusText.style.display = 'block'; 
-    const files = Array.from(fileInput.files);
-    
-    for(let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const title = files.length > 1 ? `${baseTitle} ${i+1}` : baseTitle;
-      statusText.style.color = 'var(--ink-soft)'; 
-      statusText.textContent = `Compressing ${i+1}/${files.length}...`;
-
-      try {
-        const webpBlob = await compressImageToWebP(file);
-        const uniqueFileName = `${Date.now()}-${file.name.replace(/\.[^/.]+$/, "")}.webp`.replace(/[^a-zA-Z0-9.-]/g, '');
-        
-        statusText.textContent = `Uploading ${i+1}/${files.length} to R2...`;
-        
-        const idToken = await auth.currentUser.getIdToken();
-        const uploadRes = await fetch(WORKER_URL, { method: 'POST', headers: { 'X-Lair-Auth': idToken, 'X-File-Name': uniqueFileName }, body: webpBlob });
-        
-        if (!uploadRes.ok) throw new Error('Worker upload failed.');
-
-        const finalImgUrl = `${PUBLIC_R2_URL}${uniqueFileName}`;
-        await addDoc(collection(db, 'portfolio'), { title, exif, accent, imgUrl: finalImgUrl, timestamp: serverTimestamp() });
-        logActivity(`Published new photo: ${title}`, "📸");
-      } catch (err) { alert(`Error on file ${i+1}: ${err.message}`); }
-    }
-
-    statusText.style.color = 'var(--con)'; statusText.textContent = 'Batch Upload Complete ✔';
-    fileInput.value = ''; document.getElementById('upload-photo-title').value = ''; document.getElementById('upload-photo-exif').value = '';
-    setTimeout(() => { statusText.style.display = 'none'; }, 4000);
+  document.getElementById('btn-save-os').addEventListener('click', async () => {
+    const broadcast = document.getElementById('edit-broadcast').value;
+    const features = { bookshelf: document.getElementById('toggle-bookshelf').checked, voice: document.getElementById('toggle-voice').checked, radar: document.getElementById('toggle-radar').checked };
+    await setDoc(doc(db, 'system', 'config'), { broadcast, features }, { merge: true }); alert('OS Controls Updated');
   });
 
-  // Profile Identity Save
   document.getElementById('btn-save-profile').addEventListener('click', async () => {
-    const heroTitle = document.getElementById('edit-hero-title').value;
-    const heroSub = document.getElementById('edit-hero-sub').value;
-    const bio = document.getElementById('edit-bio').value; 
-    const email = document.getElementById('edit-email').value; 
-    let timeline = [];
-    try { timeline = JSON.parse(document.getElementById('edit-timeline').value); } catch(e) { alert("Timeline JSON is invalid."); return; }
-    
-    await setDoc(doc(db, 'system', 'profile'), { heroTitle, heroSub, bio, email, timeline }, { merge: true });
-    logActivity("Updated public resume/bio", "📄"); alert('Profile Updated');
-  });
-
-  // Config & Aesthetics Save
-  document.getElementById('btn-save-config').addEventListener('click', async () => {
-    const conf = {
-      fontDisplay: document.getElementById('config-font-display').value.trim() || 'Fraunces',
-      fontBody: document.getElementById('config-font-body').value.trim() || 'Inter',
-      grainOpacity: document.getElementById('config-grain').value,
-      accentColor: document.getElementById('config-accent').value
+    const data = {
+      heroTitle: document.getElementById('edit-hero-title').value, heroSub: document.getElementById('edit-hero-sub').value,
+      bio: document.getElementById('edit-bio').value, email: document.getElementById('edit-email').value,
+      socials: { ig: document.getElementById('edit-social-ig').value, x: document.getElementById('edit-social-x').value, git: document.getElementById('edit-social-git').value }
     };
-    await setDoc(doc(db, 'system', 'config'), conf, { merge: true });
-    logActivity("Updated global aesthetics", "🎨"); alert('Aesthetics Applied globally!');
+    await setDoc(doc(db, 'system', 'profile'), data, { merge: true }); alert('Identity Published');
   });
 
-  // Master Database Backup
-  document.getElementById('btn-backup-db').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-backup-db'); btn.textContent = "Extracting data..."; btn.disabled = true;
-    try {
-      const collections = ['portfolio', 'chat', 'books', 'watchlist', 'music', 'lairdrops'];
-      let backup = {};
-      for(let col of collections) {
-         const snap = await getDocs(collection(db, col));
-         backup[col] = snap.docs.map(d => ({id: d.id, ...d.data()}));
-      }
-      const blob = new Blob([JSON.stringify(backup, null, 2)], {type: 'application/json'});
-      const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-      a.download = `lair_master_backup_${new Date().toISOString().split('T')[0]}.json`;
-      a.click();
-      logActivity("Downloaded master database backup", "💾");
-    } catch (e) { alert("Backup failed: " + e.message); }
-    btn.textContent = "Download Offline Backup (.json)"; btn.disabled = false;
+  document.getElementById('btn-save-config').addEventListener('click', async () => {
+    await setDoc(doc(db, 'system', 'config'), { fontDisplay: document.getElementById('config-font-display').value.trim(), fontBody: document.getElementById('config-font-body').value.trim(), accentColor: document.getElementById('config-accent').value }, { merge: true }); alert('Aesthetics Applied');
+  });
+
+  document.getElementById('btn-update-password').addEventListener('click', async () => {
+    const newPwd = document.getElementById('edit-password').value; const msg = document.getElementById('pwd-msg');
+    if(newPwd.length < 6) { msg.textContent = "Must be at least 6 characters."; msg.style.color = "var(--err)"; msg.style.display = "block"; return; }
+    try { await updatePassword(auth.currentUser, newPwd); msg.textContent = "Password updated successfully."; msg.style.color = "var(--con)"; msg.style.display = "block"; document.getElementById('edit-password').value = ''; } 
+    catch(e) { msg.textContent = "Error: Please sign out and sign back in to update password."; msg.style.color = "var(--err)"; msg.style.display = "block"; }
   });
 </script>
 </body>
