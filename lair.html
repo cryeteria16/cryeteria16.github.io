@@ -411,14 +411,14 @@
     initMediaEngine();
   }
 
-  let activeLightboxFilename = null;
+ let activeLightboxFilename = null;
   async function loadPhotoTimeline() {
     const container = document.getElementById('photo-timeline-container');
     try {
       const res = await fetch(`${TUNNEL_URL}/api/photos`); 
       const photos = await res.json();
       if(photos.length === 0) { 
-        container.innerHTML = '<p style="color:var(--ink-soft); font-size:13px;">No photos found on local drive.</p>'; 
+        container.innerHTML = '<p style="color:var(--ink-soft); font-size:13px;">No media found on local drive.</p>'; 
         return; 
       }
 
@@ -432,7 +432,9 @@
       for(const [dateStr, list] of Object.entries(grouped)) {
         let gridHtml = `<div><h3 class="timeline-date-header">${dateStr}</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:12px;">`;
         list.forEach(p => { 
-          gridHtml += `<div class="vault-thumb-card" data-url="${p.url}" data-filename="${p.filename}" style="background:url('${p.url}') center/cover no-repeat;"></div>`; 
+          const isVideo = /\.(mp4|mov|m4v)$/i.test(p.filename);
+          // Adds a visual play icon for videos so they don't appear as broken images
+          gridHtml += `<div class="vault-thumb-card" data-url="${p.url}" data-filename="${p.filename}" data-isvideo="${isVideo}" style="background:url('${isVideo ? 'https://upload.wikimedia.org/wikipedia/commons/0/03/Play_Icon.svg' : p.url}') center/cover no-repeat; ${isVideo ? 'background-size: 30%; background-color: #111;' : ''}"></div>`; 
         });
         container.innerHTML += gridHtml + `</div></div>`;
       }
@@ -440,7 +442,16 @@
       document.querySelectorAll('.vault-thumb-card').forEach(card => {
         card.addEventListener('click', () => {
           activeLightboxFilename = card.getAttribute('data-filename');
-          document.getElementById('lightbox-img').src = card.getAttribute('data-url');
+          const isVideo = card.getAttribute('data-isvideo') === 'true';
+          const mediaUrl = card.getAttribute('data-url');
+          
+          if(isVideo) {
+             document.getElementById('lightbox-img').style.display = 'none';
+          } else {
+             document.getElementById('lightbox-img').style.display = 'block';
+             document.getElementById('lightbox-img').src = mediaUrl;
+          }
+          
           document.getElementById('photo-lightbox').classList.add('active');
         });
       });
