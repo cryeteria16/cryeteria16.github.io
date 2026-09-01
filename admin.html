@@ -65,6 +65,7 @@
       <input type="text" id="edit-broadcast" placeholder="e.g. Server maintenance tonight at 2AM">
       
       <label class="field-label" style="margin-top:16px;">Kill Switches</label>
+      <div class="toggle-row"><span>Theater Module</span><input type="checkbox" id="toggle-theater" class="toggle-switch"></div>
       <div class="toggle-row"><span>Bookshelf Module</span><input type="checkbox" id="toggle-bookshelf" class="toggle-switch"></div>
       <div class="toggle-row"><span>Voice Room</span><input type="checkbox" id="toggle-voice" class="toggle-switch"></div>
       <div class="toggle-row"><span>Flight Radar</span><input type="checkbox" id="toggle-radar" class="toggle-switch"></div>
@@ -73,6 +74,8 @@
 
     <section class="card">
       <div class="card-head"><h2>Public Identity & Socials</h2></div>
+      <p style="font-size:12px; color:var(--warn); margin-bottom:16px;">Note: Any text saved here will instantly override the public website.</p>
+      
       <label class="field-label">Hero Title</label><input type="text" id="edit-hero-title">
       <label class="field-label">Hero Subtitle</label><textarea id="edit-hero-sub" rows="2"></textarea>
       <label class="field-label">Public Bio</label><textarea id="edit-bio" rows="4"></textarea>
@@ -127,6 +130,7 @@
         if(d.fontBody) document.getElementById('config-font-body').value = d.fontBody;
         if(d.broadcast) document.getElementById('edit-broadcast').value = d.broadcast;
         if(d.features) {
+            document.getElementById('toggle-theater').checked = d.features.theater !== false;
             document.getElementById('toggle-bookshelf').checked = d.features.bookshelf !== false;
             document.getElementById('toggle-voice').checked = d.features.voice !== false;
             document.getElementById('toggle-radar').checked = d.features.radar !== false;
@@ -151,6 +155,7 @@
   document.getElementById('btn-save-os').addEventListener('click', async () => {
     const broadcast = document.getElementById('edit-broadcast').value;
     const features = { 
+      theater: document.getElementById('toggle-theater').checked,
       bookshelf: document.getElementById('toggle-bookshelf').checked, 
       voice: document.getElementById('toggle-voice').checked, 
       radar: document.getElementById('toggle-radar').checked 
