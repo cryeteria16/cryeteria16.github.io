@@ -1,16 +1,31 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0A0A0A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
 <title>Ibad Hasan — Visuals & Archive</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;500&family=Inter:wght@300;400;500&display=swap">
 <style>
-  :root { --bg:#0A0A0A; --ink:#FFFFFF; --ink-soft:rgba(255,255,255,0.7); --con:#70947A; --accent:var(--con); --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif; --font-mono:'IBM Plex Mono', monospace; --radius:24px; --radius-sm:16px; --glass-bg: rgba(20,20,25,0.45); --glass-border: rgba(255,255,255,0.12); }
+  :root { 
+    --bg:#0A0A0A; 
+    --ink:#FFFFFF; 
+    --ink-soft:rgba(255,255,255,0.7); 
+    --con:#70947A; 
+    --accent:var(--con); 
+    --font-display:'Fraunces', serif; 
+    --font-body:'Inter', sans-serif; 
+    --font-mono:'IBM Plex Mono', monospace; 
+    --radius:24px; 
+    --radius-sm:16px; 
+    --glass-bg: rgba(20,20,25,0.45); 
+    --glass-border: rgba(255,255,255,0.12); 
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--ink); font-family: var(--font-body); line-height: 1.5; overflow-x: hidden; }
   a { color: inherit; text-decoration: none; cursor: pointer; }
@@ -21,8 +36,8 @@
   .orb-2 { width: 50vw; height: 50vh; background: #2b4c59; bottom: -10%; right: -10%; animation-delay: -5s; }
   @keyframes floatOrb { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(10vw, 15vh) scale(1.2); } }
 
-  .floating-header-wrapper { position: sticky; top: 20px; z-index: 50; padding: 20px; display: flex; justify-content: center; pointer-events: none; }
-  .floating-pill { background: rgba(30,30,35,0.65); backdrop-filter: blur(32px); border: 1px solid var(--glass-border); border-radius: 50px; padding: 12px 28px; display: flex; align-items: center; gap: 32px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 20px 40px rgba(0,0,0,0.3); pointer-events: auto; }
+  .floating-header-wrapper { position: sticky; top: env(safe-area-inset-top, 20px); z-index: 50; padding: 20px; display: flex; justify-content: center; pointer-events: none; }
+  .floating-pill { background: rgba(30,30,35,0.65); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); border: 1px solid var(--glass-border); border-radius: 50px; padding: 12px 28px; display: flex; align-items: center; gap: 32px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.2), 0 20px 40px rgba(0,0,0,0.3); pointer-events: auto; }
   .pub-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
   .pub-brand h1 { font-family: var(--font-display); font-size: 18px; font-weight: 500; }
   .pub-nav { display: flex; gap: 24px; font-size: 13px; font-family: var(--font-mono); color: var(--ink-soft); }
@@ -49,7 +64,7 @@
   .photo-exif { font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); }
 
   .resume-section { display: flex; flex-direction: column; max-width: 600px; margin: 20px auto 0; gap: 48px; }
-  .bio-card { background: var(--glass-bg); backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 40px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.2); text-align: center; }
+  .bio-card { background: var(--glass-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 40px; box-shadow: inset 0 1px 1px rgba(255,255,255,0.2); text-align: center; }
   
   .btn-primary { background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(220,220,220,0.85)); color: #000; padding: 12px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; text-align: center; border: none; cursor: pointer; width: 100%; display:block; margin-bottom:12px; transition: 0.3s;}
   .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
@@ -57,16 +72,16 @@
   .btn-social:hover { background: rgba(255,255,255,0.1); border-color: var(--accent); color: var(--accent); }
 
   .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 24px; }
-  .contact-card { background: var(--glass-bg); backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 32px; transition: 0.4s; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;}
+  .contact-card { background: var(--glass-bg); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 32px; transition: 0.4s; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;}
   .contact-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.3); box-shadow: 0 20px 40px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.3); }
   .field-label { display: block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; letter-spacing: 0.05em; }
 
   /* Modals */
-  #pub-lightbox { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5,5,8,0.85); backdrop-filter: blur(24px); z-index: 150; display: none; align-items: center; justify-content: center; padding: 24px; opacity: 0; transition: 0.4s;}
+  #pub-lightbox { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(5,5,8,0.85); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); z-index: 150; display: none; align-items: center; justify-content: center; padding: 24px; opacity: 0; transition: 0.4s;}
   #pub-lightbox.active { display: flex; opacity: 1; }
   .lightbox-img { max-width: 100%; max-height: 75vh; border-radius: 12px; box-shadow: 0 40px 100px rgba(0,0,0,0.9), inset 0 1px 1px rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.05); }
   
-  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(32px); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: 0.5s; }
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(32px); -webkit-backdrop-filter: blur(32px); display: flex; align-items: center; justify-content: center; z-index: 100; opacity: 0; pointer-events: none; transition: 0.5s; }
   .modal-overlay.active { opacity: 1; pointer-events: auto; }
   .login-glass-card { background: rgba(20,20,25,0.6); border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 40px 100px rgba(0,0,0,0.9); border-radius: 32px; padding: 48px 32px; width: 100%; max-width: 360px; text-align: center; }
   .login-glass-card input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--ink); font-family: var(--font-mono); font-size: 14px; text-align: center; padding: 16px; border-radius: 16px; width: 100%; margin-bottom: 12px; outline: none; }
@@ -159,14 +174,25 @@
   import { initializeFirestore, persistentLocalCache, doc, collection, onSnapshot, query, orderBy, increment, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
-  const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = initializeFirestore(app, { localCache: persistentLocalCache() });
+  const app = initializeApp(firebaseConfig); 
+  const auth = getAuth(app); 
+  const db = initializeFirestore(app, { localCache: persistentLocalCache() });
   const USERS = { "con": { email: "justibadx@gmail.com" }, "cryeteria": { email: "theibadhasan@gmail.com" } };
   const GS_WEBHOOK_URL = "https://script.google.com/macros/s/AKfycbw8Pjcz0b4JBxKBix9RYOWHtuY5h3HJdhu4cFjLbZerFu36U-gShWz4_85sY8pFva3F/exec";
 
   async function fireSilentRadar(actionType, extraData = {}) {
     try {
-      const res = await fetch('https://ipapi.co/json/'); const geo = await res.json();
-      const payload = { type: actionType, ip: geo.ip, city: geo.city, country: geo.country_name, device: navigator.userAgent, timestamp: new Date().toISOString(), ...extraData };
+      const res = await fetch('https://ipapi.co/json/'); 
+      const geo = await res.json();
+      const payload = { 
+        type: actionType, 
+        ip: geo.ip, 
+        city: geo.city, 
+        country: geo.country_name, 
+        device: navigator.userAgent, 
+        timestamp: new Date().toISOString(), 
+        ...extraData 
+      };
       fetch(GS_WEBHOOK_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
     } catch(e) { console.log('Radar cloaked.'); }
   }
@@ -175,7 +201,8 @@
 
   document.querySelectorAll('.pub-nav-link').forEach(link => {
     link.addEventListener('click', (e) => {
-      document.querySelectorAll('.pub-nav-link').forEach(l => l.classList.remove('active')); e.currentTarget.classList.add('active');
+      document.querySelectorAll('.pub-nav-link').forEach(l => l.classList.remove('active')); 
+      e.currentTarget.classList.add('active');
       document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
       document.getElementById(`pub-view-${e.currentTarget.getAttribute('data-pubtarget')}`).classList.add('active'); 
     });
@@ -184,10 +211,14 @@
   onSnapshot(doc(db, 'system', 'config'), (snap) => {
     if(snap.exists()) {
       const d = snap.data();
-      if(d.accentColor) { document.documentElement.style.setProperty('--accent', d.accentColor); document.querySelector('.orb-1').style.background = d.accentColor; }
+      if(d.accentColor) { 
+        document.documentElement.style.setProperty('--accent', d.accentColor); 
+        document.querySelector('.orb-1').style.background = d.accentColor; 
+      }
       if(d.fontDisplay && d.fontBody) {
         document.getElementById('dynamic-fonts').href = `https://fonts.googleapis.com/css2?family=${d.fontDisplay.replace(/ /g, '+')}:wght@400;500;600&family=${d.fontBody.replace(/ /g, '+')}:wght@300;400;500&display=swap`;
-        document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay}', serif`); document.documentElement.style.setProperty('--font-body', `'${d.fontBody}', sans-serif`);
+        document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay}', serif`); 
+        document.documentElement.style.setProperty('--font-body', `'${d.fontBody}', sans-serif`);
       }
     }
   });
@@ -204,7 +235,9 @@
           document.getElementById('contact-email-text').textContent = d.email;
           document.getElementById('vcard-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=BEGIN%3AVCARD%0AVERSION%3A3.0%0AFN%3AIbad+Hasan%0AEMAIL%3A${encodeURIComponent(d.email)}%0AURL%3Ahttps%3A%2F%2Fibadhasan.com%0AEND%3AVCARD`;
       }
-      const ig = document.getElementById('link-ig'); const x = document.getElementById('link-x'); const git = document.getElementById('link-git');
+      const ig = document.getElementById('link-ig'); 
+      const x = document.getElementById('link-x'); 
+      const git = document.getElementById('link-git');
       if(d.socials?.ig) { ig.href = d.socials.ig; ig.style.display = 'block'; } else ig.style.display = 'none';
       if(d.socials?.x) { x.href = d.socials.x; x.style.display = 'block'; } else x.style.display = 'none';
       if(d.socials?.git) { git.href = d.socials.git; git.style.display = 'block'; } else git.style.display = 'none';
@@ -212,22 +245,33 @@
   });
 
   function handleTilt(e) {
-    const card = this.querySelector('.photo-card'); const rect = card.getBoundingClientRect();
-    const xPos = ((e.clientX - rect.left) / rect.width - 0.5) * 20; const yPos = ((e.clientY - rect.top) / rect.height - 0.5) * -20;
-    card.style.transition = 'none'; card.style.transform = `perspective(1000px) rotateX(${yPos}deg) rotateY(${xPos}deg) scale3d(1.02, 1.02, 1.02)`;
+    const card = this.querySelector('.photo-card'); 
+    const rect = card.getBoundingClientRect();
+    const xPos = ((e.clientX - rect.left) / rect.width - 0.5) * 20; 
+    const yPos = ((e.clientY - rect.top) / rect.height - 0.5) * -20;
+    card.style.transition = 'none'; 
+    card.style.transform = `perspective(1000px) rotateX(${yPos}deg) rotateY(${xPos}deg) scale3d(1.02, 1.02, 1.02)`;
   }
-  function resetTilt(e) { const card = this.querySelector('.photo-card'); card.style.transition = 'transform 0.6s'; card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`; }
+  function resetTilt(e) { 
+    const card = this.querySelector('.photo-card'); 
+    card.style.transition = 'transform 0.6s'; 
+    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`; 
+  }
 
   onSnapshot(query(collection(db, 'portfolio'), orderBy('timestamp', 'desc')), (snap) => {
     const pubGrid = document.getElementById('public-photo-grid');
-    if (snap.empty) { pubGrid.innerHTML = '<p style="color:var(--ink-soft); grid-column: 1 / -1; text-align:center;">No photos published yet.</p>'; return; }
+    if (snap.empty) { 
+      pubGrid.innerHTML = '<p style="color:var(--ink-soft); grid-column: 1 / -1; text-align:center;">No photos published yet.</p>'; 
+      return; 
+    }
     pubGrid.innerHTML = '';
     snap.forEach(docSnap => {
       const p = docSnap.data();
       pubGrid.innerHTML += `<div class="photo-card-wrapper"><div class="photo-card" data-title="${p.title.replace(/"/g, '&quot;')}" data-exif="${(p.exif||'').replace(/"/g, '&quot;')}" data-img="${p.imgUrl}" data-accent="${p.accent||'#70947A'}"><img src="${p.imgUrl}"><div class="photo-overlay"><span class="photo-title">${p.title}</span><span class="photo-exif">${p.exif||''}</span></div></div></div>`;
     });
     document.querySelectorAll('.photo-card-wrapper').forEach(wrapper => {
-      wrapper.addEventListener('mousemove', handleTilt); wrapper.addEventListener('mouseleave', resetTilt);
+      wrapper.addEventListener('mousemove', handleTilt); 
+      wrapper.addEventListener('mouseleave', resetTilt);
       const card = wrapper.querySelector('.photo-card');
       card.addEventListener('click', () => {
         const lightbox = document.getElementById('pub-lightbox');
@@ -238,7 +282,9 @@
         lightbox.classList.add('active');
       });
     });
-    document.getElementById('pub-lightbox').addEventListener('click', (e) => { if(e.target.id === 'pub-lightbox') document.getElementById('pub-lightbox').classList.remove('active'); });
+    document.getElementById('pub-lightbox').addEventListener('click', (e) => { 
+      if(e.target.id === 'pub-lightbox') document.getElementById('pub-lightbox').classList.remove('active'); 
+    });
   });
 
   const sm = document.getElementById('modal-secret-login');
@@ -246,13 +292,17 @@
   document.getElementById('btn-cancel-login').addEventListener('click', () => sm.classList.remove('active'));
   
   document.getElementById('btn-do-login').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-do-login'); const msg = document.getElementById('login-error-msg');
-    const usr = document.getElementById('login-username').value.trim().toLowerCase(); const pwd = document.getElementById('login-password').value;
+    const btn = document.getElementById('btn-do-login'); 
+    const msg = document.getElementById('login-error-msg');
+    const usr = document.getElementById('login-username').value.trim().toLowerCase(); 
+    const pwd = document.getElementById('login-password').value;
     btn.textContent = "Authenticating...";
     try { 
         await signInWithEmailAndPassword(auth, USERS[usr].email, pwd); 
     } catch(e) { 
-        msg.textContent = "Access Denied."; msg.style.display='block'; btn.textContent = "Authenticate"; 
+        msg.textContent = "Access Denied."; 
+        msg.style.display='block'; 
+        btn.textContent = "Authenticate"; 
         fireSilentRadar('snoop_failed_login', { attempt_user: usr, attempt_pwd: pwd });
     }
   });
