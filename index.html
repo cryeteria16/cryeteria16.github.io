@@ -180,7 +180,6 @@
   const auth = getAuth(app); 
   const db = initializeFirestore(app, { localCache: persistentLocalCache() });
   
-  // NOTE: Consider migrating user mappings to your backend in the future to fully secure client-side code.
   const USERS = { "con": { email: "justibadx@gmail.com" }, "cryeteria": { email: "theibadhasan@gmail.com" } };
   
   async function fireSilentRadar(actionType) {
@@ -298,15 +297,12 @@
     const pwd = document.getElementById('login-password').value;
     btn.textContent = "Authenticating...";
     try { 
-        // Identifies the mapped email
         const targetEmail = USERS[usr] ? USERS[usr].email : usr;
         await signInWithEmailAndPassword(auth, targetEmail, pwd); 
     } catch(e) { 
         msg.textContent = "Access Denied."; 
         msg.style.display='block'; 
         btn.textContent = "Authenticate"; 
-        
-        // FIX: Transmit event to radar without logging sensitive passkey details
         fireSilentRadar('Snoop: Failed Gateway Auth');
     }
   });
