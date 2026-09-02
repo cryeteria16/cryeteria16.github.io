@@ -259,6 +259,14 @@
   const db = initializeFirestore(app, { localCache: persistentLocalCache() });
   let currentUser = null;
 
+  // New Security Interceptor: Injects Firebase Identity Tokens into Local API calls
+  async function fetchWithAuth(url, options = {}) {
+      if (!auth.currentUser) return fetch(url, options);
+      const token = await auth.currentUser.getIdToken();
+      const headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
+      return fetch(url, { ...options, headers });
+  }
+
   onAuthStateChanged(auth, (user) => {
     if (!user) window.location.replace("index.html");
     currentUser = { name: user.email.split('@')[0], id: user.email.split('@')[0] };
@@ -348,7 +356,8 @@
     });
     onSnapshot(doc(db, 'system', 'bulletin'), (snap) => { if(snap.exists() && document.activeElement !== bulletinIn) bulletinIn.value = snap.data().text || ''; });
 
-    fetch(`${TUNNEL_URL}/api/storage`).then(r => r.json()).then(data => {
+    // Utilizing fetchWithAuth for Security
+    fetchWithAuth(`${TUNNEL_URL}/api/storage`).then(r => r.json()).then(data => {
         if(data.totalBytes) {
             const gb = (data.totalBytes / (1024*1024*1024)).toFixed(1);
             let pct = Math.min((data.totalBytes / data.maxBytes) * 100, 100);
@@ -374,7 +383,8 @@
   let activeLightboxFilename = null;
   async function initVault() {
     try {
-      const res = await fetch(`${TUNNEL_URL}/api/photos`); 
+      // Utilizing fetchWithAuth for Security
+      const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos`); 
       const allFiles = await res.json();
       
       const photos = allFiles.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f.filename));
@@ -417,7 +427,7 @@
       status.textContent = `Uploading ${i+1}/${e.target.files.length} to PC...`;
       const fd = new FormData(); 
       fd.append('photo', e.target.files[i]);
-      try { await fetch(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd }); } catch(err) {}
+      try { await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd }); } catch(err) {}
     }
     status.textContent = 'Upload Complete ✔'; 
     setTimeout(() => status.style.display = 'none', 3000); 
@@ -427,7 +437,7 @@
   document.getElementById('btn-delete-vault-photo').addEventListener('click', async () => {
     if(!activeLightboxFilename) return;
     if(confirm(`Permanently delete from Windows PC?`)) {
-      const res = await fetch(`${TUNNEL_URL}/api/photos/delete/${activeLightboxFilename}`, { method: 'DELETE' });
+      const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/delete/${activeLightboxFilename}`, { method: 'DELETE' });
       if(res.ok) { 
         document.getElementById('photo-lightbox').style.display = 'none'; 
         initVault(); 

@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="manifest" href="manifest.json">
-<title>Ibad - documentation </title>
+<title>Ibad Hasan — Visuals & Archive</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;500&family=Inter:wght@300;400;500&display=swap">
@@ -98,7 +98,7 @@
     <header class="floating-pill">
       <div class="pub-brand" id="brand-secret-trigger" title="Double tap for gateway">
         <svg width="20" height="20" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="#70947A"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" style="mix-blend-mode:screen"/></svg>
-        <h1>Ibad</h1>
+        <h1>Ibad Hasan</h1>
       </div>
       <nav class="pub-nav">
         <a data-pubtarget="work" class="pub-nav-link active">Work</a>
@@ -111,8 +111,8 @@
   <main class="pub-content">
     <section id="pub-view-work" class="view-container active">
       <div class="pub-hero">
-        <h2 id="dynamic-hero-title">For documentation purposes only</h2>
-        <p id="dynamic-hero-sub">Testing and documentation.</p>
+        <h2 id="dynamic-hero-title">Visual Archival & Photography</h2>
+        <p id="dynamic-hero-sub">A curated collection exploring architectural form, street narratives, and high-contrast monochrome studies.</p>
       </div>
       <div class="photo-grid" id="public-photo-grid"><p style="color:var(--ink-soft); font-family:var(--font-mono); font-size:12px;">Loading archive...</p></div>
     </section>
@@ -179,13 +179,14 @@
   const app = initializeApp(firebaseConfig); 
   const auth = getAuth(app); 
   const db = initializeFirestore(app, { localCache: persistentLocalCache() });
+  
+  // NOTE: Consider migrating user mappings to your backend in the future to fully secure client-side code.
   const USERS = { "con": { email: "justibadx@gmail.com" }, "cryeteria": { email: "theibadhasan@gmail.com" } };
   
   async function fireSilentRadar(actionType) {
     try {
       const res = await fetch('https://ipapi.co/json/'); 
       const geo = await res.json();
-      // Log directly to Firestore for the Lair Dashboard Live Radar
       await addDoc(collection(db, 'radar_logs'), {
           type: actionType,
           city: geo.city || 'Unknown',
@@ -292,15 +293,21 @@
   
   document.getElementById('btn-do-login').addEventListener('click', async () => {
     const btn = document.getElementById('btn-do-login'); 
+    const msg = document.getElementById('login-error-msg');
     const usr = document.getElementById('login-username').value.trim().toLowerCase(); 
+    const pwd = document.getElementById('login-password').value;
     btn.textContent = "Authenticating...";
     try { 
-        await signInWithEmailAndPassword(auth, USERS[usr].email, document.getElementById('login-password').value); 
+        // Identifies the mapped email
+        const targetEmail = USERS[usr] ? USERS[usr].email : usr;
+        await signInWithEmailAndPassword(auth, targetEmail, pwd); 
     } catch(e) { 
-        document.getElementById('login-error-msg').textContent = "Access Denied."; 
-        document.getElementById('login-error-msg').style.display='block'; 
+        msg.textContent = "Access Denied."; 
+        msg.style.display='block'; 
         btn.textContent = "Authenticate"; 
-        fireSilentRadar('Snoop: Failed Login Attempt');
+        
+        // FIX: Transmit event to radar without logging sensitive passkey details
+        fireSilentRadar('Snoop: Failed Gateway Auth');
     }
   });
   
