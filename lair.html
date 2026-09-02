@@ -3,318 +3,119 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="theme-color" content="#070709">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="manifest.json">
 <title>The Lair OS</title>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
 <style>
   :root { 
-    --bg:#070709; 
-    --ink:#FFFFFF; 
-    --ink-soft:rgba(255,255,255,0.68); 
-    --ink-subtle:rgba(255,255,255,0.38);
-    --line:rgba(255,255,255,0.12); 
-    --con:#70947A; 
-    --warn:#DDA758; 
-    --err:#E65C58; 
-    --radius:28px; 
-    --radius-sm:18px; 
-    --font-display:'Fraunces', serif; 
-    --font-body:'Inter', sans-serif; 
-    --font-mono:'IBM Plex Mono', monospace; 
-    --accent:var(--con); 
+    /* Base Dynamic Theme Engine */
+    --con: #70947A; 
+    --accent: var(--con); 
+    --font-display: 'Fraunces', serif; 
+    --font-body: 'Inter', sans-serif; 
+    --font-mono: 'IBM Plex Mono', monospace; 
+    --radius: 28px; 
+    --radius-sm: 18px; 
+    
+    /* Default Dark Mode */
+    --bg: #070709; 
+    --ink: #FFFFFF; 
+    --ink-soft: rgba(255,255,255,0.65); 
+    --glass-bg: rgba(255, 255, 255, 0.04);
+    --glass-nav: rgba(12, 12, 16, 0.55);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.12);
+    --glass-blur: blur(35px) saturate(190%);
+    --glass-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.35), 0 20px 45px -10px rgba(0, 0, 0, 0.7);
+    --input-bg: rgba(0, 0, 0, 0.35);
+    --btn-primary-bg: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(225,225,225,0.9));
+    --btn-primary-text: #000;
+  }
 
-    /* Authentic Apple Liquid Glass System */
-    --liquid-glass-bg: rgba(255, 255, 255, 0.04);
-    --liquid-glass-thick: rgba(16, 16, 22, 0.60);
-    --liquid-glass-blur: blur(36px) saturate(190%) contrast(102%);
-    --liquid-glass-border: 1px solid rgba(255, 255, 255, 0.16);
-    --liquid-glass-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.45), 
-                         inset 0 -1px 1px 0 rgba(255, 255, 255, 0.05),
-                         0 20px 45px -10px rgba(0, 0, 0, 0.75);
+  /* Light Mode Overrides */
+  [data-theme="light"] {
+    --bg: #F2F2F7; 
+    --ink: #1C1C1E; 
+    --ink-soft: rgba(60, 60, 67, 0.65); 
+    --glass-bg: rgba(255, 255, 255, 0.65);
+    --glass-nav: rgba(255, 255, 255, 0.75);
+    --glass-border: 1px solid rgba(0, 0, 0, 0.08);
+    --glass-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.8), 0 15px 35px -10px rgba(0, 0, 0, 0.15);
+    --input-bg: rgba(0, 0, 0, 0.04);
+    --btn-primary-bg: linear-gradient(180deg, #1C1C1E, #000);
+    --btn-primary-text: #FFF;
   }
 
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
-  
-  body { 
-    background: var(--bg); 
-    color: var(--ink); 
-    font-family: var(--font-body); 
-    overflow-x: hidden; 
-    letter-spacing: -0.01em;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); 
-    transition: background 0.6s ease; 
-  }
-
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding-top: env(safe-area-inset-top, 0px); padding-bottom: 140px; transition: background 0.4s ease, color 0.4s ease; }
   a { color:inherit; text-decoration:none; cursor:pointer; } 
   button { font-family:inherit; border:none; background:none; cursor:pointer; outline:none; }
   
-  /* Fluid Chromatic Mesh Underlay */
-  .os-wallpaper { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100vw; 
-    height: 100vh; 
-    z-index: -2; 
-    background: radial-gradient(circle at 50% 50%, #0D0E15 0%, #050507 100%); 
-    overflow: hidden; 
-    pointer-events: none; 
-  }
-  .os-blob { 
-    position: absolute; 
-    filter: blur(100px); 
-    border-radius: 50%; 
-    opacity: 0.65; 
-    animation: floatBlob 22s cubic-bezier(0.4, 0, 0.2, 1) infinite alternate; 
-  }
-  .blob-1 { width: 65vw; height: 65vh; background: var(--accent); top: -15%; left: -15%; }
-  .blob-2 { width: 55vw; height: 55vh; background: #1f3d53; bottom: -12%; right: -12%; animation-delay: -6s; }
-  .blob-3 { width: 40vw; height: 40vh; background: #3c244d; top: 40%; left: 30%; animation-delay: -11s; opacity: 0.4; }
-
-  @keyframes floatBlob { 
-    0% { transform: translate(0, 0) scale(1) rotate(0deg); } 
-    50% { transform: translate(12vw, 10vh) scale(1.15) rotate(30deg); }
-    100% { transform: translate(-8vw, 18vh) scale(0.95) rotate(-20deg); } 
-  }
-
+  .os-wallpaper { position: fixed; inset: 0; z-index: -2; background: radial-gradient(circle at 50% 50%, var(--bg) 0%, var(--bg) 100%); pointer-events: none; transition: 0.4s ease;}
+  
   /* Liquid Menubar */
-  .os-menubar { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100%; 
-    height: calc(48px + env(safe-area-inset-top, 0px)); 
-    padding-top: env(safe-area-inset-top, 0px); 
-    background: rgba(12, 12, 16, 0.45); 
-    backdrop-filter: var(--liquid-glass-blur); 
-    -webkit-backdrop-filter: var(--liquid-glass-blur);
-    border-bottom: 1px solid rgba(255,255,255,0.1); 
-    display: flex; 
-    align-items: center; 
-    justify-content: space-between; 
-    padding-left: 28px; 
-    padding-right: 28px; 
-    font-size: 13px; 
-    font-weight: 500; 
-    z-index: 900; 
-    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.05);
-  }
+  .os-menubar { position: fixed; top: 0; left: 0; width: 100%; height: calc(48px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border-bottom: var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; font-size: 13px; font-weight: 500; z-index: 900; transition: background 0.4s ease; }
   .sys-dot { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 10px currentColor; display:inline-block; }
+  #broadcast-banner { display:none; width:100%; background:var(--accent); color:#000; font-family:var(--font-mono); font-size:12px; font-weight:600; text-align:center; padding:10px; z-index:1000; position:fixed; top:0; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);}
 
-  /* Floating Liquid Dock (iOS Home Bar style) */
-  .os-dock-wrapper { 
-    position: fixed; 
-    bottom: calc(24px + env(safe-area-inset-bottom, 0px)); 
-    left: 0; 
-    width: 100%; 
-    display: flex; 
-    justify-content: center; 
-    z-index: 900; 
-    pointer-events: none; 
-  }
-  .os-dock { 
-    background: var(--liquid-glass-thick); 
-    backdrop-filter: var(--liquid-glass-blur); 
-    -webkit-backdrop-filter: var(--liquid-glass-blur); 
-    border: var(--liquid-glass-border); 
-    border-radius: 36px; 
-    padding: 8px 10px; 
-    display: flex; 
-    gap: 8px; 
-    box-shadow: var(--liquid-glass-glow); 
-    pointer-events: auto; 
-    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-  .dock-app { 
-    padding: 10px 22px; 
-    border-radius: 26px; 
-    background: transparent; 
-    color: var(--ink-soft); 
-    font-weight: 500; 
-    font-size: 13px; 
-    cursor: pointer; 
-    transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1); 
-  }
-  .dock-app:hover { 
-    background: rgba(255,255,255,0.08); 
-    color: var(--ink); 
-    transform: translateY(-2px); 
-  }
-  .dock-app:active { transform: scale(0.94); }
-  .dock-app.active { 
-    background: rgba(255, 255, 255, 0.95); 
-    color: #000; 
-    font-weight: 600; 
-    box-shadow: 0 8px 20px -4px rgba(255, 255, 255, 0.4), inset 0 1px 1px #fff; 
-  }
+  /* Floating Liquid Dock */
+  .os-dock-wrapper { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); left: 0; width: 100%; display: flex; justify-content: center; z-index: 900; pointer-events: none; }
+  .os-dock { background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 36px; padding: 8px 10px; display: flex; gap: 8px; box-shadow: var(--glass-glow); pointer-events: auto; transition: background 0.4s ease; }
+  .dock-app { padding: 10px 22px; border-radius: 26px; color: var(--ink-soft); font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
+  .dock-app.active { background: var(--ink); color: var(--bg); font-weight: 600; box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.2); }
 
-  /* Liquid Cards & Surfaces */
   main { padding: 90px 32px 100px; max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
-  @media (max-width: 768px) { main { padding: 80px 16px 100px; } }
-
-  .card { 
-    background: var(--liquid-glass-bg); 
-    backdrop-filter: var(--liquid-glass-blur); 
-    -webkit-backdrop-filter: var(--liquid-glass-blur); 
-    border: var(--liquid-glass-border); 
-    border-radius: var(--radius); 
-    padding: 32px; 
-    box-shadow: var(--liquid-glass-glow); 
-    position: relative;
-    overflow: hidden; 
-  }
-  .card::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
-    opacity: 0.5;
-  }
+  
+  .card { background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: var(--radius); padding: 32px; box-shadow: var(--glass-glow); overflow: hidden; transition: 0.4s ease; }
   .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
-  .card-head h2 { font-family:var(--font-display); font-size:22px; font-weight:500; letter-spacing: -0.02em; }
+  .card-head h2 { font-family:var(--font-display); font-size:20px; font-weight:500; }
 
-  /* Liquid Inputs & Buttons */
-  input[type="text"], textarea { 
-    appearance: none; 
-    font-family: var(--font-body); 
-    font-size: 14px; 
-    color: var(--ink); 
-    background: rgba(0, 0, 0, 0.35); 
-    border: 1px solid rgba(255, 255, 255, 0.12); 
-    border-radius: var(--radius-sm); 
-    padding: 15px 20px; 
-    width: 100%; 
-    transition: all 0.25s ease; 
-    outline: none; 
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-  }
-  input[type="text"]:focus, textarea:focus { 
-    border-color: rgba(255,255,255,0.4); 
-    background: rgba(0,0,0,0.5); 
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.4), 0 0 0 3px rgba(255,255,255,0.08); 
-  }
+  input[type="text"], textarea { appearance: none; font-family: var(--font-body); font-size: 14px; color: var(--ink); background: var(--input-bg); border: var(--glass-border); border-radius: var(--radius-sm); padding: 15px 20px; width: 100%; outline: none; transition: 0.3s; }
+  
+  .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); padding: 12px 24px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; transition: 0.2s cubic-bezier(0.32, 0.72, 0, 1); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);}
+  .btn-secondary { background: var(--glass-bg); border: var(--glass-border); color: var(--ink); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight:500; backdrop-filter: var(--glass-blur); transition:0.2s;}
 
-  .btn-primary { 
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(225, 225, 225, 0.9) 100%); 
-    color: #000; 
-    padding: 12px 24px; 
-    border-radius: var(--radius-sm); 
-    font-size: 13px; 
-    font-weight: 600; 
-    box-shadow: inset 0 1px 0 #fff, 0 10px 25px -5px rgba(0,0,0,0.5); 
-    transition: all 0.2s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 #fff, 0 14px 28px -4px rgba(0,0,0,0.6); }
-  .btn-primary:active { transform: scale(0.97); }
+  /* Segmented Control Vault */
+  .segment-pill { display: inline-flex; background: var(--input-bg); border: var(--glass-border); border-radius: 30px; padding: 4px; margin-bottom: 24px; }
+  .seg-btn { padding: 8px 24px; border-radius: 26px; font-size: 13px; font-weight: 500; color: var(--ink-soft); transition: 0.3s; }
+  .seg-btn.active { background: var(--ink); color: var(--bg); box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-weight: 600;}
+  .vault-timeline { display: none; flex-direction: column; gap: 24px; animation: smoothFadeIn 0.3s forwards; }
+  .vault-timeline.active { display: flex; }
 
-  .btn-secondary { 
-    background: rgba(255, 255, 255, 0.06); 
-    border: 1px solid rgba(255, 255, 255, 0.16); 
-    color: var(--ink); 
-    padding: 12px 20px; 
-    border-radius: var(--radius-sm); 
-    font-size: 13px; 
-    box-shadow: inset 0 1px 1px rgba(255,255,255,0.2); 
-    backdrop-filter: blur(16px);
-    transition: all 0.2s ease; 
-  }
-  .btn-secondary:hover { background: rgba(255, 255, 255, 0.12); border-color: rgba(255, 255, 255, 0.28); }
-  .btn-secondary:active { transform: scale(0.97); }
+  /* Radar Widget */
+  .radar-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: var(--glass-border); font-size: 13px; }
+  .radar-row:last-child { border-bottom: none; }
 
-  /* Frosted Gauge */
-  .storage-gauge-wrapper { 
-    position: relative; 
-    width: 170px; 
-    height: 170px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    margin: 0 auto 32px; 
-    border-radius: 50%; 
-    background: conic-gradient(var(--con) calc(var(--pct) * 1%), rgba(255,255,255,0.06) 0); 
-    box-shadow: 0 15px 40px rgba(0,0,0,0.6), inset 0 0 2px rgba(255,255,255,0.2); 
-  }
-  .storage-gauge-inner { 
-    width: 144px; 
-    height: 144px; 
-    background: rgba(14, 14, 18, 0.75); 
-    backdrop-filter: var(--liquid-glass-blur); 
-    border: 1px solid rgba(255, 255, 255, 0.14); 
-    border-radius: 50%; 
-    display: flex; 
-    flex-direction: column; 
-    align-items: center; 
-    justify-content: center; 
-    box-shadow: inset 0 1px 1px rgba(255,255,255,0.3);
-  }
-
-  /* Theater & Grid */
+  /* Bulletproof Theater */
   .theater-grid { display: grid; grid-template-columns: 7.2fr 2.8fr; gap: 28px; align-items: start; }
   @media (max-width: 1024px) { .theater-grid { grid-template-columns: 1fr; } }
+  .theater-container { width: 100%; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); border: var(--glass-border); box-shadow: 0 35px 70px -15px rgba(0,0,0,0.6); position: relative; overflow: hidden;}
+  .theater-container .plyr { position: absolute; inset: 0; width: 100%; height: 100%; }
   
-  .theater-container { 
-    width: 100%; 
-    max-height: 60vh; 
-    aspect-ratio: 16/9; 
-    margin: 0 auto; 
-    background: #000; 
-    border-radius: var(--radius-sm); 
-    overflow: hidden; 
-    border: 1px solid rgba(255,255,255,0.18); 
-    box-shadow: 0 35px 70px -15px rgba(0,0,0,0.9), inset 0 1px 1px rgba(255,255,255,0.2); 
-    position: relative;
-  }
-  .theater-container .plyr { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-  .plyr { border-radius: var(--radius-sm); }
-  .plyr__control--overlaid { background: var(--accent) !important; color: #000 !important; }
-
-  /* Gallery Thumbnails */
-  .vault-thumb-card { 
-    aspect-ratio: 1; 
-    border-radius: var(--radius-sm); 
-    cursor: pointer; 
-    border: 1px solid rgba(255,255,255,0.15); 
-    box-shadow: inset 0 1px 1px rgba(255,255,255,0.3), 0 10px 20px rgba(0,0,0,0.4); 
-    transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1), box-shadow 0.25s ease; 
-  }
-  .vault-thumb-card:hover { 
-    transform: scale(1.04); 
-    box-shadow: inset 0 1px 1px rgba(255,255,255,0.5), 0 15px 30px rgba(0,0,0,0.7); 
-    border-color: rgba(255,255,255,0.35);
-  }
+  .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
+  .vault-thumb-card:hover { transform: scale(1.04); }
+  .storage-gauge-wrapper { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; margin: 0 auto 32px; border-radius: 50%; background: conic-gradient(var(--con) calc(var(--pct) * 1%), var(--glass-bg) 0); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+  .storage-gauge-inner { width: 136px; height: 136px; background: var(--bg); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
   .view-container { display: none; opacity: 0; } 
   .view-container.active { display: block; animation: smoothFadeIn 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
-  @keyframes smoothFadeIn { from { opacity: 0; transform: translateY(16px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes smoothFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 </head>
-<body>
+<body data-theme="dark">
   
-  <div class="os-wallpaper">
-    <div class="os-blob blob-1"></div>
-    <div class="os-blob blob-2"></div>
-    <div class="os-blob blob-3"></div>
-  </div>
-  
+  <div class="os-wallpaper"></div>
   <div id="broadcast-banner"></div>
 
   <nav class="os-menubar" id="top-nav">
     <div style="display:flex; gap:16px; align-items:center;">
-      <span style="font-weight:600; display:flex; align-items:center; gap:8px;">
-        <span class="sys-dot" style="color:var(--con);"></span>The Lair
-      </span>
+      <span style="font-weight:600; display:flex; align-items:center; gap:8px;"><span class="sys-dot" style="color:var(--con);"></span>The Lair</span>
     </div>
     <div style="display:flex; gap:16px; align-items:center;">
+        <button id="btn-theme-toggle" class="btn-secondary" style="padding:4px 12px; font-size:11px;">☀️ Light</button>
         <div id="sys-clock" style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft);">--:--</div>
-        <button id="btn-signout" style="background:rgba(230,92,88,0.12); color:var(--err); border: 1px solid rgba(230,92,88,0.35); padding:5px 12px; border-radius:10px; font-size:11px; font-weight:600; transition:0.2s;">Lock</button>
+        <button id="btn-signout" style="color:var(--err); font-size:12px; font-weight:600;">Lock</button>
     </div>
   </nav>
 
@@ -330,107 +131,110 @@
   <main>
     <section id="view-dashboard" class="view-container active">
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
-        <div class="card" style="display:flex; flex-direction:column; gap:14px; padding:24px;">
-          <div class="card-head" style="margin-bottom:0;">
-            <h2 style="font-size:16px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft);">Universal Relay</h2>
-            <span id="relay-status" style="font-family:var(--font-mono); font-size:11px; color:var(--con);">Synced</span>
-          </div>
-          <textarea id="relay-input" rows="3" placeholder="Paste links or text to sync across devices instantly..."></textarea>
+        <div class="card" style="padding:24px;">
+          <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Universal Relay</h2>
+          <textarea id="relay-input" rows="3" placeholder="Sync text across devices..."></textarea>
+          <div style="display:flex; justify-content:flex-end; margin-top:8px;"><span id="relay-status" style="font-family:var(--font-mono); font-size:11px; color:var(--con);">Synced</span></div>
         </div>
         
-        <div class="card" id="flight-radar-widget" style="display:flex; flex-direction:column; justify-content:space-between; padding:24px;">
-          <div class="card-head" style="margin-bottom:12px;">
-            <h2 style="font-size:16px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft);">Flight Radar</h2>
+        <!-- Live Radar Command Center -->
+        <div class="card" style="padding:24px; display:flex; flex-direction:column;">
+          <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Live Radar</h2>
+          <div id="radar-feed" style="flex:1; overflow-y:auto; max-height:140px;">
+             <p style="font-size:12px; color:var(--ink-soft);">Waiting for telemetry...</p>
           </div>
-          <input type="text" id="flight-input" placeholder="Enter flight number (e.g. EK1)" style="margin-bottom:12px;">
-          <button class="btn-secondary" onclick="window.open('https://www.flightradar24.com/' + document.getElementById('flight-input').value, '_blank')" style="width:100%;">Track Flight ↗</button>
         </div>
       </div>
       
+      <div class="status-strip" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:24px; margin-bottom:24px;">
+        <div class="card" id="flight-radar-widget" style="padding:24px; display:flex; flex-direction:column; justify-content:space-between;">
+            <h3 style="font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 12px;">Flight Radar</h3>
+            <input type="text" id="flight-input" placeholder="e.g. EK1" style="margin-bottom:12px;">
+            <button class="btn-secondary" onclick="window.open('https://www.flightradar24.com/' + document.getElementById('flight-input').value, '_blank')" style="width:100%;">Track on FlightRadar24 ↗</button>
+        </div>
+        <div class="card" id="voice-room-widget" style="padding:24px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            <h3 style="font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 12px;">Voice Room</h3>
+            <button class="btn-primary" id="btn-join-voice" style="width:100%;">🎙 Join Channel</button>
+        </div>
+      </div>
+
       <section class="card">
         <div class="card-head">
           <h2>Shared Bulletin</h2>
           <span id="bulletin-status" style="font-family:var(--font-mono); font-size:11px; color:var(--con);">Synced</span>
         </div>
-        <textarea id="shared-bulletin-input" rows="7" placeholder="Collaborative notes, watch party dates, or shared thoughts..." style="line-height:1.6;"></textarea>
+        <textarea id="shared-bulletin-input" rows="7" style="line-height:1.6;"></textarea>
       </section>
     </section>
 
     <section id="view-drop" class="view-container">
       <section class="card" style="margin-bottom:28px; text-align:center;">
-        <div class="card-head" style="justify-content:center; margin-bottom:32px;"><h2>Private Cloud Storage</h2></div>
-        
+        <div class="card-head" style="justify-content:center; margin-bottom:16px;"><h2>Lair Cloud Drive</h2></div>
         <div class="storage-gauge-wrapper" id="drop-gauge" style="--pct: 0;">
           <div class="storage-gauge-inner">
-            <span id="drop-usage-text" style="font-family:var(--font-mono); font-size:24px; font-weight:600;">0GB</span>
-            <span style="font-size:11px; color:var(--ink-soft);">of 100GB Allocation</span>
+            <span id="drop-usage-text" style="font-family:var(--font-mono); font-size:22px; font-weight:600;">0GB</span>
+            <span style="font-size:11px; color:var(--ink-soft);">of 100GB Limit</span>
           </div>
         </div>
-
-        <div style="background:rgba(0,0,0,0.25); border:1px dashed rgba(255,255,255,0.25); border-radius:var(--radius-sm); padding:36px; text-align:center;">
-          <p style="font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); margin-bottom:16px;">Direct Upload to Local PC</p>
+        <div style="background:var(--input-bg); border:1px dashed rgba(128,128,128,0.5); border-radius:var(--radius-sm); padding:24px;">
           <input type="file" id="vault-photo-input" accept="image/*,video/*" style="display:none;" multiple>
-          <button class="btn-secondary" onclick="document.getElementById('vault-photo-input').click()">Upload Media</button>
-          <p id="vault-status" style="font-size:12px; color:var(--con); margin-top:16px; display:none;"></p>
+          <button class="btn-secondary" onclick="document.getElementById('vault-photo-input').click()">Upload Local Media</button>
+          <p id="vault-status" style="font-size:12px; color:var(--con); margin-top:12px; display:none;"></p>
         </div>
       </section>
 
       <section class="card">
-        <div class="card-head"><h2>Vault Timeline</h2></div>
-        <div id="photo-timeline-container" style="display:flex; flex-direction:column; gap:24px;">
-          <p style="font-size:13px; color:var(--ink-soft); font-family:var(--font-mono);">Connecting to local vault bridge...</p>
+        <div style="display:flex; justify-content:center;">
+            <!-- Segmented Control -->
+            <div class="segment-pill">
+                <button class="seg-btn active" data-seg="photos">Photography</button>
+                <button class="seg-btn" data-seg="videos">Videos</button>
+            </div>
         </div>
+        
+        <div id="timeline-photos" class="vault-timeline active"><p style="font-size:13px; color:var(--ink-soft); text-align:center;">Scanning local bridge...</p></div>
+        <div id="timeline-videos" class="vault-timeline"><p style="font-size:13px; color:var(--ink-soft); text-align:center;">Scanning local bridge...</p></div>
       </section>
     </section>
 
     <section id="view-theater" class="view-container">
       <div class="theater-grid">
         <div style="display:flex; flex-direction:column; gap:28px;">
-          <section class="card">
-            <div class="card-head"><h2>Theater Stage</h2></div>
+          <section class="card" style="padding:24px;">
             <div class="theater-container" id="theater-frame-box" style="margin-bottom:20px;">
-              <div id="video-view" style="width:100%; height:100%; display:flex;">
-                <div id="theater-player-slot" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px;">
-                  Select a title from the watchlist below
-                </div>
+              <div id="theater-player-slot" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px;">
+                  Select media from watchlist
               </div>
             </div>
             <div style="display:flex; gap:14px;">
               <input type="text" id="cowatch-url-input" placeholder="Direct Video URL (.mp4 or YouTube)...">
               <button class="btn-primary" id="btn-load-cowatch">Stream</button>
-              <button class="btn-secondary" id="btn-pip">Pop Out</button>
             </div>
           </section>
 
-          <section class="card">
+          <section class="card" style="padding:24px;">
             <div style="display:flex; gap:12px; margin-bottom:20px;">
-              <input type="text" id="tmdb-search-input" placeholder="Search movies globally (TMDB)...">
+              <input type="text" id="tmdb-search-input" placeholder="Search globally (TMDB)...">
               <button class="btn-secondary" id="btn-tmdb-search" style="width:auto;">Search</button>
             </div>
-            <div id="tmdb-results" style="display:flex; gap:16px; overflow-x:auto; margin-bottom:24px; padding-bottom:16px;"></div>
+            <div id="tmdb-results" style="display:flex; gap:16px; overflow-x:auto; margin-bottom:20px; padding-bottom:8px;"></div>
             <div id="shared-watchlist" style="display:flex; gap:16px; overflow-x:auto;"></div>
           </section>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:28px;">
-          <div class="card" id="voice-room-widget">
-            <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:16px;">Voice Channel</h2>
-            <button class="btn-primary" id="btn-join-voice" style="width:100%;">🎙 Join Channel</button>
+        <section class="card" style="display:flex; flex-direction:column; min-height:420px; padding:24px;">
+          <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:20px;">Live Chat</h2>
+          <div id="chat-window" style="flex:1; overflow-y:auto; margin-bottom:16px; font-size:14px; display:flex; flex-direction:column; gap:8px;"></div>
+          <div style="display:flex; gap:10px;">
+            <input type="text" id="chat-input" placeholder="Write message...">
+            <button class="btn-primary" id="btn-send-chat">&rarr;</button>
           </div>
-          <section class="card" style="display:flex; flex-direction:column; flex:1; min-height:420px;">
-            <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:20px;">Live Chat</h2>
-            <div id="chat-window" style="flex:1; overflow-y:auto; margin-bottom:16px; font-size:14px; display:flex; flex-direction:column; gap:8px;"></div>
-            <div style="display:flex; gap:10px;">
-              <input type="text" id="chat-input" placeholder="Write message...">
-              <button class="btn-primary" id="btn-send-chat">&rarr;</button>
-            </div>
-          </section>
-        </div>
+        </section>
       </div>
     </section>
   </main>
-
-  <div class="modal-overlay" id="photo-lightbox" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:var(--liquid-glass-blur); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px;">
+  
+  <div id="photo-lightbox" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:var(--glass-blur); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px;">
     <div class="card" style="max-width:90%; text-align:center; padding:24px;">
       <img id="lightbox-img" src="" style="max-width:100%; max-height:70vh; border-radius:var(--radius-sm); margin-bottom:20px;">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -444,7 +248,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { initializeFirestore, persistentLocalCache, doc, collection, onSnapshot, query, orderBy, setDoc, addDoc, updateDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { initializeFirestore, persistentLocalCache, doc, collection, onSnapshot, query, orderBy, setDoc, addDoc, updateDoc, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
   const TUNNEL_URL = "https://vault.ibadhasan.com"; 
@@ -454,12 +258,6 @@
   const auth = getAuth(app); 
   const db = initializeFirestore(app, { localCache: persistentLocalCache() });
   let currentUser = null;
-  const watchPartyDoc = doc(db, 'system', 'watch_party');
-
-  function triggerHaptic() { if (navigator.vibrate) navigator.vibrate(12); }
-  document.addEventListener('click', (e) => {
-    if(e.target.closest('button') || e.target.closest('.dock-app') || e.target.closest('.vault-thumb-card')) triggerHaptic();
-  });
 
   onAuthStateChanged(auth, (user) => {
     if (!user) window.location.replace("index.html");
@@ -467,18 +265,15 @@
     initOS();
   });
 
-  document.getElementById('btn-signout').addEventListener('click', async () => {
-    await signOut(auth);
-    window.location.replace("index.html");
-  });
+  document.getElementById('btn-signout').addEventListener('click', () => { signOut(auth); window.location.replace("index.html"); });
 
+  // Top Nav & Routing
   document.querySelectorAll('.app-link').forEach(link => {
     link.addEventListener('click', (e) => {
-      const target = e.currentTarget.getAttribute('data-target');
       document.querySelectorAll('.dock-app').forEach(d => d.classList.remove('active')); 
       e.currentTarget.classList.add('active');
       document.querySelectorAll('.view-container').forEach(w => w.classList.remove('active'));
-      document.getElementById(`view-${target}`).classList.add('active'); 
+      document.getElementById(`view-${e.currentTarget.getAttribute('data-target')}`).classList.add('active'); 
       window.scrollTo(0,0);
     });
   });
@@ -486,37 +281,72 @@
   function initOS() {
     setInterval(() => document.getElementById('sys-clock').textContent = new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:false }), 1000);
 
+    // Dynamic UI features syncing
     onSnapshot(doc(db, 'system', 'config'), (snap) => {
       if(snap.exists()) {
         const d = snap.data();
-        if(d.accentColor) document.querySelector('.blob-1').style.background = d.accentColor;
+        if(d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
+        
+        const banner = document.getElementById('broadcast-banner');
+        if(d.broadcast && d.broadcast.trim() !== '') { 
+          banner.textContent = d.broadcast; 
+          banner.style.display = 'block'; 
+          document.getElementById('top-nav').style.top = '36px'; 
+        } else { 
+          banner.style.display = 'none'; 
+          document.getElementById('top-nav').style.top = '0'; 
+        }
+
         if(d.features) {
-          document.getElementById('dock-theater-link').style.display = d.features.theater === false ? 'none' : 'block';
-          document.getElementById('voice-room-widget').style.display = d.features.voice === false ? 'none' : 'block';
-          document.getElementById('flight-radar-widget').style.display = d.features.radar === false ? 'none' : 'flex';
+            document.getElementById('dock-theater-link').style.display = d.features.theater === false ? 'none' : 'block';
+            if (d.features.theater === false && document.getElementById('view-theater').classList.contains('active')) document.querySelector('.dock-app[data-target="dashboard"]').click();
+            document.getElementById('voice-room-widget').style.display = d.features.voice === false ? 'none' : 'flex';
+            document.getElementById('flight-radar-widget').style.display = d.features.radar === false ? 'none' : 'flex';
         }
       }
     });
 
+    // Theme Engine Sync
+    const themeBtn = document.getElementById('btn-theme-toggle');
+    themeBtn.addEventListener('click', () => {
+        const current = document.body.getAttribute('data-theme');
+        const newTheme = current === 'dark' ? 'light' : 'dark';
+        setDoc(doc(db, 'users', currentUser.id), { theme: newTheme }, { merge: true });
+    });
+    onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
+        if(snap.exists() && snap.data().theme) {
+            document.body.setAttribute('data-theme', snap.data().theme);
+            themeBtn.textContent = snap.data().theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        }
+    });
+
+    // Radar Feed Sync
+    onSnapshot(query(collection(db, 'radar_logs'), orderBy('timestamp', 'desc'), limit(12)), (snap) => {
+        const feed = document.getElementById('radar-feed');
+        feed.innerHTML = '';
+        snap.forEach(d => {
+            const data = d.data();
+            const time = data.timestamp ? data.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now';
+            feed.innerHTML += `<div class="radar-row"><div><span style="font-weight:600; color:var(--ink);">${data.city}, ${data.country}</span><br><span style="color:var(--ink-soft); font-family:var(--font-mono); font-size:10px;">${data.device} • ${data.type}</span></div><span style="font-family:var(--font-mono); color:var(--con);">${time}</span></div>`;
+        });
+    });
+
+    // Relay & Bulletin
     const relayIn = document.getElementById('relay-input');
     relayIn.addEventListener('input', () => {
         document.getElementById('relay-status').textContent = "Saving...";
         setDoc(doc(db, 'system', 'relay'), { text: relayIn.value, timestamp: serverTimestamp() });
         setTimeout(()=> document.getElementById('relay-status').textContent = "Synced", 1000);
     });
-    onSnapshot(doc(db, 'system', 'relay'), (snap) => {
-        if(snap.exists() && document.activeElement !== relayIn) relayIn.value = snap.data().text || '';
-    });
-
+    onSnapshot(doc(db, 'system', 'relay'), (snap) => { if(snap.exists() && document.activeElement !== relayIn) relayIn.value = snap.data().text || ''; });
+    
     const bulletinIn = document.getElementById('shared-bulletin-input');
     bulletinIn.addEventListener('input', () => {
         document.getElementById('bulletin-status').textContent = "Saving...";
         setDoc(doc(db, 'system', 'bulletin'), { text: bulletinIn.value, timestamp: serverTimestamp() });
         setTimeout(()=> document.getElementById('bulletin-status').textContent = "Synced", 1000);
     });
-    onSnapshot(doc(db, 'system', 'bulletin'), (snap) => {
-        if(snap.exists() && document.activeElement !== bulletinIn) bulletinIn.value = snap.data().text || '';
-    });
+    onSnapshot(doc(db, 'system', 'bulletin'), (snap) => { if(snap.exists() && document.activeElement !== bulletinIn) bulletinIn.value = snap.data().text || ''; });
 
     fetch(`${TUNNEL_URL}/api/storage`).then(r => r.json()).then(data => {
         if(data.totalBytes) {
@@ -525,37 +355,47 @@
             document.getElementById('drop-gauge').style.setProperty('--pct', pct);
             document.getElementById('drop-usage-text').textContent = `${gb}GB`;
         }
-    }).catch(() => console.log("Storage scan error"));
+    }).catch(e => {});
 
-    loadPhotoTimeline();
+    initVault();
     initMediaEngine();
   }
 
+  // Segmented Vault Logic
+  document.querySelectorAll('.seg-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+          e.currentTarget.classList.add('active');
+          document.querySelectorAll('.vault-timeline').forEach(t => t.classList.remove('active'));
+          document.getElementById(`timeline-${e.currentTarget.getAttribute('data-seg')}`).classList.add('active');
+      });
+  });
+
   let activeLightboxFilename = null;
-  async function loadPhotoTimeline() {
-    const container = document.getElementById('photo-timeline-container');
+  async function initVault() {
     try {
       const res = await fetch(`${TUNNEL_URL}/api/photos`); 
-      const photos = await res.json();
-      if(photos.length === 0) { 
-        container.innerHTML = '<p style="color:var(--ink-soft); font-size:13px;">No photos found on local drive.</p>'; 
-        return; 
-      }
-
-      const grouped = {}; 
-      photos.forEach(p => { 
-        if(!grouped[p.dateFormatted]) grouped[p.dateFormatted] = []; 
-        grouped[p.dateFormatted].push(p); 
-      });
+      const allFiles = await res.json();
       
-      container.innerHTML = '';
-      for(const [dateStr, list] of Object.entries(grouped)) {
-        let gridHtml = `<div><h3 style="font-family:var(--font-mono); font-size:12px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px;">${dateStr}</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:14px;">`;
-        list.forEach(p => { 
-          gridHtml += `<div class="vault-thumb-card" data-url="${p.url}" data-filename="${p.filename}" style="background:url('${p.url}') center/cover no-repeat;"></div>`; 
-        });
-        container.innerHTML += gridHtml + `</div></div>`;
-      }
+      const photos = allFiles.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f.filename));
+      const videos = allFiles.filter(f => /\.(mp4|mov|m4v)$/i.test(f.filename));
+
+      const renderGrid = (list, containerId) => {
+          const container = document.getElementById(containerId);
+          if(!list.length) { container.innerHTML = '<p style="color:var(--ink-soft); font-size:13px; text-align:center;">Empty directory.</p>'; return; }
+          
+          const grouped = {}; 
+          list.forEach(p => { if(!grouped[p.dateFormatted]) grouped[p.dateFormatted] = []; grouped[p.dateFormatted].push(p); });
+          container.innerHTML = '';
+          for(const [dateStr, items] of Object.entries(grouped)) {
+            let gridHtml = `<div><h3 style="font-family:var(--font-mono); font-size:12px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px;">${dateStr}</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap:12px;">`;
+            items.forEach(p => { gridHtml += `<div class="vault-thumb-card" data-url="${p.url}" data-filename="${p.filename}" style="background:url('${p.url}') center/cover;"></div>`; });
+            container.innerHTML += gridHtml + `</div></div>`;
+          }
+      };
+      
+      renderGrid(photos, 'timeline-photos');
+      renderGrid(videos, 'timeline-videos');
 
       document.querySelectorAll('.vault-thumb-card').forEach(card => {
         card.addEventListener('click', () => {
@@ -565,7 +405,7 @@
         });
       });
     } catch(err) { 
-      container.innerHTML = '<p style="color:var(--err); font-size:13px;">Failed to connect to local Node server.</p>'; 
+        document.getElementById('timeline-photos').innerHTML = '<p style="color:var(--err); font-size:13px;">Vault offline.</p>'; 
     }
   }
 
@@ -581,7 +421,7 @@
     }
     status.textContent = 'Upload Complete ✔'; 
     setTimeout(() => status.style.display = 'none', 3000); 
-    loadPhotoTimeline(); 
+    initVault(); 
   });
 
   document.getElementById('btn-delete-vault-photo').addEventListener('click', async () => {
@@ -590,17 +430,26 @@
       const res = await fetch(`${TUNNEL_URL}/api/photos/delete/${activeLightboxFilename}`, { method: 'DELETE' });
       if(res.ok) { 
         document.getElementById('photo-lightbox').style.display = 'none'; 
-        loadPhotoTimeline(); 
+        initVault(); 
       }
     }
   });
 
+  // Bulletproof Theater Sync Engine (Debounced)
   let theaterPlayer = null; 
-  let isRemoteSyncing = false;
+  let localActionLock = false; 
+  let lockTimer = null;
+  const watchPartyDoc = doc(db, 'system', 'watch_party');
+
+  function acquireSyncLock() {
+      localActionLock = true;
+      clearTimeout(lockTimer);
+      lockTimer = setTimeout(() => { localActionLock = false; }, 1500); 
+  }
 
   function loadMediaIntoTheater(url) {
       const slot = document.getElementById('theater-player-slot');
-      if(theaterPlayer) { theaterPlayer.destroy(); theaterPlayer = null; }
+      if(theaterPlayer) { theaterPlayer.destroy(); }
       
       if(url.includes('youtube.com') || url.includes('youtu.be')) {
           const ytId = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
@@ -610,46 +459,38 @@
           slot.innerHTML = `<video id="theater-video" playsinline controls crossorigin="anonymous"><source src="${url}" type="video/mp4" /></video>`;
       }
 
-      theaterPlayer = new Plyr('#theater-video', { controls: ['play-large', 'play', 'progress', 'current-time', 'duration', 'mute', 'volume', 'pip', 'fullscreen'] });
+      theaterPlayer = new Plyr('#theater-video', { controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
       
-      theaterPlayer.on('play', () => { if(!isRemoteSyncing) updateDoc(watchPartyDoc, { isPlaying: true, currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); });
-      theaterPlayer.on('pause', () => { if(!isRemoteSyncing) updateDoc(watchPartyDoc, { isPlaying: false, currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); });
-      theaterPlayer.on('seeked', () => { if(!isRemoteSyncing) updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, senderId: currentUser.id, updatedAt: serverTimestamp() }); });
+      theaterPlayer.on('play', () => { acquireSyncLock(); updateDoc(watchPartyDoc, { isPlaying: true, currentTime: theaterPlayer.currentTime, senderId: currentUser.id }); });
+      theaterPlayer.on('pause', () => { acquireSyncLock(); updateDoc(watchPartyDoc, { isPlaying: false, currentTime: theaterPlayer.currentTime, senderId: currentUser.id }); });
+      theaterPlayer.on('seeked', () => { acquireSyncLock(); updateDoc(watchPartyDoc, { currentTime: theaterPlayer.currentTime, senderId: currentUser.id }); });
   }
 
   function initMediaEngine() {
     onSnapshot(watchPartyDoc, (snap) => {
         if(!snap.exists() || !snap.data().url) return;
         const d = snap.data();
-        const slot = document.getElementById('theater-player-slot');
-        const currentVideo = slot.querySelector('video') || slot.querySelector('iframe');
         
-        if(!theaterPlayer || !currentVideo || (!currentVideo.src.includes(d.url) && !currentVideo.src.includes(d.url.match(/([a-zA-Z0-9_-]{11})/)?.[0] || 'NONE'))) {
+        const currentVideo = document.getElementById('theater-video');
+        const needsNewPlayer = !theaterPlayer || !currentVideo || (!currentVideo.src && !currentVideo.innerHTML.includes(d.url.match(/([a-zA-Z0-9_-]{11})/)?.[0] || 'NONE'));
+        
+        if(needsNewPlayer) {
             loadMediaIntoTheater(d.url);
-            theaterPlayer.on('ready', () => { 
-              theaterPlayer.currentTime = d.currentTime || 0; 
-              if(d.isPlaying) theaterPlayer.play().catch(() => console.log("Autoplay blocked")); 
-            });
+            theaterPlayer.on('ready', () => { theaterPlayer.currentTime = d.currentTime || 0; if(d.isPlaying) theaterPlayer.play().catch(()=>{}); });
             return;
         }
 
-        if (d.senderId !== currentUser.id) {
-            if (Math.abs(theaterPlayer.currentTime - d.currentTime) > 2) { 
-              isRemoteSyncing = true; 
-              theaterPlayer.currentTime = d.currentTime; 
-              setTimeout(() => isRemoteSyncing = false, 1000); 
-            }
-            if (d.isPlaying && !theaterPlayer.playing) { 
-              isRemoteSyncing = true; 
-              theaterPlayer.play().catch(() => {}); 
-              setTimeout(() => isRemoteSyncing = false, 500); 
-            }
-            if (!d.isPlaying && theaterPlayer.playing) { 
-              isRemoteSyncing = true; 
-              theaterPlayer.pause(); 
-              setTimeout(() => isRemoteSyncing = false, 500); 
-            }
+        // Network Sync is ignored if local user just interacted (Debounce fix)
+        if (!localActionLock && d.senderId !== currentUser.id) {
+            if (Math.abs(theaterPlayer.currentTime - d.currentTime) > 2) { theaterPlayer.currentTime = d.currentTime; }
+            if (d.isPlaying && !theaterPlayer.playing) { theaterPlayer.play().catch(()=>{}); }
+            if (!d.isPlaying && theaterPlayer.playing) { theaterPlayer.pause(); }
         }
+    });
+
+    document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
+        const url = document.getElementById('cowatch-url-input').value.trim();
+        if(url) await setDoc(watchPartyDoc, { url: url, isPlaying: true, currentTime: 0, senderId: currentUser.id });
     });
 
     onSnapshot(collection(db, 'watchlist'), (snap) => { 
@@ -657,7 +498,7 @@
         wList.innerHTML = ''; 
         snap.forEach(d => { 
             const v = d.data(); 
-            wList.innerHTML += `<div style="flex: 0 0 130px; cursor:pointer;" onclick="if('${v.streamUrl}') { setDoc(doc(db, 'system', 'watch_party'), { url: '${v.streamUrl}', isPlaying: true, currentTime: 0, senderId: currentUser.id, updatedAt: serverTimestamp() }, { merge: true }); }"><div style="height:190px; border-radius:var(--radius-sm); border:1px solid rgba(255,255,255,0.15); box-shadow:inset 0 1px 1px rgba(255,255,255,0.2), 0 10px 25px rgba(0,0,0,0.5); background:url('${v.poster}') center/cover; margin-bottom:8px;"></div><p style="font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden;">${v.title}</p></div>`; 
+            wList.innerHTML += `<div style="flex: 0 0 130px; cursor:pointer;" onclick="if('${v.streamUrl}') { setDoc(doc(db, 'system', 'watch_party'), { url: '${v.streamUrl}', isPlaying: true, currentTime: 0, senderId: currentUser.id }, { merge: true }); }"><div style="height:190px; border-radius:var(--radius-sm); border:var(--glass-border); box-shadow:inset 0 1px 1px rgba(255,255,255,0.2), 0 10px 25px rgba(0,0,0,0.5); background:url('${v.poster}') center/cover; margin-bottom:8px;"></div><p style="font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden;">${v.title}</p></div>`; 
         }); 
     });
 
@@ -672,36 +513,26 @@
             if(item.media_type !== 'movie' && item.media_type !== 'tv') return;
             const title = item.title || item.name; 
             const posterUrl = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '';
-            resRow.innerHTML += `<div style="flex:0 0 110px;"><div style="height:160px; border-radius:var(--radius-sm); background:url('${posterUrl}') center/cover; margin-bottom:8px; border:1px solid rgba(255,255,255,0.15);"></div><p style="font-size:11px; white-space:nowrap; overflow:hidden;">${title}</p><button class="btn-primary" style="padding:4px; font-size:10px; width:100%; margin-top:6px;" onclick="addDoc(collection(db, 'watchlist'), {title:'${title.replace(/'/g, "\\'")}', poster:'${posterUrl}', streamUrl:'', timestamp:serverTimestamp()}); this.textContent='Added ✔';">+ Add</button></div>`;
+            resRow.innerHTML += `<div style="flex:0 0 110px;"><div style="height:160px; border-radius:var(--radius-sm); background:url('${posterUrl}') center/cover; margin-bottom:8px; border:var(--glass-border);"></div><p style="font-size:11px; white-space:nowrap; overflow:hidden;">${title}</p><button class="btn-primary" style="padding:4px; font-size:10px; width:100%; margin-top:6px;" onclick="addDoc(collection(db, 'watchlist'), {title:'${title.replace(/'/g, "\\'")}', poster:'${posterUrl}', streamUrl:'', timestamp:serverTimestamp()}); this.textContent='Added ✔';">+ Add</button></div>`;
         });
-    });
-
-    document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
-        const url = document.getElementById('cowatch-url-input').value.trim();
-        if(url) await setDoc(watchPartyDoc, { url: url, isPlaying: true, currentTime: 0, senderId: currentUser.id, updatedAt: serverTimestamp() }, { merge: true });
     });
   }
 
+  // Chat Engine
   onSnapshot(query(collection(db, 'chat'), orderBy('timestamp', 'asc')), (snap) => { 
       const cw = document.getElementById('chat-window'); 
       cw.innerHTML = ''; 
       snap.forEach(d => { 
         const msg = d.data(); 
-        cw.innerHTML += `<div style="padding:10px 16px; background:${msg.user===currentUser.name ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.08)'}; color:${msg.user===currentUser.name ? '#000' : '#fff'}; border:1px solid rgba(255,255,255,0.15); box-shadow:inset 0 1px 1px rgba(255,255,255,0.2); border-radius:18px; align-self:${msg.user===currentUser.name ? 'flex-end' : 'flex-start'}; max-width:80%; word-break:break-word; font-size:13px;">${msg.text}</div>`; 
+        cw.innerHTML += `<div style="padding:10px 14px; background:${msg.user===currentUser.name ? 'var(--ink)' : 'var(--glass-bg)'}; color:${msg.user===currentUser.name ? 'var(--bg)' : 'var(--ink)'}; border-radius:18px; align-self:${msg.user===currentUser.name ? 'flex-end' : 'flex-start'}; max-width:80%; word-break:break-word; font-size:13px; border:var(--glass-border);">${msg.text}</div>`; 
       }); 
       cw.scrollTop = cw.scrollHeight; 
   });
-
   document.getElementById('btn-send-chat').addEventListener('click', () => { 
     const t = document.getElementById('chat-input').value.trim(); 
-    if(t) { 
-      addDoc(collection(db, 'chat'), { user:currentUser.name, text:t, timestamp: serverTimestamp() }); 
-      document.getElementById('chat-input').value = ''; 
-    } 
+    if(t) { addDoc(collection(db, 'chat'), { user:currentUser.name, text:t, timestamp: serverTimestamp() }); document.getElementById('chat-input').value = ''; } 
   });
-  document.getElementById('chat-input').addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') document.getElementById('btn-send-chat').click();
-  });
+  document.getElementById('chat-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') document.getElementById('btn-send-chat').click(); });
 </script>
 </body>
 </html>
