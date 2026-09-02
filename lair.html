@@ -7,7 +7,6 @@
 <title>The Lair OS</title>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css" />
-<!-- Initialize PDF.js for the Bookshelf Module -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
@@ -72,11 +71,42 @@
   .radar-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: var(--glass-border); font-size: 13px; }
   .radar-row:last-child { border-bottom: none; }
 
-  /* Fluid Theater Engine */
-  .theater-grid { display: grid; grid-template-columns: 7.2fr 2.8fr; gap: 28px; align-items: start; }
+  /* FIX: Fluid Theater Engine */
+  .theater-grid { 
+      display: grid; 
+      grid-template-columns: minmax(0, 7.2fr) minmax(0, 2.8fr); 
+      gap: 28px; 
+      align-items: start; 
+  }
   @media (max-width: 1024px) { .theater-grid { grid-template-columns: 1fr; } }
-  .theater-container { width: 100%; height: auto; min-height: 250px; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); border: var(--glass-border); box-shadow: 0 35px 70px -15px rgba(0,0,0,0.6); position: relative; overflow: hidden; display:flex; justify-content:center; align-items:center; }
-  .theater-container .plyr { position: absolute; inset: 0; width: 100%; height: 100%; }
+  
+  .theater-container { 
+      width: 100%; 
+      max-height: 70vh; 
+      aspect-ratio: 16/9; 
+      background: #000; 
+      border-radius: var(--radius-sm); 
+      border: var(--glass-border); 
+      box-shadow: 0 35px 70px -15px rgba(0,0,0,0.6); 
+      position: relative; 
+      overflow: hidden; 
+      display: block; 
+  }
+  
+  .theater-container .plyr { 
+      position: absolute; 
+      top: 0; left: 0; 
+      width: 100%; 
+      height: 100%; 
+  }
+
+  /* Force internal elements to respect aspect ratio */
+  .theater-container video, 
+  .theater-container iframe {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain;
+  }
   
   .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
   .vault-thumb-card:hover { transform: scale(1.04); }
@@ -204,7 +234,7 @@
           <section class="card" style="padding:24px;">
             <div class="theater-container" id="theater-frame-box" style="margin-bottom:20px;">
               <div id="theater-player-slot" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px;">
-                  Select media from watchlist
+                  <span id="theater-placeholder-text">Select media from watchlist</span>
               </div>
             </div>
             <div style="display:flex; gap:14px;">
@@ -325,6 +355,17 @@
       if(snap.exists()) {
         const d = snap.data();
         if(d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
+        
+        const banner = document.getElementById('broadcast-banner');
+        if(d.broadcast && d.broadcast.trim() !== '') { 
+          banner.textContent = d.broadcast; 
+          banner.style.display = 'block'; 
+          document.getElementById('top-nav').style.top = '36px'; 
+        } else { 
+          banner.style.display = 'none'; 
+          document.getElementById('top-nav').style.top = '0'; 
+        }
+
         if(d.features) {
             document.getElementById('dock-theater-link').style.display = d.features.theater === false ? 'none' : 'block';
             if (d.features.theater === false && document.getElementById('view-theater').classList.contains('active')) document.querySelector('.dock-app[data-target="dashboard"]').click();
@@ -347,7 +388,6 @@
         }
     });
 
-    // AirDrop Shuttle Logic
     const shuttleDoc = doc(db, 'system', 'shuttle');
     onSnapshot(shuttleDoc, (snap) => {
         const disp = document.getElementById('shuttle-display');
@@ -411,7 +451,6 @@
     initMediaEngine();
   }
 
-  // Segmented Vault Logic
   document.querySelectorAll('.seg-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
           document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
@@ -474,7 +513,6 @@
     } catch(err) { document.getElementById('timeline-photos').innerHTML = '<p style="color:var(--err); font-size:13px;">Vault offline.</p>'; }
   }
 
-  // PDF Engine (Bookshelf Module)
   let pdfDoc = null, pageNum = 1, pageIsRendering = false, pageNumIsPending = null;
   const canvas = document.getElementById('pdf-canvas');
   const ctx = canvas.getContext('2d');
@@ -525,7 +563,6 @@
     }
   });
 
-  // Bulletproof Theater Sync Engine (Debounced)
   let theaterPlayer = null; 
   let localActionLock = false; 
   let lockTimer = null;
@@ -565,12 +602,15 @@
         const needsNewPlayer = !theaterPlayer || !currentVideo || (!currentVideo.src && !currentVideo.innerHTML.includes(d.url.match(/([a-zA-Z0-9_-]{11})/)?.[0] || 'NONE'));
         
         if(needsNewPlayer) {
+            // Remove the placeholder text when a video actually loads
+            const placeholder = document.getElementById('theater-placeholder-text');
+            if(placeholder) placeholder.style.display = 'none';
+
             loadMediaIntoTheater(d.url);
             theaterPlayer.on('ready', () => { theaterPlayer.currentTime = d.currentTime || 0; if(d.isPlaying) theaterPlayer.play().catch(()=>{}); });
             return;
         }
 
-        // Network Sync is ignored if local user just interacted
         if (!localActionLock && d.senderId !== currentUser.id) {
             if (Math.abs(theaterPlayer.currentTime - d.currentTime) > 2) { theaterPlayer.currentTime = d.currentTime; }
             if (d.isPlaying && !theaterPlayer.playing) { theaterPlayer.play().catch(()=>{}); }
@@ -580,7 +620,7 @@
 
     document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
         const url = document.getElementById('cowatch-url-input').value.trim();
-        if(url) await setDoc(watchPartyDoc, { url: url, isPlaying: true, currentTime: 0, senderId: currentUser.id });
+        if(url) await setDoc(watchPartyDoc, { url: url, isPlaying: true, currentTime: 0, senderId: currentUser.id }, { merge: true });
     });
 
     onSnapshot(collection(db, 'watchlist'), (snap) => { 
@@ -588,12 +628,10 @@
         wList.innerHTML = ''; 
         snap.forEach(d => { 
             const v = d.data(); 
-            // Watchlist item click logic opens stream directly
             wList.innerHTML += `<div style="flex: 0 0 130px; cursor:pointer;" onclick="if('${v.streamUrl}') { setDoc(doc(db, 'system', 'watch_party'), { url: '${v.streamUrl}', isPlaying: true, currentTime: 0, senderId: currentUser.id }, { merge: true }); } else { alert('Stream URL missing. Update in Backend.'); }"><div style="height:190px; border-radius:var(--radius-sm); border:var(--glass-border); box-shadow:inset 0 1px 1px rgba(255,255,255,0.2), 0 10px 25px rgba(0,0,0,0.5); background:url('${v.poster}') center/cover; margin-bottom:8px;"></div><p style="font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden;">${v.title}</p></div>`; 
         }); 
     });
 
-    // Rich Media Overlay Logic (TMDB API)
     window.openTMDBModal = async (id, type) => {
         const modal = document.getElementById('tmdb-modal');
         modal.classList.add('active');
@@ -635,7 +673,6 @@
             if(item.media_type !== 'movie' && item.media_type !== 'tv') return;
             const title = item.title || item.name; 
             const posterUrl = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '';
-            // Clicking search result opens Rich Media Overlay
             resRow.innerHTML += `<div style="flex:0 0 110px; cursor:pointer;" onclick="openTMDBModal(${item.id}, '${item.media_type}')"><div style="height:160px; border-radius:var(--radius-sm); background:url('${posterUrl}') center/cover; margin-bottom:8px; border:var(--glass-border); box-shadow:0 8px 20px rgba(0,0,0,0.4);"></div><p style="font-size:11px; white-space:nowrap; overflow:hidden;">${title}</p></div>`;
         });
     });
