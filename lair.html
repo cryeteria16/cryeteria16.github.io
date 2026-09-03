@@ -12,77 +12,126 @@
 
 <style>
   :root { 
-    --con: #70947A; --accent: var(--con); --warn: #A9803F; --err: #D9534F;
+    --con: #70947A; --accent: var(--con); 
     --font-display: 'Fraunces', serif; --font-body: 'Inter', sans-serif; --font-mono: 'IBM Plex Mono', monospace; 
-    --radius: 32px; --radius-sm: 22px; 
+    --radius: 28px; --radius-sm: 18px; 
     
-    --bg: #020203; --ink: #FFFFFF; --ink-soft: rgba(255,255,255,0.65); 
-    --glass-bg: rgba(10, 10, 15, 0.45); --glass-nav: rgba(5, 5, 8, 0.65);
-    --glass-border: 1px solid rgba(255, 255, 255, 0.08);
-    --glass-blur: blur(60px) saturate(200%);
-    --glass-glow: inset 0 1px 0px rgba(255,255,255,0.15), 0 25px 50px -12px rgba(0,0,0,0.8);
+    /* Dark Mode Defaults */
+    --bg: #070709; --ink: #FFFFFF; --ink-soft: rgba(255,255,255,0.65); 
+    --glass-bg: rgba(255, 255, 255, 0.04); --glass-nav: rgba(12, 12, 16, 0.55);
+    --glass-border: 1px solid rgba(255, 255, 255, 0.12);
+    --glass-blur: blur(35px) saturate(190%);
+    --glass-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.35), 0 20px 45px -10px rgba(0, 0, 0, 0.7);
     --input-bg: rgba(0, 0, 0, 0.35);
+    --btn-primary-bg: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(225,225,225,0.9)); --btn-primary-text: #000;
+  }
+
+  [data-theme="light"] {
+    --bg: #F2F2F7; --ink: #1C1C1E; --ink-soft: rgba(60, 60, 67, 0.65); 
+    --glass-bg: rgba(255, 255, 255, 0.65); --glass-nav: rgba(255, 255, 255, 0.75);
+    --glass-border: 1px solid rgba(0, 0, 0, 0.08);
+    --glass-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.8), 0 15px 35px -10px rgba(0, 0, 0, 0.15);
+    --input-bg: rgba(0, 0, 0, 0.04);
+    --btn-primary-bg: linear-gradient(180deg, #1C1C1E, #000); --btn-primary-text: #FFF;
   }
 
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
-  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding-top: env(safe-area-inset-top, 0px); padding-bottom: 140px; overscroll-behavior-y: none; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding-top: env(safe-area-inset-top, 0px); padding-bottom: 140px; transition: background 0.4s ease, color 0.4s ease; }
   a { color:inherit; text-decoration:none; cursor:pointer; } 
   button { font-family:inherit; border:none; background:none; cursor:pointer; outline:none; }
   
-  .os-wallpaper { position: fixed; inset: 0; z-index: -2; background: radial-gradient(circle at 50% 50%, #0A0A0F 0%, var(--bg) 100%); pointer-events: none; }
+  .os-wallpaper { position: fixed; inset: 0; z-index: -2; background: radial-gradient(circle at 50% 50%, var(--bg) 0%, var(--bg) 100%); pointer-events: none; transition: 0.4s ease;}
   
-  .os-menubar { position: fixed; top: 0; left: 0; width: 100%; height: calc(48px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); background: var(--glass-nav); backdrop-filter: var(--glass-blur); border-bottom: var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; font-size: 13px; font-weight: 500; z-index: 900; }
+  .os-menubar { position: fixed; top: 0; left: 0; width: 100%; height: calc(48px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px); background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border-bottom: var(--glass-border); display: flex; align-items: center; justify-content: space-between; padding: 0 28px; font-size: 13px; font-weight: 500; z-index: 900; transition: background 0.4s ease; }
   .sys-dot { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 10px currentColor; display:inline-block; }
+  #broadcast-banner { display:none; width:100%; background:var(--accent); color:#000; font-family:var(--font-mono); font-size:12px; font-weight:600; text-align:center; padding:10px; z-index:1000; position:fixed; top:0; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);}
 
   .os-dock-wrapper { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); left: 0; width: 100%; display: flex; justify-content: center; z-index: 900; pointer-events: none; }
-  .os-dock { background: var(--glass-nav); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 36px; padding: 8px 10px; display: flex; gap: 8px; box-shadow: var(--glass-glow); pointer-events: auto; }
-  .dock-app { padding: 10px 22px; border-radius: 26px; color: var(--ink-soft); font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.25s ease; }
+  .os-dock { background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 36px; padding: 8px 10px; display: flex; gap: 8px; box-shadow: var(--glass-glow); pointer-events: auto; transition: background 0.4s ease; }
+  .dock-app { padding: 10px 22px; border-radius: 26px; color: var(--ink-soft); font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
   .dock-app.active { background: var(--ink); color: var(--bg); font-weight: 600; box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.2); }
 
   main { padding: 90px 32px 100px; max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
-  .card { background: var(--glass-bg); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: var(--radius); padding: 32px; box-shadow: var(--glass-glow); overflow: hidden; }
+  .card { background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: var(--radius); padding: 32px; box-shadow: var(--glass-glow); overflow: hidden; transition: 0.4s ease; }
   .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
   .card-head h2 { font-family:var(--font-display); font-size:20px; font-weight:500; }
 
-  input[type="text"], textarea { appearance: none; font-family: var(--font-body); font-size: 14px; color: var(--ink); background: var(--input-bg); border: var(--glass-border); border-radius: var(--radius-sm); padding: 15px 20px; width: 100%; outline: none; }
+  input[type="text"], textarea { appearance: none; font-family: var(--font-body); font-size: 14px; color: var(--ink); background: var(--input-bg); border: var(--glass-border); border-radius: var(--radius-sm); padding: 15px 20px; width: 100%; outline: none; transition: 0.3s; }
   
-  .btn-primary { background: linear-gradient(180deg, #FFF, #E0E0E0); color: #00; padding: 12px 24px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; box-shadow: inset 0 1px 0 #fff, 0 10px 25px -5px rgba(0,0,0,0.3);}
-  .btn-secondary { background: var(--glass-bg); border: var(--glass-border); color: var(--ink); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight:500; backdrop-filter: var(--glass-blur); }
+  .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); padding: 12px 24px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; transition: 0.2s cubic-bezier(0.32, 0.72, 0, 1); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); border:none; cursor:pointer;}
+  .btn-secondary { background: var(--glass-bg); border: var(--glass-border); color: var(--ink); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight:500; backdrop-filter: var(--glass-blur); transition:0.2s; cursor:pointer;}
 
+  /* Segmented Control Vault */
   .segment-pill { display: inline-flex; background: var(--input-bg); border: var(--glass-border); border-radius: 30px; padding: 4px; margin-bottom: 24px; }
-  .seg-btn { padding: 8px 24px; border-radius: 26px; font-size: 13px; font-weight: 500; color: var(--ink-soft); }
-  .seg-btn.active { background: var(--ink); color: var(--bg); }
-  .vault-timeline { display: none; flex-direction: column; gap: 24px; }
+  .seg-btn { padding: 8px 24px; border-radius: 26px; font-size: 13px; font-weight: 500; color: var(--ink-soft); transition: 0.3s; cursor:pointer;}
+  .seg-btn.active { background: var(--ink); color: var(--bg); box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-weight: 600;}
+  .vault-timeline { display: none; flex-direction: column; gap: 24px; animation: smoothFadeIn 0.3s forwards; }
   .vault-timeline.active { display: flex; }
 
   .radar-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: var(--glass-border); font-size: 13px; }
   .radar-row:last-child { border-bottom: none; }
 
-  .theater-grid { display: grid; grid-template-columns: minmax(0, 7.2fr) minmax(0, 2.8fr); gap: 28px; align-items: start; }
+  /* Fluid Theater Engine (Fixed Mobile CSS) */
+  .theater-grid { 
+      display: grid; 
+      grid-template-columns: minmax(0, 7.2fr) minmax(0, 2.8fr); 
+      gap: 28px; 
+      align-items: start; 
+  }
   @media (max-width: 1024px) { .theater-grid { grid-template-columns: 1fr; } }
-  .theater-container { width: 100%; max-height: 70vh; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); border: var(--glass-border); position: relative; overflow: hidden; display: block; }
-  .theater-container .plyr { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-  .theater-container video, .theater-container iframe { width: 100% !important; height: 100% !important; object-fit: contain; }
+  
+  .theater-container { 
+      width: 100%; 
+      max-height: 70vh; 
+      aspect-ratio: 16/9; 
+      background: #000; 
+      border-radius: var(--radius-sm); 
+      border: var(--glass-border); 
+      box-shadow: 0 35px 70px -15px rgba(0,0,0,0.6); 
+      position: relative; 
+      overflow: hidden; 
+      display: block; 
+  }
+  
+  .theater-container .plyr { 
+      position: absolute; 
+      top: 0; left: 0; 
+      width: 100%; 
+      height: 100%; 
+  }
+
+  .theater-container video, 
+  .theater-container iframe {
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: contain;
+  }
+  
+  .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
+  .vault-thumb-card:hover { transform: scale(1.04); }
+  .storage-gauge-wrapper { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; margin: 0 auto 32px; border-radius: 50%; background: conic-gradient(var(--con) calc(var(--pct) * 1%), var(--glass-bg) 0); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+  .storage-gauge-inner { width: 136px; height: 136px; background: var(--bg); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
   .view-container { display: none; opacity: 0; } 
-  .view-container.active { display: block; animation: smoothFadeIn 0.45s ease forwards; }
+  .view-container.active { display: block; animation: smoothFadeIn 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
   @keyframes smoothFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  .modal-overlay { position:fixed; inset:0; background:rgba(5,5,8,0.85); backdrop-filter:var(--glass-blur); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px; }
+  /* Modals */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px; animation: smoothFadeIn 0.3s forwards; }
   .modal-overlay.active { display:flex; }
-  #spotlight-search { align-items: flex-start; padding-top: 15vh; }
 </style>
 </head>
 <body data-theme="dark">
   
   <div class="os-wallpaper"></div>
+  <div id="broadcast-banner"></div>
 
   <nav class="os-menubar" id="top-nav">
     <div style="display:flex; gap:16px; align-items:center;">
       <span style="font-weight:600; display:flex; align-items:center; gap:8px;"><span class="sys-dot" style="color:var(--con);"></span>The Lair</span>
     </div>
     <div style="display:flex; gap:16px; align-items:center;">
-        <button id="btn-enable-push" class="btn-secondary" style="padding:4px 12px; font-size:11px;">🔔 Alerts</button>
+        <button id="btn-theme-toggle" class="btn-secondary" style="padding:4px 12px; font-size:11px;">☀️ Light</button>
         <div id="sys-clock" style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft);">--:--</div>
         <button id="btn-signout" style="color:var(--err); font-size:12px; font-weight:600;">Lock</button>
     </div>
@@ -92,7 +141,7 @@
     <div class="os-dock">
       <div class="dock-app app-link active" data-target="dashboard">Dashboard</div>
       <div class="dock-app app-link" data-target="drop">Vault</div>
-      <div class="dock-app app-link" data-target="theater">Theater</div>
+      <div class="dock-app app-link" data-target="theater" id="dock-theater-link">Theater</div>
       <a href="admin.html" class="dock-app">Settings</a>
     </div>
   </div>
@@ -103,17 +152,43 @@
         <div class="card" style="padding:24px;">
           <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Universal Relay</h2>
           <textarea id="relay-input" rows="3" placeholder="Sync text across devices..."></textarea>
+          <div style="display:flex; justify-content:flex-end; margin-top:8px;"><span id="relay-status" style="font-family:var(--font-mono); font-size:11px; color:var(--con);">Synced</span></div>
+        </div>
+
+        <div class="card" style="padding:24px;">
+          <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">AirDrop Shuttle</h2>
+          <div id="shuttle-display" style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:1px dashed var(--con); text-align:center; margin-bottom:12px;">
+             <p style="font-size:12px; color:var(--ink-soft);">No active payload.</p>
+          </div>
+          <input type="file" id="shuttle-input" style="display:none;">
+          <button class="btn-secondary" style="width:100%;" onclick="document.getElementById('shuttle-input').click()">Beam File</button>
         </div>
         
         <div class="card" style="padding:24px; display:flex; flex-direction:column;">
-          <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Overseer Feed</h2>
+          <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Live Radar</h2>
           <div id="radar-feed" style="flex:1; overflow-y:auto; max-height:140px;">
              <p style="font-size:12px; color:var(--ink-soft);">Waiting for telemetry...</p>
           </div>
         </div>
       </div>
+      
+      <div class="status-strip" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:24px; margin-bottom:24px;">
+        <div class="card" id="flight-radar-widget" style="padding:24px; display:flex; flex-direction:column; justify-content:space-between;">
+            <h3 style="font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 12px;">Flight Radar</h3>
+            <input type="text" id="flight-input" placeholder="e.g. EK1" style="margin-bottom:12px;">
+            <button class="btn-secondary" onclick="window.open('https://www.flightradar24.com/' + document.getElementById('flight-input').value, '_blank')" style="width:100%;">Track on FlightRadar24 ↗</button>
+        </div>
+        <div class="card" id="voice-room-widget" style="padding:24px; display:flex; flex-direction:column; justify-content:center; align-items:center;">
+            <h3 style="font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 12px;">Voice Room</h3>
+            <button class="btn-primary" id="btn-join-voice" style="width:100%;">🎙 Join Channel</button>
+        </div>
+      </div>
+
       <section class="card">
-        <div class="card-head"><h2>Shared Bulletin</h2></div>
+        <div class="card-head">
+          <h2>Shared Bulletin</h2>
+          <span id="bulletin-status" style="font-family:var(--font-mono); font-size:11px; color:var(--con);">Synced</span>
+        </div>
         <textarea id="shared-bulletin-input" rows="7" style="line-height:1.6;"></textarea>
       </section>
     </section>
@@ -121,9 +196,16 @@
     <section id="view-drop" class="view-container">
       <section class="card" style="margin-bottom:28px; text-align:center;">
         <div class="card-head" style="justify-content:center; margin-bottom:16px;"><h2>Lair Cloud Drive</h2></div>
-        <div style="background:var(--input-bg); border-radius:var(--radius-sm); padding:24px;">
+        <div class="storage-gauge-wrapper" id="drop-gauge" style="--pct: 0;">
+          <div class="storage-gauge-inner">
+            <span id="drop-usage-text" style="font-family:var(--font-mono); font-size:22px; font-weight:600;">0GB</span>
+            <span style="font-size:11px; color:var(--ink-soft);">of 100GB Limit</span>
+          </div>
+        </div>
+        <div style="background:var(--input-bg); border:1px dashed rgba(128,128,128,0.5); border-radius:var(--radius-sm); padding:24px;">
           <input type="file" id="vault-photo-input" accept="image/*,video/*,application/pdf" style="display:none;" multiple>
           <button class="btn-secondary" onclick="document.getElementById('vault-photo-input').click()">Upload Local Media</button>
+          <p id="vault-status" style="font-size:12px; color:var(--con); margin-top:12px; display:none;"></p>
         </div>
       </section>
 
@@ -135,7 +217,8 @@
                 <button class="seg-btn" data-seg="docs">Documents</button>
             </div>
         </div>
-        <div id="timeline-photos" class="vault-timeline active"></div>
+        
+        <div id="timeline-photos" class="vault-timeline active"><p style="font-size:13px; color:var(--ink-soft); text-align:center;">Scanning local bridge...</p></div>
         <div id="timeline-videos" class="vault-timeline"></div>
         <div id="timeline-docs" class="vault-timeline"></div>
       </section>
@@ -155,6 +238,15 @@
               <button class="btn-primary" id="btn-load-cowatch">Stream</button>
             </div>
           </section>
+
+          <section class="card" style="padding:24px;">
+            <div style="display:flex; gap:12px; margin-bottom:20px;">
+              <input type="text" id="tmdb-search-input" placeholder="Search globally (TMDB)...">
+              <button class="btn-secondary" id="btn-tmdb-search" style="width:auto;">Search</button>
+            </div>
+            <div id="tmdb-results" style="display:flex; gap:16px; overflow-x:auto; margin-bottom:20px; padding-bottom:8px;"></div>
+            <div id="shared-watchlist" style="display:flex; gap:16px; overflow-x:auto;"></div>
+          </section>
         </div>
 
         <section class="card" style="display:flex; flex-direction:column; min-height:420px; padding:24px;">
@@ -168,10 +260,46 @@
       </div>
     </section>
   </main>
+  
+  <div id="photo-lightbox" class="modal-overlay">
+    <div class="card" style="max-width:90%; text-align:center; padding:24px;">
+      <img id="lightbox-img" src="" style="max-width:100%; max-height:70vh; border-radius:var(--radius-sm); margin-bottom:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <button id="btn-delete-vault-photo" style="color:var(--err); font-size:13px; font-weight:600;">Delete from Vault</button>
+        <button class="btn-secondary" onclick="document.getElementById('photo-lightbox').classList.remove('active')">Close</button>
+      </div>
+    </div>
+  </div>
 
-  <div class="modal-overlay" id="spotlight-search">
-    <div style="width: 100%; max-width: 600px; padding: 0 20px;">
-        <input type="text" id="spotlight-input" placeholder="Command Lair OS..." style="width: 100%; background: rgba(0,0,0,0.5); border: var(--glass-border); color: var(--ink); font-family: var(--font-body); font-size: 20px; padding: 20px; border-radius: var(--radius-sm); outline: none; box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);">
+  <div id="pdf-lightbox" class="modal-overlay">
+    <div class="card" style="width:95%; max-width:1200px; height:90vh; display:flex; flex-direction:column; padding:24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 id="pdf-title" style="font-family:var(--font-display); font-size:18px;">Bookshelf Reader</h2>
+            <div style="display:flex; gap:16px; align-items:center;">
+                <button class="btn-secondary" id="btn-pdf-prev" style="padding:8px 16px;">Prev</button>
+                <span id="pdf-page-num" style="font-family:var(--font-mono); font-size:13px; color:var(--ink-soft);"></span>
+                <button class="btn-secondary" id="btn-pdf-next" style="padding:8px 16px;">Next</button>
+                <button class="btn-secondary" onclick="document.getElementById('pdf-lightbox').classList.remove('active')" style="margin-left:24px; border-color:var(--err); color:var(--err);">Close</button>
+            </div>
+        </div>
+        <div style="flex:1; overflow:auto; display:flex; justify-content:center; align-items:center; background:rgba(0,0,0,0.6); border-radius:var(--radius-sm); border:var(--glass-border);">
+            <canvas id="pdf-canvas" style="max-height:100%; max-width:100%; box-shadow:0 20px 50px rgba(0,0,0,0.8);"></canvas>
+        </div>
+    </div>
+  </div>
+
+  <div id="tmdb-modal" class="modal-overlay">
+    <div class="card" style="max-width:600px; width:90%; position:relative;">
+        <button class="btn-secondary" style="position:absolute; top:24px; right:24px; padding:6px 12px;" onclick="document.getElementById('tmdb-modal').classList.remove('active')">X</button>
+        <div style="display:flex; gap:24px; align-items:flex-start;">
+            <img id="tmdb-modal-poster" src="" style="width:140px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.6); border:var(--glass-border);">
+            <div style="flex:1;">
+                <h2 id="tmdb-modal-title" style="font-family:var(--font-display); font-size:24px; margin-bottom:8px; line-height:1.2;"></h2>
+                <p id="tmdb-modal-meta" style="font-family:var(--font-mono); font-size:12px; color:var(--con); margin-bottom:16px;"></p>
+                <p id="tmdb-modal-plot" style="font-size:13px; color:var(--ink-soft); line-height:1.5; margin-bottom:24px; max-height:100px; overflow-y:auto; padding-right:12px;"></p>
+                <button class="btn-primary" id="btn-modal-add" style="width:auto;">Add to Watchlist</button>
+            </div>
+        </div>
     </div>
   </div>
 
@@ -183,18 +311,12 @@
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
   const TUNNEL_URL = "https://vault.ibadhasan.com"; 
+  const TMDB_API_KEY = "4b52b76174a761002dc02aa11e0394c8";
 
   const app = initializeApp(firebaseConfig); 
   const auth = getAuth(app); 
   const db = getFirestore(app);
   let currentUser = null;
-
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
-
-  document.getElementById('btn-enable-push').addEventListener('click', async () => {
-      const permission = await Notification.requestPermission();
-      if(permission === 'granted') alert('Push alerts authorized. Matrix ready.');
-  });
 
   async function fetchWithAuth(url, options = {}) {
       if (!auth.currentUser) return fetch(url, options);
@@ -209,7 +331,7 @@
     initOS();
   });
 
-  document.getElementById('btn-signout').addEventListener('click', () => signOut(auth));
+  document.getElementById('btn-signout').addEventListener('click', () => { signOut(auth); window.location.replace("index.html"); });
 
   document.querySelectorAll('.app-link').forEach(link => {
     link.addEventListener('click', (e) => {
@@ -221,53 +343,221 @@
     });
   });
 
-  let touchStartY = 0;
-  const spotlight = document.getElementById('spotlight-search');
-  document.addEventListener('touchstart', e => touchStartY = e.touches[0].clientY, {passive: true});
-  document.addEventListener('touchend', e => {
-      if(window.scrollY <= 5 && (e.changedTouches[0].clientY - touchStartY > 70)) {
-          spotlight.classList.add('active');
-          document.getElementById('spotlight-input').focus();
-      }
-  });
-  spotlight.addEventListener('click', (e) => { if(e.target.id === 'spotlight-search') spotlight.classList.remove('active'); });
-
   function initOS() {
     setInterval(() => document.getElementById('sys-clock').textContent = new Date().toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit', hour12:false }), 1000);
 
     onSnapshot(doc(db, 'system', 'config'), (snap) => {
-      if(snap.exists() && snap.data().accentColor) document.documentElement.style.setProperty('--accent', snap.data().accentColor);
+      if(snap.exists()) {
+        const d = snap.data();
+        if(d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
+        
+        const banner = document.getElementById('broadcast-banner');
+        if(d.broadcast && d.broadcast.trim() !== '') { 
+          banner.textContent = d.broadcast; 
+          banner.style.display = 'block'; 
+          document.getElementById('top-nav').style.top = '36px'; 
+        } else { 
+          banner.style.display = 'none'; 
+          document.getElementById('top-nav').style.top = '0'; 
+        }
+
+        if(d.features) {
+            document.getElementById('dock-theater-link').style.display = d.features.theater === false ? 'none' : 'block';
+            if (d.features.theater === false && document.getElementById('view-theater').classList.contains('active')) document.querySelector('.dock-app[data-target="dashboard"]').click();
+            document.getElementById('voice-room-widget').style.display = d.features.voice === false ? 'none' : 'flex';
+            document.getElementById('flight-radar-widget').style.display = d.features.radar === false ? 'none' : 'flex';
+        }
+      }
     });
 
-    // Overseer Feed Engine
-    onSnapshot(query(collection(db, 'radar_logs'), orderBy('timestamp', 'desc'), limit(15)), (snap) => {
+    const themeBtn = document.getElementById('btn-theme-toggle');
+    themeBtn.addEventListener('click', () => {
+        const current = document.body.getAttribute('data-theme');
+        const newTheme = current === 'dark' ? 'light' : 'dark';
+        setDoc(doc(db, 'users', currentUser.id), { theme: newTheme }, { merge: true });
+    });
+    onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
+        if(snap.exists() && snap.data().theme) {
+            document.body.setAttribute('data-theme', snap.data().theme);
+            themeBtn.textContent = snap.data().theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+        }
+    });
+
+    const shuttleDoc = doc(db, 'system', 'shuttle');
+    onSnapshot(shuttleDoc, (snap) => {
+        const disp = document.getElementById('shuttle-display');
+        if(snap.exists() && snap.data().url) {
+            const d = snap.data();
+            disp.innerHTML = `<p style="font-size:12px; color:var(--con); margin-bottom:12px;">Payload ready from ${d.sender}</p><a href="${d.url}" target="_blank" class="btn-primary" style="display:inline-block; text-decoration:none;">Download ${d.name}</a>`;
+        } else {
+            disp.innerHTML = `<p style="font-size:12px; color:var(--ink-soft);">No active payload.</p>`;
+        }
+    });
+
+    document.getElementById('shuttle-input').addEventListener('change', async (e) => {
+        if(!e.target.files.length) return;
+        const file = e.target.files[0];
+        const disp = document.getElementById('shuttle-display');
+        disp.innerHTML = `<p style="font-size:12px; color:var(--warn);">Beaming to Lair...</p>`;
+        const fd = new FormData(); fd.append('photo', file);
+        try { 
+            const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd }); 
+            const data = await res.json();
+            await setDoc(shuttleDoc, { url: data.url, name: file.name, sender: currentUser.name, timestamp: serverTimestamp() });
+        } catch(err) { disp.innerHTML = `<p style="font-size:12px; color:var(--err);">Transfer Failed.</p>`; }
+    });
+
+    onSnapshot(query(collection(db, 'radar_logs'), orderBy('timestamp', 'desc'), limit(12)), (snap) => {
         const feed = document.getElementById('radar-feed');
         feed.innerHTML = '';
         snap.forEach(d => {
             const data = d.data();
             const time = data.timestamp ? data.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now';
-            const statusDot = data.status === 'Active' ? '<span style="color:var(--con);">● Active</span>' : '<span style="color:var(--warn);">● Idle</span>';
-            feed.innerHTML += `<div class="radar-row" style="flex-direction:column; align-items:flex-start;">
-                <div style="width:100%; display:flex; justify-content:space-between;">
-                    <span style="font-weight:600; color:var(--ink);">${data.city}, ${data.country}</span>
-                    <span style="font-family:var(--font-mono); color:var(--ink-soft);">${time}</span>
-                </div>
-                <div style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-top:4px;">
-                    ${data.ip} • ${data.device} • ${statusDot}<br>
-                    <span style="color:var(--con);">${data.type}</span>
-                </div>
-            </div>`;
+            feed.innerHTML += `<div class="radar-row"><div><span style="font-weight:600; color:var(--ink);">${data.city}, ${data.country}</span><br><span style="color:var(--ink-soft); font-family:var(--font-mono); font-size:10px;">${data.device} • ${data.type}</span></div><span style="font-family:var(--font-mono); color:var(--con);">${time}</span></div>`;
         });
     });
 
     const relayIn = document.getElementById('relay-input');
-    relayIn.addEventListener('input', () => setDoc(doc(db, 'system', 'relay'), { text: relayIn.value, timestamp: serverTimestamp() }));
+    relayIn.addEventListener('input', () => {
+        document.getElementById('relay-status').textContent = "Saving...";
+        setDoc(doc(db, 'system', 'relay'), { text: relayIn.value, timestamp: serverTimestamp() });
+        setTimeout(()=> document.getElementById('relay-status').textContent = "Synced", 1000);
+    });
     onSnapshot(doc(db, 'system', 'relay'), (snap) => { if(snap.exists() && document.activeElement !== relayIn) relayIn.value = snap.data().text || ''; });
     
+    const bulletinIn = document.getElementById('shared-bulletin-input');
+    bulletinIn.addEventListener('input', () => {
+        document.getElementById('bulletin-status').textContent = "Saving...";
+        setDoc(doc(db, 'system', 'bulletin'), { text: bulletinIn.value, timestamp: serverTimestamp() });
+        setTimeout(()=> document.getElementById('bulletin-status').textContent = "Synced", 1000);
+    });
+    onSnapshot(doc(db, 'system', 'bulletin'), (snap) => { if(snap.exists() && document.activeElement !== bulletinIn) bulletinIn.value = snap.data().text || ''; });
+
+    fetchWithAuth(`${TUNNEL_URL}/api/storage`).then(r => r.json()).then(data => {
+        if(data.totalBytes) {
+            const gb = (data.totalBytes / (1024*1024*1024)).toFixed(1);
+            let pct = Math.min((data.totalBytes / data.maxBytes) * 100, 100);
+            document.getElementById('drop-gauge').style.setProperty('--pct', pct);
+            document.getElementById('drop-usage-text').textContent = `${gb}GB`;
+        }
+    }).catch(e => {});
+
+    initVault();
     initMediaEngine();
   }
 
-  // Bulletproof Theater Sync
+  document.querySelectorAll('.seg-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+          e.currentTarget.classList.add('active');
+          document.querySelectorAll('.vault-timeline').forEach(t => t.classList.remove('active'));
+          document.getElementById(`timeline-${e.currentTarget.getAttribute('data-seg')}`).classList.add('active');
+      });
+  });
+
+  let activeLightboxFilename = null;
+  async function initVault() {
+    try {
+      const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos`); 
+      const allFiles = await res.json();
+      
+      const photos = allFiles.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f.filename));
+      const videos = allFiles.filter(f => /\.(mp4|mov|m4v)$/i.test(f.filename));
+      const docs = allFiles.filter(f => /\.(pdf)$/i.test(f.filename));
+
+      const renderGrid = (list, containerId, isDoc = false) => {
+          const container = document.getElementById(containerId);
+          if(!list.length) { container.innerHTML = '<p style="color:var(--ink-soft); font-size:13px; text-align:center;">Empty directory.</p>'; return; }
+          
+          const grouped = {}; 
+          list.forEach(p => { if(!grouped[p.dateFormatted]) grouped[p.dateFormatted] = []; grouped[p.dateFormatted].push(p); });
+          container.innerHTML = '';
+          for(const [dateStr, items] of Object.entries(grouped)) {
+            let gridHtml = `<div><h3 style="font-family:var(--font-mono); font-size:12px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px;">${dateStr}</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;">`;
+            items.forEach(p => { 
+                if (isDoc) {
+                    gridHtml += `<div class="vault-thumb-card doc-card" data-url="${p.url}" data-filename="${p.filename}" style="background:var(--input-bg); display:flex; align-items:center; justify-content:center; padding:12px; text-align:center;"><span style="font-size:11px; word-break:break-word; font-family:var(--font-mono); color:var(--ink);">${p.filename}</span></div>`;
+                } else {
+                    gridHtml += `<div class="vault-thumb-card media-card" data-url="${p.url}" data-filename="${p.filename}" style="background:url('${p.url}') center/cover;"></div>`; 
+                }
+            });
+            container.innerHTML += gridHtml + `</div></div>`;
+          }
+      };
+      
+      renderGrid(photos, 'timeline-photos');
+      renderGrid(videos, 'timeline-videos');
+      renderGrid(docs, 'timeline-docs', true);
+
+      document.querySelectorAll('.media-card').forEach(card => {
+        card.addEventListener('click', () => {
+          activeLightboxFilename = card.getAttribute('data-filename');
+          document.getElementById('lightbox-img').src = card.getAttribute('data-url');
+          document.getElementById('photo-lightbox').classList.add('active');
+        });
+      });
+
+      document.querySelectorAll('.doc-card').forEach(card => {
+        card.addEventListener('click', () => {
+          activeLightboxFilename = card.getAttribute('data-filename');
+          document.getElementById('pdf-title').textContent = activeLightboxFilename;
+          window.openPDF(card.getAttribute('data-url'));
+        });
+      });
+
+    } catch(err) { document.getElementById('timeline-photos').innerHTML = '<p style="color:var(--err); font-size:13px;">Vault offline.</p>'; }
+  }
+
+  let pdfDoc = null, pageNum = 1, pageIsRendering = false, pageNumIsPending = null;
+  const canvas = document.getElementById('pdf-canvas');
+  const ctx = canvas.getContext('2d');
+
+  const renderPage = num => {
+      pageIsRendering = true;
+      pdfDoc.getPage(num).then(page => {
+          const viewport = page.getViewport({ scale: 1.5 });
+          canvas.height = viewport.height; canvas.width = viewport.width;
+          page.render({ canvasContext: ctx, viewport: viewport }).promise.then(() => {
+              pageIsRendering = false;
+              if(pageNumIsPending !== null) { renderPage(pageNumIsPending); pageNumIsPending = null; }
+          });
+      });
+      document.getElementById('pdf-page-num').textContent = `Page ${num} / ${pdfDoc.numPages}`;
+  };
+
+  const queueRenderPage = num => { if(pageIsRendering) pageNumIsPending = num; else renderPage(num); };
+  document.getElementById('btn-pdf-prev').addEventListener('click', () => { if(pageNum <= 1) return; pageNum--; queueRenderPage(pageNum); });
+  document.getElementById('btn-pdf-next').addEventListener('click', () => { if(pageNum >= pdfDoc.numPages) return; pageNum++; queueRenderPage(pageNum); });
+
+  window.openPDF = url => {
+      document.getElementById('pdf-lightbox').classList.add('active');
+      pdfjsLib.getDocument(url).promise.then(doc_ => {
+          pdfDoc = doc_; pageNum = 1; renderPage(pageNum);
+      });
+  };
+
+  document.getElementById('vault-photo-input').addEventListener('change', async (e) => {
+    if(!e.target.files.length) return;
+    const status = document.getElementById('vault-status'); 
+    status.style.display = 'block';
+    for(let i = 0; i < e.target.files.length; i++) {
+      status.textContent = `Uploading ${i+1}/${e.target.files.length} to PC...`;
+      const fd = new FormData(); fd.append('photo', e.target.files[i]);
+      try { await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd }); } catch(err) {}
+    }
+    status.textContent = 'Upload Complete ✔'; 
+    setTimeout(() => status.style.display = 'none', 3000); 
+    initVault(); 
+  });
+
+  document.getElementById('btn-delete-vault-photo').addEventListener('click', async () => {
+    if(!activeLightboxFilename) return;
+    if(confirm(`Permanently delete from Windows PC?`)) {
+      const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/delete/${activeLightboxFilename}`, { method: 'DELETE' });
+      if(res.ok) { document.getElementById('photo-lightbox').classList.remove('active'); initVault(); }
+    }
+  });
+
   let theaterPlayer = null; 
   let localActionLock = false; 
   let lockTimer = null;
@@ -281,8 +571,16 @@
 
   function loadMediaIntoTheater(url) {
       const slot = document.getElementById('theater-player-slot');
-      if(theaterPlayer) theaterPlayer.destroy();
-      slot.innerHTML = `<video id="theater-video" playsinline controls crossorigin="anonymous"><source src="${url}" type="video/mp4" /></video>`;
+      if(theaterPlayer) { theaterPlayer.destroy(); }
+      
+      if(url.includes('youtube.com') || url.includes('youtu.be')) {
+          const ytId = url.match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/);
+          const parsedId = (ytId && ytId[2].length === 11) ? ytId[2] : url;
+          slot.innerHTML = `<div class="plyr__video-embed" id="theater-video"><iframe src="https://www.youtube.com/embed/${parsedId}?origin=https://plyr.io&amp;iv_load_policy=3&amp;modestbranding=1&amp;playsinline=1&amp;showinfo=0&amp;rel=0&amp;enablejsapi=1" allowfullscreen allowtransparency allow="autoplay"></iframe></div>`;
+      } else {
+          slot.innerHTML = `<video id="theater-video" playsinline controls crossorigin="anonymous"><source src="${url}" type="video/mp4" /></video>`;
+      }
+
       theaterPlayer = new Plyr('#theater-video', { controls: ['play-large', 'play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen'] });
       
       theaterPlayer.on('play', () => { acquireSyncLock(); updateDoc(watchPartyDoc, { isPlaying: true, currentTime: theaterPlayer.currentTime, senderId: currentUser.id }); });
@@ -294,26 +592,83 @@
     onSnapshot(watchPartyDoc, (snap) => {
         if(!snap.exists() || !snap.data().url) return;
         const d = snap.data();
+        
         const currentVideo = document.getElementById('theater-video');
         const needsNewPlayer = !theaterPlayer || !currentVideo || (!currentVideo.src && !currentVideo.innerHTML.includes(d.url.match(/([a-zA-Z0-9_-]{11})/)?.[0] || 'NONE'));
         
         if(needsNewPlayer) {
             const placeholder = document.getElementById('theater-placeholder-text');
             if(placeholder) placeholder.style.display = 'none';
+
             loadMediaIntoTheater(d.url);
             theaterPlayer.on('ready', () => { theaterPlayer.currentTime = d.currentTime || 0; if(d.isPlaying) theaterPlayer.play().catch(()=>{}); });
             return;
         }
+
         if (!localActionLock && d.senderId !== currentUser.id) {
-            if (Math.abs(theaterPlayer.currentTime - d.currentTime) > 2) theaterPlayer.currentTime = d.currentTime;
-            if (d.isPlaying && !theaterPlayer.playing) theaterPlayer.play().catch(()=>{});
-            if (!d.isPlaying && theaterPlayer.playing) theaterPlayer.pause();
+            if (Math.abs(theaterPlayer.currentTime - d.currentTime) > 2) { theaterPlayer.currentTime = d.currentTime; }
+            if (d.isPlaying && !theaterPlayer.playing) { theaterPlayer.play().catch(()=>{}); }
+            if (!d.isPlaying && theaterPlayer.playing) { theaterPlayer.pause(); }
         }
     });
 
     document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
         const url = document.getElementById('cowatch-url-input').value.trim();
         if(url) await setDoc(watchPartyDoc, { url: url, isPlaying: true, currentTime: 0, senderId: currentUser.id }, { merge: true });
+    });
+
+    onSnapshot(collection(db, 'watchlist'), (snap) => { 
+        const wList = document.getElementById('shared-watchlist'); 
+        wList.innerHTML = ''; 
+        snap.forEach(d => { 
+            const v = d.data(); 
+            wList.innerHTML += `<div style="flex: 0 0 130px; cursor:pointer;" onclick="if('${v.streamUrl}') { setDoc(doc(db, 'system', 'watch_party'), { url: '${v.streamUrl}', isPlaying: true, currentTime: 0, senderId: currentUser.id }, { merge: true }); } else { alert('Stream URL missing. Update in Backend.'); }"><div style="height:190px; border-radius:var(--radius-sm); border:var(--glass-border); box-shadow:inset 0 1px 1px rgba(255,255,255,0.2), 0 10px 25px rgba(0,0,0,0.5); background:url('${v.poster}') center/cover; margin-bottom:8px;"></div><p style="font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden;">${v.title}</p></div>`; 
+        }); 
+    });
+
+    window.openTMDBModal = async (id, type) => {
+        const modal = document.getElementById('tmdb-modal');
+        modal.classList.add('active');
+        document.getElementById('tmdb-modal-title').textContent = 'Loading payload...';
+        document.getElementById('tmdb-modal-plot').textContent = '';
+        
+        try {
+            const res = await fetch(`https://api.themoviedb.org/3/${type}/${id}?api_key=${TMDB_API_KEY}`);
+            const data = await res.json();
+            
+            const title = data.title || data.name;
+            const year = (data.release_date || data.first_air_date || 'N/A').split('-')[0];
+            const runtime = data.runtime ? `${data.runtime} min` : (type==='tv' ? 'Series' : '');
+            const posterUrl = data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : '';
+            
+            document.getElementById('tmdb-modal-poster').src = posterUrl;
+            document.getElementById('tmdb-modal-title').textContent = title;
+            document.getElementById('tmdb-modal-meta').textContent = `${year} • ${runtime}`;
+            document.getElementById('tmdb-modal-plot').textContent = data.overview || 'No synopsis available.';
+            
+            const btn = document.getElementById('btn-modal-add');
+            btn.onclick = () => {
+                addDoc(collection(db, 'watchlist'), {title: title, poster: posterUrl, streamUrl: '', timestamp: serverTimestamp()});
+                btn.textContent = 'Added to Watchlist ✔';
+                setTimeout(() => modal.classList.remove('active'), 1000);
+            };
+            btn.textContent = 'Add to Watchlist';
+        } catch(e) { document.getElementById('tmdb-modal-title').textContent = 'Error fetching data.'; }
+    };
+
+    document.getElementById('btn-tmdb-search').addEventListener('click', async () => {
+        const q = document.getElementById('tmdb-search-input').value.trim(); 
+        if(!q) return;
+        const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        const resRow = document.getElementById('tmdb-results'); 
+        resRow.innerHTML = '';
+        data.results.forEach(item => {
+            if(item.media_type !== 'movie' && item.media_type !== 'tv') return;
+            const title = item.title || item.name; 
+            const posterUrl = item.poster_path ? `https://image.tmdb.org/t/p/w300${item.poster_path}` : '';
+            resRow.innerHTML += `<div style="flex:0 0 110px; cursor:pointer;" onclick="openTMDBModal(${item.id}, '${item.media_type}')"><div style="height:160px; border-radius:var(--radius-sm); background:url('${posterUrl}') center/cover; margin-bottom:8px; border:var(--glass-border); box-shadow:0 8px 20px rgba(0,0,0,0.4);"></div><p style="font-size:11px; white-space:nowrap; overflow:hidden;">${title}</p></div>`;
+        });
     });
   }
 
@@ -322,7 +677,7 @@
       cw.innerHTML = ''; 
       snap.forEach(d => { 
         const msg = d.data(); 
-        cw.innerHTML += `<div style="padding:10px 14px; background:${msg.user===currentUser.name ? 'var(--con)' : 'var(--glass-bg)'}; color:#fff; border-radius:18px; align-self:${msg.user===currentUser.name ? 'flex-end' : 'flex-start'}; max-width:80%; word-break:break-word; border:var(--glass-border);">${msg.text}</div>`; 
+        cw.innerHTML += `<div style="padding:10px 14px; background:${msg.user===currentUser.name ? 'var(--ink)' : 'var(--glass-bg)'}; color:${msg.user===currentUser.name ? 'var(--bg)' : 'var(--ink)'}; border-radius:18px; align-self:${msg.user===currentUser.name ? 'flex-end' : 'flex-start'}; max-width:80%; word-break:break-word; font-size:13px; border:var(--glass-border);">${msg.text}</div>`; 
       }); 
       cw.scrollTop = cw.scrollHeight; 
   });
@@ -330,6 +685,7 @@
     const t = document.getElementById('chat-input').value.trim(); 
     if(t) { addDoc(collection(db, 'chat'), { user:currentUser.name, text:t, timestamp: serverTimestamp() }); document.getElementById('chat-input').value = ''; } 
   });
+  document.getElementById('chat-input').addEventListener('keydown', (e) => { if(e.key === 'Enter') document.getElementById('btn-send-chat').click(); });
 </script>
 </body>
 </html>
