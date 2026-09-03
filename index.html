@@ -191,6 +191,11 @@
             </div>
         </div>
         <div class="login-glass-card" style="display:flex; flex-direction:column; padding:24px; height:100%; max-width:100%;">
+            <h3 style="font-family:var(--font-mono); font-size:12px; color:var(--con); text-transform:uppercase; margin-bottom:16px;">Guest AirDrop</h3>
+            <input type="file" id="guest-airdrop-input" style="display:none;">
+            <button class="btn-primary" onclick="document.getElementById('guest-airdrop-input').click()" style="margin-bottom:24px;">Beam File to Vault</button>
+            <p id="guest-drop-status" style="font-size:11px; color:var(--con); margin-top:-16px; margin-bottom:16px; display:none;"></p>
+
             <h3 style="font-family:var(--font-mono); font-size:12px; color:var(--con); text-transform:uppercase; margin-bottom:16px;">Guest Relay</h3>
             <div id="guest-chat-window" style="flex:1; overflow-y:auto; margin-bottom:16px; display:flex; flex-direction:column; gap:8px; font-size:13px; text-align:left;"></div>
             <div style="display:flex; gap:8px;">
@@ -211,27 +216,25 @@
   const app = initializeApp(firebaseConfig); 
   const auth = getAuth(app); 
   const db = getFirestore(app); 
+  const TUNNEL_URL = 'https://vault.ibadhasan.com';
   
   const USERS = { "con": { email: "justibadx@gmail.com" }, "cryeteria": { email: "theibadhasan@gmail.com" } };
   
-  // Overseer Logic: IP and Device Parsing
+  // Overseer Logic: True IP extraction and Device Parsing
   async function fireSilentRadar(actionType) {
     try {
-      const ipRes = await fetch('https://api.ipify.org?format=json');
-      const ipData = await ipRes.json();
-      const geoRes = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
+      const geoRes = await fetch('https://ipapi.co/json/');
       const geo = await geoRes.json();
       
+      const ipRes = await fetch(`${TUNNEL_URL}/api/track`, { method: 'POST' });
+      const ipData = await ipRes.json();
+      
       const ua = navigator.userAgent;
-      let device = "Desktop";
-      if (/iPhone|iPad|iPod/i.test(ua)) device = "iOS Device";
-      else if (/Android/i.test(ua)) device = "Android Device";
-      else if (/Macintosh/i.test(ua)) device = "Mac";
-      else if (/Windows/i.test(ua)) device = "Windows PC";
+      let device = /iPhone|iPad|iPod/i.test(ua) ? "iOS Device" : /Android/i.test(ua) ? "Android Device" : /Macintosh/i.test(ua) ? "Mac" : "Windows PC";
 
       await addDoc(collection(db, 'radar_logs'), {
           type: actionType,
-          ip: ipData.ip || 'Unknown',
+          ip: ipData.ip || geo.ip,
           city: geo.city || 'Unknown',
           country: geo.country_name || 'Unknown',
           device: device,
@@ -412,6 +415,30 @@
   document.getElementById('btn-guest-send').addEventListener('click', () => {
       const t = document.getElementById('guest-chat-input').value.trim();
       if(t) { addDoc(collection(db, 'guest_chat'), { text: t, device: navigator.userAgent, timestamp: serverTimestamp() }); document.getElementById('guest-chat-input').value = ''; }
+  });
+
+  // Guest Chunked Upload (AirDrop Quarantine)
+  document.getElementById('guest-airdrop-input').addEventListener('change', async (e) => {
+      if(!e.target.files.length) return;
+      const file = e.target.files[0];
+      const status = document.getElementById('guest-drop-status');
+      status.style.display = 'block';
+      const chunkSize = 20 * 1024 * 1024; // 20MB slices
+      const totalChunks = Math.ceil(file.size / chunkSize);
+      
+      for (let i = 0; i < totalChunks; i++) {
+          const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);
+          const fd = new FormData();
+          fd.append('chunk', chunk);
+          fd.append('filename', file.name);
+          fd.append('chunkIndex', i);
+          fd.append('totalChunks', totalChunks);
+          
+          status.textContent = `Beaming chunk ${i+1}/${totalChunks}...`;
+          await fetch(`${TUNNEL_URL}/api/guest/upload/chunk`, { method: 'POST', body: fd });
+      }
+      status.textContent = 'Transmission Complete. Safely Quarantined.';
+      setTimeout(()=> status.style.display = 'none', 3000);
   });
 </script>
 </body>

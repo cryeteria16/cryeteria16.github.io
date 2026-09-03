@@ -265,8 +265,9 @@
   <div id="photo-lightbox" class="modal-overlay">
     <div class="card" style="max-width:90%; text-align:center; padding:24px;">
       <img id="lightbox-img" src="" style="max-width:100%; max-height:70vh; border-radius:var(--radius-sm); margin-bottom:20px;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <button id="btn-delete-vault-photo" style="color:var(--err); font-size:13px; font-weight:600;">Delete from Vault</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; gap: 12px;">
+        <button id="btn-publish-photo" class="btn-primary" style="background:var(--con); color:#fff; width:auto;">Publish</button>
+        <button id="btn-delete-vault-photo" style="color:var(--err); font-size:13px; font-weight:600; flex:1; text-align:left;">Delete from Vault</button>
         <button class="btn-secondary" onclick="document.getElementById('photo-lightbox').classList.remove('active')">Close</button>
       </div>
     </div>
@@ -554,18 +555,41 @@
       });
   };
 
+  // Master Vault Chunked Upload Engine
   document.getElementById('vault-photo-input').addEventListener('change', async (e) => {
     if(!e.target.files.length) return;
     const status = document.getElementById('vault-status'); 
     status.style.display = 'block';
-    for(let i = 0; i < e.target.files.length; i++) {
-      status.textContent = `Uploading ${i+1}/${e.target.files.length} to PC...`;
-      const fd = new FormData(); fd.append('photo', e.target.files[i]);
-      try { await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd }); } catch(err) {}
+    
+    for(let f = 0; f < e.target.files.length; f++) {
+        const file = e.target.files[f];
+        const chunkSize = 20 * 1024 * 1024; // 20MB slices bypass Cloudflare caps
+        const totalChunks = Math.ceil(file.size / chunkSize);
+        
+        for (let i = 0; i < totalChunks; i++) {
+            const chunk = file.slice(i * chunkSize, (i + 1) * chunkSize);
+            const fd = new FormData();
+            fd.append('chunk', chunk);
+            fd.append('filename', file.name);
+            fd.append('chunkIndex', i);
+            fd.append('totalChunks', totalChunks);
+            
+            status.textContent = `File ${f+1}/${e.target.files.length} - Beaming chunk ${i+1}/${totalChunks}...`;
+            await fetchWithAuth(`${TUNNEL_URL}/api/upload/chunk`, { method: 'POST', body: fd });
+        }
     }
+    
     status.textContent = 'Upload Complete ✔'; 
     setTimeout(() => status.style.display = 'none', 3000); 
     initVault(); 
+  });
+
+  // Portfolio Publisher Integration
+  document.getElementById('btn-publish-photo').addEventListener('click', async () => {
+    const title = prompt("Enter a title for the public portfolio:");
+    if (!title) return;
+    await addDoc(collection(db, 'portfolio'), { title: title, imgUrl: document.getElementById('lightbox-img').src, timestamp: serverTimestamp() });
+    alert("Published successfully to ibadhasan.com");
   });
 
   document.getElementById('btn-delete-vault-photo').addEventListener('click', async () => {
