@@ -57,6 +57,14 @@
 
   <main>
     <section class="card">
+      <div class="card-head"><h2>Notification Matrix</h2></div>
+      <p style="font-size:12px; color:var(--ink-soft); margin-bottom:16px;">Configure which events ping your device lock screen.</p>
+      <div class="toggle-row"><span>New Public Visitor</span><input type="checkbox" id="notify-visitor" class="toggle-switch"></div>
+      <div class="toggle-row"><span>Guest Lounge Entry</span><input type="checkbox" id="notify-guest" class="toggle-switch"></div>
+      <button class="btn-primary" id="btn-save-notifications" style="margin-top:8px;">Update Matrix</button>
+    </section>
+
+    <section class="card">
       <div class="card-head"><h2>OS Control & Features</h2></div>
       <label class="field-label">Broadcast Banner (Lair OS)</label>
       <input type="text" id="edit-broadcast" placeholder="e.g. Server maintenance tonight at 2AM">
@@ -70,7 +78,7 @@
 
     <section class="card">
       <div class="card-head"><h2>Public Identity & Socials</h2></div>
-      <p style="font-size:12px; color:var(--warn); margin-bottom:16px;">Note: Any text saved here will instantly override the public website.</p>
+      <p style="font-size:12px; color:var(--warn); margin-bottom:16px;">Note: Ensure your Firebase Rules are updated, otherwise these will fail to read publicly.</p>
       
       <label class="field-label">Hero Title</label><input type="text" id="edit-hero-title">
       <label class="field-label">Hero Subtitle</label><textarea id="edit-hero-sub" rows="2"></textarea>
@@ -120,6 +128,14 @@
     onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
         if(snap.exists() && snap.data().theme) { document.body.setAttribute('data-theme', snap.data().theme); }
     });
+
+    onSnapshot(doc(db, 'system', 'notifications'), (snap) => {
+      if(snap.exists()) {
+        const d = snap.data();
+        document.getElementById('notify-visitor').checked = d.visitor !== false;
+        document.getElementById('notify-guest').checked = d.guest !== false;
+      }
+    });
     
     onSnapshot(doc(db, 'system', 'config'), (snap) => {
       if(snap.exists() && document.activeElement.tagName !== "INPUT") {
@@ -151,6 +167,14 @@
         document.getElementById('edit-social-git').value = d.socials?.git || '';
       }
     });
+  });
+
+  document.getElementById('btn-save-notifications').addEventListener('click', async () => {
+    await setDoc(doc(db, 'system', 'notifications'), { 
+      visitor: document.getElementById('notify-visitor').checked,
+      guest: document.getElementById('notify-guest').checked
+    }, { merge: true }); 
+    alert('Matrix Updated');
   });
 
   document.getElementById('btn-save-os').addEventListener('click', async () => {

@@ -131,6 +131,7 @@
       <span style="font-weight:600; display:flex; align-items:center; gap:8px;"><span class="sys-dot" style="color:var(--con);"></span>The Lair</span>
     </div>
     <div style="display:flex; gap:16px; align-items:center;">
+        <button id="btn-enable-push" class="btn-secondary" style="padding:4px 12px; font-size:11px;">🔔 Alerts</button>
         <button id="btn-theme-toggle" class="btn-secondary" style="padding:4px 12px; font-size:11px;">☀️ Light</button>
         <div id="sys-clock" style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft);">--:--</div>
         <button id="btn-signout" style="color:var(--err); font-size:12px; font-weight:600;">Lock</button>
@@ -165,7 +166,7 @@
         </div>
         
         <div class="card" style="padding:24px; display:flex; flex-direction:column;">
-          <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Live Radar</h2>
+          <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Live Radar / Overseer</h2>
           <div id="radar-feed" style="flex:1; overflow-y:auto; max-height:140px;">
              <p style="font-size:12px; color:var(--ink-soft);">Waiting for telemetry...</p>
           </div>
@@ -318,6 +319,13 @@
   const db = getFirestore(app);
   let currentUser = null;
 
+  // Initialize Push Notifications
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+  document.getElementById('btn-enable-push').addEventListener('click', async () => {
+      const permission = await Notification.requestPermission();
+      if(permission === 'granted') alert('Push alerts authorized. Configure in Admin Studio.');
+  });
+
   async function fetchWithAuth(url, options = {}) {
       if (!auth.currentUser) return fetch(url, options);
       const token = await auth.currentUser.getIdToken();
@@ -407,13 +415,23 @@
         } catch(err) { disp.innerHTML = `<p style="font-size:12px; color:var(--err);">Transfer Failed.</p>`; }
     });
 
+    // Updated Radar rendering to parse IP & Device properly
     onSnapshot(query(collection(db, 'radar_logs'), orderBy('timestamp', 'desc'), limit(12)), (snap) => {
         const feed = document.getElementById('radar-feed');
         feed.innerHTML = '';
         snap.forEach(d => {
             const data = d.data();
             const time = data.timestamp ? data.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now';
-            feed.innerHTML += `<div class="radar-row"><div><span style="font-weight:600; color:var(--ink);">${data.city}, ${data.country}</span><br><span style="color:var(--ink-soft); font-family:var(--font-mono); font-size:10px;">${data.device} • ${data.type}</span></div><span style="font-family:var(--font-mono); color:var(--con);">${time}</span></div>`;
+            feed.innerHTML += `<div class="radar-row" style="flex-direction:column; align-items:flex-start; padding: 12px 0;">
+                <div style="width:100%; display:flex; justify-content:space-between; margin-bottom:4px;">
+                    <span style="font-weight:600; color:var(--ink);">${data.city}, ${data.country}</span>
+                    <span style="font-family:var(--font-mono); color:var(--ink-soft);">${time}</span>
+                </div>
+                <div style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft);">
+                    ${data.ip || 'Hidden IP'} • ${data.device || 'Unknown Device'}<br>
+                    <span style="color:var(--con);">${data.type}</span>
+                </div>
+            </div>`;
         });
     });
 
@@ -677,7 +695,7 @@
       cw.innerHTML = ''; 
       snap.forEach(d => { 
         const msg = d.data(); 
-        cw.innerHTML += `<div style="padding:10px 14px; background:${msg.user===currentUser.name ? 'var(--ink)' : 'var(--glass-bg)'}; color:${msg.user===currentUser.name ? 'var(--bg)' : 'var(--ink)'}; border-radius:18px; align-self:${msg.user===currentUser.name ? 'flex-end' : 'flex-start'}; max-width:80%; word-break:break-word; font-size:13px; border:var(--glass-border);">${msg.text}</div>`; 
+        cw.innerHTML += `<div style="padding:10px 14px; background:${msg.user===currentUser.name ? 'var(--con)' : 'var(--glass-bg)'}; color:${msg.user===currentUser.name ? 'var(--bg)' : 'var(--ink)'}; border-radius:18px; align-self:${msg.user===currentUser.name ? 'flex-end' : 'flex-start'}; max-width:80%; word-break:break-word; font-size:13px; border:var(--glass-border);">${msg.text}</div>`; 
       }); 
       cw.scrollTop = cw.scrollHeight; 
   });
