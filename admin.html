@@ -7,41 +7,31 @@
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
   :root { 
-    --bg: #070709; --ink: #FFFFFF; --ink-soft: rgba(255,255,255,0.65); 
+    --bg: #020203; --ink: #FFFFFF; --ink-soft: rgba(255,255,255,0.65); 
     --con: #70947A; --warn: #A9803F; --err: #D9534F; --accent: var(--con); 
-    --radius: 28px; --radius-sm: 18px; 
+    --radius: 32px; --radius-sm: 22px; 
     --font-display: 'Fraunces', serif; --font-body: 'Inter', sans-serif; --font-mono: 'IBM Plex Mono', monospace; 
-    --glass-bg: rgba(255, 255, 255, 0.04); --glass-border: 1px solid rgba(255, 255, 255, 0.12);
-    --glass-blur: blur(35px) saturate(190%);
-    --glass-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.35), 0 20px 45px -10px rgba(0, 0, 0, 0.7);
+    
+    --glass-bg: rgba(10, 10, 15, 0.45); --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+    --glass-blur: blur(60px) saturate(200%);
+    --glass-glow: inset 0 1px 0px rgba(255,255,255,0.15), 0 25px 50px -12px rgba(0,0,0,0.8);
     --input-bg: rgba(0, 0, 0, 0.35);
-    --btn-primary-bg: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(225,225,225,0.9));
-    --btn-primary-text: #000;
   }
   
-  [data-theme="light"] {
-    --bg: #F2F2F7; --ink: #1C1C1E; --ink-soft: rgba(60, 60, 67, 0.65); 
-    --glass-bg: rgba(255, 255, 255, 0.65); --glass-border: 1px solid rgba(0, 0, 0, 0.08);
-    --glass-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.8), 0 15px 35px -10px rgba(0, 0, 0, 0.15);
-    --input-bg: rgba(0, 0, 0, 0.04);
-    --btn-primary-bg: linear-gradient(180deg, #1C1C1E, #000); --btn-primary-text: #FFF;
-  }
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding-bottom: 140px; transition: background 0.4s ease, color 0.4s ease; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding-bottom: 140px; overscroll-behavior-y: none;}
   
-  .os-wallpaper { position: fixed; inset: 0; z-index: -2; background: radial-gradient(circle at 50% 50%, var(--bg) 0%, var(--bg) 100%); pointer-events: none; transition: 0.4s ease;}
-  .floating-pill { background: rgba(12,12,16,0.65); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 50px; padding: 12px 28px; display: flex; align-items: center; justify-content: space-between; max-width: 800px; margin: 14px auto 24px; box-shadow: var(--glass-glow);}
+  .os-wallpaper { position: fixed; inset: 0; z-index: -2; background: radial-gradient(circle at 50% 50%, #0A0A0F 0%, var(--bg) 100%); pointer-events: none;}
+  .floating-pill { background: rgba(5,5,8,0.65); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 50px; padding: 12px 28px; display: flex; align-items: center; justify-content: space-between; max-width: 800px; margin: 14px auto 24px; box-shadow: var(--glass-glow);}
   main { padding: 0 20px 40px; max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
-  .card { background: var(--glass-bg); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: var(--radius); padding: 32px; box-shadow: var(--glass-glow); transition: 0.4s ease;}
+  .card { background: var(--glass-bg); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: var(--radius); padding: 32px; box-shadow: var(--glass-glow); }
   .card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
   .field-label { display: block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
 
-  input[type="text"], input[type="password"], textarea { appearance: none; font-family: var(--font-body); font-size: 14px; color: var(--ink); background: var(--input-bg); border: var(--glass-border); border-radius: var(--radius-sm); padding: 14px 18px; width: 100%; transition: 0.3s; margin-bottom:16px; outline:none;}
+  input[type="text"], input[type="password"], textarea { appearance: none; font-family: var(--font-body); font-size: 14px; color: var(--ink); background: var(--input-bg); border: var(--glass-border); border-radius: var(--radius-sm); padding: 14px 18px; width: 100%; margin-bottom:16px; outline:none;}
   input[type="color"] { background: var(--input-bg); border: var(--glass-border); border-radius: 10px; padding: 2px; height: 38px; width: 48px; margin-bottom:16px; cursor: pointer; }
   
-  .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; border: none; cursor: pointer; width: 100%; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3);}
-  .btn-secondary { background: var(--glass-bg); color: var(--ink); border: var(--glass-border); padding: 12px 18px; border-radius: var(--radius-sm); font-size: 13px; cursor: pointer; backdrop-filter: var(--glass-blur);}
+  .btn-primary { background: linear-gradient(180deg, #FFF, #E0E0E0); color: #000; padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; border: none; cursor: pointer; width: 100%; box-shadow: inset 0 1px 0 #fff, 0 10px 25px -5px rgba(0,0,0,0.3);}
   
   .toggle-row { display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); margin-bottom:12px; border:var(--glass-border); }
   .toggle-switch { appearance: none; width: 44px; height: 24px; background: rgba(128,128,128,0.2); border-radius: 24px; position: relative; cursor: pointer; outline: none; transition: 0.3s; }
@@ -50,165 +40,78 @@
   .toggle-switch:checked::after { transform: translateX(20px); }
 </style>
 </head>
-<body data-theme="dark">
+<body>
 
   <div class="os-wallpaper"></div>
   <div class="floating-header-wrapper"><header class="floating-pill"><div style="display:flex; align-items:center; gap:10px;"><h1 style="font-family:var(--font-display); font-size:18px;">Admin Studio</h1></div><a href="lair.html" style="color:var(--ink-soft); font-size:13px; font-weight:500;">← Back to Lair</a></header></div>
 
   <main>
     <section class="card">
-      <div class="card-head"><h2>OS Control & Features</h2></div>
-      <label class="field-label">Broadcast Banner (Lair OS)</label>
-      <input type="text" id="edit-broadcast" placeholder="e.g. Server maintenance tonight at 2AM">
-      
-      <label class="field-label" style="margin-top:16px;">Kill Switches</label>
-      <div class="toggle-row"><span>Theater Module</span><input type="checkbox" id="toggle-theater" class="toggle-switch"></div>
-      <div class="toggle-row"><span>Voice Room</span><input type="checkbox" id="toggle-voice" class="toggle-switch"></div>
-      <div class="toggle-row"><span>Flight Radar</span><input type="checkbox" id="toggle-radar" class="toggle-switch"></div>
-      <button class="btn-primary" id="btn-save-os">Update OS Controls</button>
+      <div class="card-head"><h2>Notification Matrix</h2></div>
+      <p style="font-size:12px; color:var(--ink-soft); margin-bottom:16px;">Configure which Overseer alerts ping your device lock screen.</p>
+      <div class="toggle-row"><span>New Public Visitor</span><input type="checkbox" id="notify-visitor" class="toggle-switch"></div>
+      <div class="toggle-row"><span>Guest Lounge Entry</span><input type="checkbox" id="notify-guest" class="toggle-switch"></div>
+      <div class="toggle-row"><span>Theater Interaction</span><input type="checkbox" id="notify-theater" class="toggle-switch"></div>
+      <div class="toggle-row"><span>Relay Message</span><input type="checkbox" id="notify-relay" class="toggle-switch"></div>
+      <button class="btn-primary" id="btn-save-notifications" style="margin-top:8px;">Update Matrix</button>
     </section>
 
     <section class="card">
-      <div class="card-head"><h2>Public Identity & Socials</h2></div>
-      <p style="font-size:12px; color:var(--warn); margin-bottom:16px;">Note: Any text saved here will instantly override the public website.</p>
-      
+      <div class="card-head"><h2>Public Identity & Aesthetics</h2></div>
       <label class="field-label">Hero Title</label><input type="text" id="edit-hero-title">
-      <label class="field-label">Hero Subtitle</label><textarea id="edit-hero-sub" rows="2"></textarea>
-      <label class="field-label">Public Bio</label><textarea id="edit-bio" rows="4"></textarea>
-      <label class="field-label">Contact Email</label><input type="text" id="edit-email">
-      
-      <label class="field-label" style="margin-top:16px; color:var(--con);">Social Links (Leave blank to hide)</label>
-      <input type="text" id="edit-social-ig" placeholder="Instagram URL">
-      <input type="text" id="edit-social-x" placeholder="X (Twitter) URL">
-      <input type="text" id="edit-social-git" placeholder="GitHub URL">
-      <button class="btn-primary" id="btn-save-profile">Publish Identity Updates</button>
-    </section>
-
-    <section class="card">
-      <div class="card-head"><h2>Global Aesthetics</h2></div>
-      <label class="field-label">Primary Display Font (Google Fonts)</label><input type="text" id="config-font-display">
-      <label class="field-label">Body Font (Google Fonts)</label><input type="text" id="config-font-body">
       <label class="field-label">Primary Accent Color</label><input type="color" id="config-accent">
-      <button class="btn-primary" id="btn-save-config">Apply Aesthetics</button>
-    </section>
-
-    <section class="card" style="border-color:rgba(217,83,79,0.3);">
-      <div class="card-head"><h2 style="color:var(--err);">Security & Authentication</h2></div>
-      <label class="field-label">New Master Passkey</label>
-      <input type="password" id="edit-password" placeholder="Enter new password (min 6 characters)">
-      <button class="btn-primary" id="btn-update-password" style="background:rgba(217,83,79,0.2); color:var(--err);">Update Password</button>
-      <p id="pwd-msg" style="font-size:12px; margin-top:12px; display:none;"></p>
+      <button class="btn-primary" id="btn-save-profile">Publish Updates</button>
     </section>
   </main>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { initializeFirestore, persistentLocalCache, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
   const app = initializeApp(firebaseConfig); 
   const auth = getAuth(app); 
-  const db = initializeFirestore(app, { localCache: persistentLocalCache() });
+  const db = getFirestore(app);
   
-  let currentUser = null;
-
   onAuthStateChanged(auth, (user) => { 
     if (!user) window.location.replace("index.html"); 
-    currentUser = { id: user.email.split('@')[0] };
     
-    onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
-        if(snap.exists() && snap.data().theme) { document.body.setAttribute('data-theme', snap.data().theme); }
-    });
-    
-    onSnapshot(doc(db, 'system', 'config'), (snap) => {
-      if(snap.exists() && document.activeElement.tagName !== "INPUT") {
+    onSnapshot(doc(db, 'system', 'notifications'), (snap) => {
+      if(snap.exists()) {
         const d = snap.data();
-        if(d.accentColor) { 
-          document.getElementById('config-accent').value = d.accentColor; 
-          document.documentElement.style.setProperty('--accent', d.accentColor); 
-        }
-        if(d.fontDisplay) document.getElementById('config-font-display').value = d.fontDisplay;
-        if(d.fontBody) document.getElementById('config-font-body').value = d.fontBody;
-        if(d.broadcast) document.getElementById('edit-broadcast').value = d.broadcast;
-        if(d.features) {
-            document.getElementById('toggle-theater').checked = d.features.theater !== false;
-            document.getElementById('toggle-voice').checked = d.features.voice !== false;
-            document.getElementById('toggle-radar').checked = d.features.radar !== false;
-        }
+        document.getElementById('notify-visitor').checked = d.visitor !== false;
+        document.getElementById('notify-guest').checked = d.guest !== false;
+        document.getElementById('notify-theater').checked = d.theater !== false;
+        document.getElementById('notify-relay').checked = d.relay !== false;
       }
+    });
+
+    onSnapshot(doc(db, 'system', 'config'), (snap) => {
+      if(snap.exists() && snap.data().accentColor) document.getElementById('config-accent').value = snap.data().accentColor;
     });
 
     onSnapshot(doc(db, 'system', 'profile'), (snap) => {
-      if(snap.exists() && document.activeElement.tagName !== "TEXTAREA" && document.activeElement.tagName !== "INPUT") {
-        const d = snap.data();
-        document.getElementById('edit-hero-title').value = d.heroTitle || ''; 
-        document.getElementById('edit-hero-sub').value = d.heroSub || '';
-        document.getElementById('edit-bio').value = d.bio || ''; 
-        document.getElementById('edit-email').value = d.email || '';
-        document.getElementById('edit-social-ig').value = d.socials?.ig || ''; 
-        document.getElementById('edit-social-x').value = d.socials?.x || ''; 
-        document.getElementById('edit-social-git').value = d.socials?.git || '';
+      if(snap.exists() && document.activeElement.tagName !== "INPUT") {
+        document.getElementById('edit-hero-title').value = snap.data().heroTitle || ''; 
       }
     });
   });
 
-  document.getElementById('btn-save-os').addEventListener('click', async () => {
-    const broadcast = document.getElementById('edit-broadcast').value;
-    const features = { 
-      theater: document.getElementById('toggle-theater').checked,
-      voice: document.getElementById('toggle-voice').checked, 
-      radar: document.getElementById('toggle-radar').checked 
-    };
-    await setDoc(doc(db, 'system', 'config'), { broadcast, features }, { merge: true }); 
-    alert('OS Controls Updated');
+  document.getElementById('btn-save-notifications').addEventListener('click', async () => {
+    await setDoc(doc(db, 'system', 'notifications'), { 
+      visitor: document.getElementById('notify-visitor').checked,
+      guest: document.getElementById('notify-guest').checked,
+      theater: document.getElementById('notify-theater').checked,
+      relay: document.getElementById('notify-relay').checked
+    }, { merge: true }); 
+    alert('Matrix Updated');
   });
 
   document.getElementById('btn-save-profile').addEventListener('click', async () => {
-    const data = {
-      heroTitle: document.getElementById('edit-hero-title').value, 
-      heroSub: document.getElementById('edit-hero-sub').value,
-      bio: document.getElementById('edit-bio').value, 
-      email: document.getElementById('edit-email').value,
-      socials: { 
-        ig: document.getElementById('edit-social-ig').value, 
-        x: document.getElementById('edit-social-x').value, 
-        git: document.getElementById('edit-social-git').value 
-      }
-    };
-    await setDoc(doc(db, 'system', 'profile'), data, { merge: true }); 
-    alert('Identity Published');
-  });
-
-  document.getElementById('btn-save-config').addEventListener('click', async () => {
-    await setDoc(doc(db, 'system', 'config'), { 
-      fontDisplay: document.getElementById('config-font-display').value.trim(), 
-      fontBody: document.getElementById('config-font-body').value.trim(), 
-      accentColor: document.getElementById('config-accent').value 
-    }, { merge: true }); 
-    alert('Aesthetics Applied');
-  });
-
-  document.getElementById('btn-update-password').addEventListener('click', async () => {
-    const newPwd = document.getElementById('edit-password').value; 
-    const msg = document.getElementById('pwd-msg');
-    if(newPwd.length < 6) { 
-      msg.textContent = "Must be at least 6 characters."; 
-      msg.style.color = "var(--err)"; 
-      msg.style.display = "block"; 
-      return; 
-    }
-    try { 
-      await updatePassword(auth.currentUser, newPwd); 
-      msg.textContent = "Password updated successfully."; 
-      msg.style.color = "var(--con)"; 
-      msg.style.display = "block"; 
-      document.getElementById('edit-password').value = ''; 
-    } catch(e) { 
-      msg.textContent = "Error: Please sign out and sign back in to update password."; 
-      msg.style.color = "var(--err)"; 
-      msg.style.display = "block"; 
-    }
+    await setDoc(doc(db, 'system', 'profile'), { heroTitle: document.getElementById('edit-hero-title').value }, { merge: true });
+    await setDoc(doc(db, 'system', 'config'), { accentColor: document.getElementById('config-accent').value }, { merge: true });
+    alert('Published');
   });
 </script>
 </body>
