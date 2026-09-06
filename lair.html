@@ -371,7 +371,7 @@
       }
   });
 
-  async function pollSystemStats() {
+async function pollSystemStats() {
       try {
           const res = await fetchWithAuth(`${TUNNEL_URL}/api/stats`);
           if (res.ok) {
@@ -380,8 +380,11 @@
               document.getElementById('sys-ram').textContent = `${stats.ram}%`;
               document.getElementById('health-dot').style.color = "var(--con)";
               document.getElementById('health-text').textContent = "LINK ACTIVE";
-          } else { throw new Error(); }
+          } else { 
+              throw new Error(`Server returned HTTP ${res.status}`); 
+          }
       } catch(e) {
+          console.error("[Lair OS] Tunnel Health Check Failed:", e.message);
           document.getElementById('health-dot').style.color = "var(--err)";
           document.getElementById('health-text').textContent = "TUNNEL OFFLINE";
       }
@@ -467,7 +470,7 @@
         }
     });
 
-    relayIn.addEventListener('keydown', (e) => {
+relayIn.addEventListener('keydown', (e) => {
         if(e.key === 'Enter' && relayIn.value.trim() !== '') {
             e.preventDefault();
             const updated = [{ text: relayIn.value.trim(), by: currentUser.name, time: Date.now() }, ...currentClips].slice(0, 20); 
@@ -476,10 +479,20 @@
         }
     });
 
+    // AVIATION TRACKING ENGINE
+    document.getElementById('btn-track-flight').addEventListener('click', () => {
+        const flightNo = document.getElementById('flight-input').value.trim().toUpperCase();
+        if(!flightNo) return;
+        triggerHaptic();
+        
+        const container = document.getElementById('flight-frame-container');
+        // Employs ADSBExchange: An open, iframe-friendly tracker without paywalls or CORS blocks.
+        container.innerHTML = `<iframe src="https://globe.adsbexchange.com/?hideSidebar&hideButtons&callsign=${flightNo}" style="width:100%; height:100%; border:none;"></iframe>`;
+    });
+
     initWatchParty();
     initVault();
   }
-
   // --- HYBRID WATCH PARTY ENGINE ---
   function initWatchParty() {
       let currentSessionUrl = null;
@@ -491,13 +504,17 @@
 
       const requestWakeLock = async () => { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
 
-      // Safe YouTube API Loader (Thread Isolated)
-      let ytApiReady = false;
-      window.onYouTubeIframeAPIReady = function() { ytApiReady = true; };
-      const tag = document.createElement('script');
-      tag.src = "https://www.youtube.com/iframe_api";
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+  // Safe YouTube API Loader (Thread Quarantined)
+      window.ytApiReady = false;
+      try {
+          window.onYouTubeIframeAPIReady = function() { window.ytApiReady = true; };
+          const tag = document.createElement('script');
+          tag.src = "https://www.youtube.com/iframe_api";
+          tag.onerror = () => console.error("[Lair OS] YouTube API blocked or offline");
+          const firstScriptTag = document.getElementsByTagName('script')[0];
+          if(firstScriptTag) firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+          else document.head.appendChild(tag);
+      } catch (err) { console.error("[Lair OS] YouTube API Init Failed:", err); }
 
       const joinOverlay = document.getElementById('theater-join-overlay');
       document.getElementById('btn-join-party').addEventListener('click', () => {
@@ -530,7 +547,7 @@
               if (ytPlayer && ytPlayer.loadVideoById) {
                   ytPlayer.loadVideoById(videoId);
               } else {
-                  if (!ytApiReady || typeof YT === 'undefined' || !YT.Player) { 
+                  if (!window.ytApiReady || typeof YT === 'undefined' || !YT.Player) { 
                       setTimeout(() => mountMedia(rawUrl), 1000); 
                       return; 
                   }
@@ -607,8 +624,13 @@
           const resultsDiv = document.getElementById('tmdb-results');
           resultsDiv.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Searching TMDB...</p>';
           
-          try {
+         try {
               const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=4b52b76174a761002dc02aa11e0394c8&query=${encodeURIComponent(queryStr)}`);
+              
+              if (!res.ok) {
+                  throw new Error(`API Error ${res.status}: ${res.statusText}`);
+              }
+              
               const data = await res.json();
               resultsDiv.innerHTML = '';
               
