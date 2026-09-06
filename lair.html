@@ -6,7 +6,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>The Lair OS</title>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<!-- Plyr Removed. Artplayer is fully self-contained in JS -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
@@ -104,7 +103,6 @@
       <span style="font-weight:600; display:flex; align-items:center; gap:8px;"><span class="sys-dot" style="color:var(--con);"></span>The Lair</span>
     </div>
     <div style="display:flex; gap:16px; align-items:center;">
-        <!-- New Presence UI -->
         <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); display:flex; align-items:center;">
             <span id="partner-dot" class="sys-dot" style="color:var(--err); margin-right:6px;"></span><span id="partner-name">Offline</span>
         </span>
@@ -149,7 +147,6 @@
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
         
-        <!-- Updated Health Matrix Terminal -->
         <div class="card" style="padding:24px; background:#000; border:1px solid rgba(255,255,255,0.1);">
             <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
                 <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); display:flex; align-items:center;">
@@ -164,13 +161,10 @@
             </div>
         </div>
 
-        <!-- Updated Universal Clipboard History -->
         <div class="card" style="padding:24px;">
           <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Universal Clipboard</h2>
           <input type="text" id="relay-input" placeholder="Type and press Enter to sync...">
-          <div id="relay-list" style="margin-top:16px; display:flex; flex-direction:column; gap:8px; max-height:170px; overflow-y:auto;">
-             <!-- Renders dynamically -->
-          </div>
+          <div id="relay-list" style="margin-top:16px; display:flex; flex-direction:column; gap:8px; max-height:170px; overflow-y:auto;"></div>
         </div>
 
         <div class="card" style="padding:24px; display:flex; flex-direction:column;">
@@ -227,18 +221,18 @@
               </div>
             </div>
             <div style="display:flex; gap:14px;">
-              <input type="text" id="cowatch-url-input" placeholder="Direct Video URL (.mp4 or YouTube)...">
-              <button class="btn-primary haptic-btn" id="btn-load-cowatch">Stream</button>
+              <input type="text" id="cowatch-url-input" placeholder="Direct Video URL (.mp4)..." style="display:none;">
+              <button class="btn-primary haptic-btn" id="btn-load-cowatch" style="display:none;">Stream</button>
             </div>
           </section>
 
           <section class="card" style="padding:24px;">
-            <div style="display:flex; gap:12px; margin-bottom:20px;">
-              <input type="text" id="tmdb-search-input" placeholder="Search globally (TMDB)...">
-              <button class="btn-secondary haptic-btn" id="btn-tmdb-search" style="width:auto;">Search</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                <h2 style="font-family:var(--font-display); font-size:20px;">Vault Watchlist</h2>
             </div>
-            <div id="tmdb-results" style="display:flex; gap:16px; overflow-x:auto; margin-bottom:20px; padding-bottom:8px;"></div>
-            <div id="shared-watchlist" style="display:flex; gap:16px; overflow-x:auto;"></div>
+            <div id="shared-watchlist" style="display:flex; gap:16px; overflow-x:auto; padding-bottom:12px;">
+                <p style="font-size:12px; color:var(--ink-soft);">Loading movies...</p>
+            </div>
           </section>
         </div>
 
@@ -264,7 +258,6 @@
     </div>
   </div>
 
-<!-- Artplayer: Sleek Vanilla HTML5 Player -->
 <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -279,7 +272,7 @@
   const db = getFirestore(app);
   let currentUser = null;
   let activeLightboxFile = null;
-  let art = null; // Global Artplayer instance
+  let art = null; 
 
   const triggerHaptic = () => { 
       if(navigator.vibrate) navigator.vibrate(15);
@@ -337,11 +330,14 @@
   async function fetchWithAuth(url, options = {}) {
       if (!auth.currentUser) return fetch(url, options);
       const token = await auth.currentUser.getIdToken();
+      
+      // If we are passing the token via query string (for streams/downloads), skip the header
+      if (url.includes('?token=')) return fetch(url, options);
+
       const headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
       return fetch(url, { ...options, headers });
   }
 
-  // TERMINAL ENGINE
   const termIn = document.getElementById('terminal-in');
   const termOut = document.getElementById('terminal-out');
   termIn.addEventListener('keydown', async (e) => {
@@ -364,7 +360,6 @@
       }
   });
 
-  // HEALTH MATRIX & OS STATS
   async function pollSystemStats() {
       try {
           const res = await fetchWithAuth(`${TUNNEL_URL}/api/stats`);
@@ -403,17 +398,14 @@
   function initOS() {
     pollSystemStats();
 
-    // 1. NEAR-INSTANT PRESENCE ENGINE
     const presenceRef = doc(db, 'users', currentUser.id);
     const setOnline = () => setDoc(presenceRef, { state: 'online', name: currentUser.name, lastActive: serverTimestamp() }, {merge: true});
     const setOffline = () => setDoc(presenceRef, { state: 'offline', lastActive: serverTimestamp() }, {merge: true});
 
-    // Binds explicitly to browser visibility for instant signaling
     window.addEventListener('visibilitychange', () => document.visibilityState === 'visible' ? setOnline() : setOffline());
     window.addEventListener('beforeunload', setOffline);
     setOnline();
 
-    // Listen to Partner's Presence
     onSnapshot(collection(db, 'users'), (snap) => {
        snap.forEach(d => {
           if(d.id !== currentUser.id && d.data().name) {
@@ -456,7 +448,6 @@
         });
     });
 
-    // 2. UNIVERSAL CLIPBOARD HISTORY (Capped Array Logic)
     let currentClips = [];
     const relayIn = document.getElementById('relay-input');
     
@@ -475,7 +466,6 @@
                     </div>
                     <button class="btn-secondary haptic-btn clip-copy-btn" style="padding:6px 12px; font-size:11px; flex-shrink:0;">Copy</button>
                 `;
-                // Securely attach event listener to avoid XSS
                 row.querySelector('.clip-copy-btn').addEventListener('click', (e) => {
                     navigator.clipboard.writeText(clip.text);
                     e.currentTarget.textContent = 'Copied';
@@ -490,13 +480,53 @@
         if(e.key === 'Enter' && relayIn.value.trim() !== '') {
             e.preventDefault();
             const newClip = { text: relayIn.value.trim(), by: currentUser.name, time: Date.now() };
-            const updated = [newClip, ...currentClips].slice(0, 20); // Mathematically caps at 20 to protect quota
+            const updated = [newClip, ...currentClips].slice(0, 20); 
             setDoc(doc(db, 'system', 'relay'), { items: updated }, {merge: true});
             relayIn.value = '';
         }
     });
 
-    // 3. ARTPLAYER INITIALIZATION
+    // WATCHLIST & THEATER DOWNLOAD ENGINE
+    onSnapshot(query(collection(db, 'watchlist'), orderBy('timestamp', 'desc')), async (snap) => {
+        const list = document.getElementById('shared-watchlist');
+        list.innerHTML = '';
+        
+        if(snap.empty) {
+            list.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Watchlist is empty. Add movies to your Vault.</p>';
+            return;
+        }
+
+        const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
+
+        snap.forEach(d => {
+            const data = d.data();
+            const rawUrl = data.streamUrl; 
+            
+            // Append token to bypass PC security lock
+            const streamUrlWithToken = `${rawUrl}?token=${token}`;
+            const dlUrl = rawUrl.replace('/stream/movies/', '/api/download/movies/') + `?token=${token}`;
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.style.cssText = 'flex: 0 0 140px; padding:12px; display:flex; flex-direction:column; gap:10px; background:var(--glass-bg);';
+            card.innerHTML = `
+                <div style="aspect-ratio:2/3; background:url('${data.poster || ''}') center/cover; border-radius:8px; border:var(--glass-border); background-color:#111;"></div>
+                <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${data.title}">${data.title}</div>
+                <div style="display:flex; gap:6px;">
+                    <button class="btn-primary play-btn haptic-btn" data-url="${streamUrlWithToken}" style="flex:1; padding:8px 0; font-size:11px;">Play</button>
+                    <a href="${dlUrl}" download class="btn-secondary haptic-btn" style="flex:1; padding:8px 0; font-size:11px; text-align:center;">Save</a>
+                </div>
+            `;
+            
+            card.querySelector('.play-btn').addEventListener('click', (e) => {
+                triggerHaptic();
+                document.getElementById('cowatch-url-input').value = e.currentTarget.getAttribute('data-url');
+                document.getElementById('btn-load-cowatch').click();
+            });
+            list.appendChild(card);
+        });
+    });
+
     document.getElementById('btn-load-cowatch').addEventListener('click', () => {
         const url = document.getElementById('cowatch-url-input').value;
         if(!url) return;
