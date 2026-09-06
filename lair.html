@@ -92,6 +92,16 @@
 
   .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px; animation: smoothFadeIn 0.3s forwards; }
   .modal-overlay.active { display:flex; }
+
+  .voice-orb { width: 180px; height: 180px; border-radius: 50%; margin: 0 auto 28px; background: radial-gradient(circle at 35% 30%, rgba(112,148,122,0.9), rgba(112,148,122,0.15) 70%); display:flex; align-items:center; justify-content:center; box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 20px 60px -10px rgba(112,148,122,0.5); transition: box-shadow 0.15s ease, transform 0.15s ease; }
+  .voice-orb.speaking { box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 0 60px 10px rgba(112,148,122,0.65); transform: scale(1.03); }
+  .voice-orb-inner { font-family: var(--font-mono); font-size: 12px; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 0.05em; }
+  .voice-status-row { display:flex; align-items:center; justify-content:center; gap:8px; font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-bottom:24px; }
+  .voice-controls { display:flex; gap:14px; justify-content:center; }
+  .voice-btn { width: 56px; height: 56px; border-radius: 50%; display:flex; align-items:center; justify-content:center; font-size: 20px; border: var(--glass-border); background: var(--glass-bg); color: var(--ink); cursor:pointer; transition: 0.2s; }
+  .voice-btn:active { transform: scale(0.92); }
+  .voice-btn.danger { background: var(--err); color:#fff; }
+  .voice-btn.muted { background: var(--warn); color:#000; }
 </style>
 </head>
 <body data-theme="dark">
@@ -117,6 +127,7 @@
       <div class="dock-app app-link active haptic-btn" data-target="dashboard">Dashboard</div>
       <div class="dock-app app-link haptic-btn" data-target="drop">Vault</div>
       <div class="dock-app app-link haptic-btn" data-target="theater" id="dock-theater-link">Theater</div>
+      <div class="dock-app app-link haptic-btn" data-target="voice" id="dock-voice-link">Voice</div>
       <!-- Fixed: This link defaults to display:none until RBAC verifies an admin -->
       <a href="admin.html" id="dock-admin-link" class="dock-app haptic-btn" style="display:none;">Settings</a>
     </div>
@@ -267,6 +278,23 @@
         </section>
       </div>
     </section>
+
+    <section id="view-voice" class="view-container">
+      <div class="card" style="max-width:480px; margin:0 auto; padding:40px 32px; text-align:center;">
+        <h2 style="font-family:var(--font-display); font-size:22px; margin-bottom:8px;">Voice Room</h2>
+        <p style="font-size:12px; color:var(--ink-soft); margin-bottom:32px;">Private 1:1 voice call over WebRTC. No recordings, no server relay — audio goes peer-to-peer.</p>
+
+        <div class="voice-orb" id="voice-orb"><div class="voice-orb-inner" id="voice-orb-label">Idle</div></div>
+        <div class="voice-status-row"><span class="sys-dot" id="voice-status-dot" style="color:var(--err);"></span><span id="voice-status-text">Not connected</span></div>
+
+        <div class="voice-controls">
+          <button class="voice-btn haptic-btn" id="btn-voice-join" title="Join call">📞</button>
+          <button class="voice-btn haptic-btn muted" id="btn-voice-mute" title="Mute" style="display:none;">🎤</button>
+          <button class="voice-btn danger haptic-btn" id="btn-voice-leave" title="Leave call" style="display:none;">✕</button>
+        </div>
+        <audio id="voice-remote-audio" autoplay playsinline style="display:none;"></audio>
+      </div>
+    </section>
   </main>
   
   <div id="photo-lightbox" class="modal-overlay">
@@ -283,7 +311,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, collection, onSnapshot, query, orderBy, setDoc, deleteDoc, addDoc, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, collection, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, addDoc, getDoc, getDocs, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
   const TUNNEL_URL = "https://vault.ibadhasan.com"; 
@@ -316,7 +344,7 @@
       const diffX = touchStartX - e.changedTouches[0].screenX; const diffY = touchStartY - e.changedTouches[0].screenY;
       if (Math.abs(diffY) > Math.abs(diffX)) return;
 
-      const views = ['dashboard', 'drop', 'theater'];
+      const views = ['dashboard', 'drop', 'theater', 'voice'];
       const activeIdx = views.findIndex(v => document.getElementById(`view-${v}`).classList.contains('active'));
       
       if (diffX > 80 && activeIdx < views.length - 1) { 
@@ -479,6 +507,347 @@
 
     initWatchParty();
     initVault();
+    initTheaterChat();
+    initWatchlist();
+    initConfigAndFeatures();
+    initRadarFeed();
+    initVoiceRoom();
+  }
+
+  // Fixed: chat input/button previously had no listeners and no messages
+  // were ever read from Firestore, so "Live Chat" just sat empty forever.
+  function initTheaterChat() {
+      const chatWindow = document.getElementById('chat-window');
+      const chatInput = document.getElementById('chat-input');
+
+      const renderMsg = (m) => {
+          const mine = m.uid === currentUser.id;
+          const row = document.createElement('div');
+          row.style.cssText = `align-self:${mine ? 'flex-end' : 'flex-start'}; max-width:80%; background:${mine ? 'var(--accent)' : 'var(--input-bg)'}; color:${mine ? '#000' : 'var(--ink)'}; padding:8px 14px; border-radius:16px; font-size:13px;`;
+          row.innerHTML = `${!mine ? `<div style="font-family:var(--font-mono); font-size:10px; opacity:0.7; margin-bottom:2px;">${m.name}</div>` : ''}${m.text}`;
+          return row;
+      };
+
+      const chatQuery = query(collection(db, 'chat'), orderBy('timestamp', 'asc'), limit(100));
+      onSnapshot(chatQuery, (snap) => {
+          chatWindow.innerHTML = '';
+          snap.forEach(d => chatWindow.appendChild(renderMsg(d.data())));
+          chatWindow.scrollTop = chatWindow.scrollHeight;
+      });
+
+      const sendChat = async () => {
+          const text = chatInput.value.trim();
+          if (!text) return;
+          chatInput.value = '';
+          triggerHaptic();
+          await addDoc(collection(db, 'chat'), { text, name: currentUser.name, uid: currentUser.id, timestamp: serverTimestamp() });
+      };
+      document.getElementById('btn-send-chat').addEventListener('click', sendChat);
+      chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
+  }
+
+  // Fixed: "Vault Watchlist" rendered "Loading movies..." forever because
+  // nothing ever queried Firestore. TMDB search also had no listener, so
+  // typing a title and pressing Search silently did nothing.
+  function initWatchlist() {
+      const listEl = document.getElementById('shared-watchlist');
+      const watchQuery = query(collection(db, 'watchlist'), orderBy('timestamp', 'desc'), limit(40));
+      onSnapshot(watchQuery, (snap) => {
+          if (snap.empty) { listEl.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Watchlist is empty. Search TMDB above to add something.</p>'; return; }
+          listEl.innerHTML = '';
+          snap.forEach(docSnap => {
+              const m = docSnap.data();
+              const card = document.createElement('div');
+              card.style.cssText = 'flex:0 0 auto; width:110px; cursor:pointer;';
+              card.innerHTML = `
+                  <div style="width:110px; height:160px; border-radius:12px; background:${m.poster ? `url('${m.poster}') center/cover` : 'var(--input-bg)'}; border:var(--glass-border); margin-bottom:6px;"></div>
+                  <div style="font-size:11px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${m.title}</div>
+                  <div style="font-size:10px; color:var(--ink-soft);">${m.streamUrl ? '▶ Play' : m.status || ''}</div>
+              `;
+              if (m.streamUrl) {
+                  card.addEventListener('click', async () => {
+                      triggerHaptic();
+                      document.querySelector('.dock-app[data-target="theater"]').click();
+                      document.getElementById('theater-join-overlay').style.display = 'none';
+                      const { mountMediaFromWatchlist } = window.__lairTheater || {};
+                      if (mountMediaFromWatchlist) mountMediaFromWatchlist(m.streamUrl);
+                  });
+              }
+              listEl.appendChild(card);
+          });
+      });
+
+      const resultsEl = document.getElementById('tmdb-results');
+      const searchInput = document.getElementById('tmdb-search-input');
+
+      const runSearch = async () => {
+          const qStr = searchInput.value.trim();
+          if (!qStr) return;
+          resultsEl.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Searching...</p>';
+          try {
+              const res = await fetchWithAuth(`${TUNNEL_URL}/api/tmdb/search?q=${encodeURIComponent(qStr)}`);
+              const data = await res.json();
+              if (!res.ok) { resultsEl.innerHTML = `<p style="font-size:12px; color:var(--err);">${data.error || 'Search failed.'}</p>`; return; }
+              if (!data.results.length) { resultsEl.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">No results.</p>'; return; }
+              resultsEl.innerHTML = '';
+              data.results.forEach(r => {
+                  const card = document.createElement('div');
+                  card.style.cssText = 'flex:0 0 auto; width:110px;';
+                  card.innerHTML = `
+                      <div style="width:110px; height:160px; border-radius:12px; background:${r.poster ? `url('${r.poster}') center/cover` : 'var(--input-bg)'}; border:var(--glass-border); margin-bottom:6px;"></div>
+                      <div style="font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.title} ${r.year ? `(${r.year})` : ''}</div>
+                      <button class="btn-secondary haptic-btn" style="width:100%; margin-top:4px; padding:6px; font-size:10px;">+ Add</button>
+                  `;
+                  card.querySelector('button').addEventListener('click', async () => {
+                      triggerHaptic();
+                      await addDoc(collection(db, 'watchlist'), {
+                          title: r.title, poster: r.poster, type: r.type, status: 'Want to Watch',
+                          streamUrl: '', addedBy: currentUser.name, timestamp: serverTimestamp()
+                      });
+                  });
+                  resultsEl.appendChild(card);
+              });
+          } catch (e) {
+              resultsEl.innerHTML = '<p style="font-size:12px; color:var(--err);">Search failed.</p>';
+          }
+      };
+      document.getElementById('btn-tmdb-search').addEventListener('click', runSearch);
+      searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
+  }
+
+  // Fixed: admin.html writes broadcast banner text and theater/voice/radar
+  // kill switches to system/config, but lair.html never read that document,
+  // so none of the OS Control toggles in the admin panel did anything here.
+  function initConfigAndFeatures() {
+      onSnapshot(doc(db, 'system', 'config'), (snap) => {
+          if (!snap.exists()) return;
+          const d = snap.data();
+
+          const banner = document.getElementById('broadcast-banner');
+          if (d.broadcast) { banner.textContent = d.broadcast; banner.style.display = 'block'; }
+          else { banner.style.display = 'none'; }
+
+          if (d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
+          if (d.fontDisplay || d.fontBody) {
+              const families = [d.fontDisplay, d.fontBody].filter(Boolean).map(f => f.trim().replace(/ /g, '+'));
+              document.getElementById('dynamic-fonts').href = `https://fonts.googleapis.com/css2?${families.map(f => `family=${f}:wght@400;500;600`).join('&')}&display=swap`;
+              if (d.fontDisplay) document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay}', serif`);
+              if (d.fontBody) document.documentElement.style.setProperty('--font-body', `'${d.fontBody}', sans-serif`);
+          }
+
+          const f = d.features || {};
+          document.getElementById('dock-theater-link').style.display = f.theater === false ? 'none' : 'block';
+          document.getElementById('dock-voice-link').style.display = f.voice === false ? 'none' : 'block';
+          const radarCard = document.getElementById('radar-feed')?.closest('.card');
+          if (radarCard) radarCard.style.display = f.radar === false ? 'none' : 'flex';
+
+          // If the current view got killed from under the user, bounce to dashboard.
+          const activeTarget = document.querySelector('.dock-app.active')?.getAttribute('data-target');
+          if ((activeTarget === 'theater' && f.theater === false) || (activeTarget === 'voice' && f.voice === false)) {
+              document.querySelector('.dock-app[data-target="dashboard"]').click();
+          }
+      });
+  }
+
+  // Fixed: index.html's fireSilentRadar() has been writing visits into
+  // radar_logs the whole time, but the "Live Radar" card in the dashboard
+  // never queried that collection, so it just said "Waiting for telemetry"
+  // forever.
+  function initRadarFeed() {
+      const feed = document.getElementById('radar-feed');
+      const radarQuery = query(collection(db, 'radar_logs'), orderBy('timestamp', 'desc'), limit(20));
+      onSnapshot(radarQuery, (snap) => {
+          if (snap.empty) { feed.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Waiting for telemetry...</p>'; return; }
+          feed.innerHTML = '';
+          snap.forEach(d => {
+              const r = d.data();
+              const row = document.createElement('div');
+              row.className = 'radar-row';
+              const when = r.timestamp?.toDate ? r.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+              row.innerHTML = `<span>${r.type || 'Visit'} — ${r.city || 'Unknown'}, ${r.country || ''}</span><span style="color:var(--ink-soft); font-family:var(--font-mono); font-size:11px;">${when}</span>`;
+              feed.appendChild(row);
+          });
+      });
+  }
+
+  // Fixed: "Voice Room" was a kill-switch in the admin panel and a promise
+  // in this app's name only — there was no dock item, no UI, and no code
+  // anywhere. This adds a real 1:1 WebRTC voice call, using a single fixed
+  // Firestore document ("voice_calls/main-room") purely for signaling
+  // (SDP offer/answer + ICE candidates). Once connected, audio itself flows
+  // directly between the two browsers — Firestore never sees or relays it.
+  function initVoiceRoom() {
+      const ROOM_ID = 'main-room';
+      const roomRef = doc(db, 'voice_calls', ROOM_ID);
+      const callerCandidatesRef = collection(roomRef, 'callerCandidates');
+      const calleeCandidatesRef = collection(roomRef, 'calleeCandidates');
+      const rtcConfig = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }] };
+
+      let pc = null;
+      let localStream = null;
+      let remoteStream = null;
+      let role = null; // 'caller' | 'callee'
+      let unsubRoom = null, unsubCandidates = null;
+      let analyser = null, analyserRaf = null;
+
+      const orb = document.getElementById('voice-orb');
+      const orbLabel = document.getElementById('voice-orb-label');
+      const statusDot = document.getElementById('voice-status-dot');
+      const statusText = document.getElementById('voice-status-text');
+      const btnJoin = document.getElementById('btn-voice-join');
+      const btnMute = document.getElementById('btn-voice-mute');
+      const btnLeave = document.getElementById('btn-voice-leave');
+      const remoteAudioEl = document.getElementById('voice-remote-audio');
+
+      const setUiState = (state) => {
+          if (state === 'idle') {
+              orbLabel.textContent = 'Idle'; statusDot.style.color = 'var(--err)'; statusText.textContent = 'Not connected';
+              btnJoin.style.display = 'flex'; btnMute.style.display = 'none'; btnLeave.style.display = 'none';
+          } else if (state === 'waiting') {
+              orbLabel.textContent = 'Ringing…'; statusDot.style.color = 'var(--warn)'; statusText.textContent = 'Waiting for the other side to join';
+              btnJoin.style.display = 'none'; btnMute.style.display = 'flex'; btnLeave.style.display = 'flex';
+          } else if (state === 'connected') {
+              orbLabel.textContent = 'Live'; statusDot.style.color = 'var(--con)'; statusText.textContent = 'Connected';
+              btnJoin.style.display = 'none'; btnMute.style.display = 'flex'; btnLeave.style.display = 'flex';
+          }
+      };
+
+      const watchRemoteVolume = (stream) => {
+          try {
+              const ctx = new (window.AudioContext || window.webkitAudioContext)();
+              const source = ctx.createMediaStreamSource(stream);
+              analyser = ctx.createAnalyser(); analyser.fftSize = 512;
+              source.connect(analyser);
+              const data = new Uint8Array(analyser.frequencyBinCount);
+              const tick = () => {
+                  analyser.getByteFrequencyData(data);
+                  const avg = data.reduce((a, b) => a + b, 0) / data.length;
+                  orb.classList.toggle('speaking', avg > 12);
+                  analyserRaf = requestAnimationFrame(tick);
+              };
+              tick();
+          } catch (e) { /* non-fatal, just skip the speaking glow */ }
+      };
+
+      async function cleanupPeer() {
+          if (analyserRaf) cancelAnimationFrame(analyserRaf);
+          analyser = null;
+          if (unsubRoom) { unsubRoom(); unsubRoom = null; }
+          if (unsubCandidates) { unsubCandidates(); unsubCandidates = null; }
+          if (pc) { pc.close(); pc = null; }
+          if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
+          remoteStream = null;
+          remoteAudioEl.srcObject = null;
+          role = null;
+          orb.classList.remove('speaking');
+      }
+
+      async function hangUp(deleteRoom) {
+          triggerHaptic();
+          await cleanupPeer();
+          if (deleteRoom) {
+              try {
+                  const [callerDocs, calleeDocs] = await Promise.all([getDocs(callerCandidatesRef), getDocs(calleeCandidatesRef)]);
+                  await Promise.all([
+                      ...callerDocs.docs.map(d => deleteDoc(d.ref)),
+                      ...calleeDocs.docs.map(d => deleteDoc(d.ref))
+                  ]);
+                  await deleteDoc(roomRef);
+              } catch (e) { /* room may already be gone */ }
+          }
+          setUiState('idle');
+      }
+
+      btnLeave.addEventListener('click', () => hangUp(true));
+
+      btnMute.addEventListener('click', () => {
+          if (!localStream) return;
+          const track = localStream.getAudioTracks()[0];
+          track.enabled = !track.enabled;
+          btnMute.textContent = track.enabled ? '🎤' : '🔇';
+          triggerHaptic();
+      });
+
+      btnJoin.addEventListener('click', async () => {
+          triggerHaptic();
+          try {
+              localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+          } catch (e) {
+              alert('Microphone access is required for the Voice Room.');
+              return;
+          }
+
+          pc = new RTCPeerConnection(rtcConfig);
+          localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+          remoteStream = new MediaStream();
+          remoteAudioEl.srcObject = remoteStream;
+          pc.ontrack = (event) => {
+              event.streams[0].getTracks().forEach(t => remoteStream.addTrack(t));
+              watchRemoteVolume(remoteStream);
+          };
+
+          const existingSnap = await getDoc(roomRef);
+          const existing = existingSnap.exists() ? existingSnap.data() : null;
+
+          if (!existing || !existing.offer || (existing.status === 'ended')) {
+              // No one is calling yet — become the caller.
+              role = 'caller';
+              pc.onicecandidate = (e) => { if (e.candidate) addDoc(callerCandidatesRef, e.candidate.toJSON()); };
+
+              const offerDesc = await pc.createOffer();
+              await pc.setLocalDescription(offerDesc);
+              await setDoc(roomRef, {
+                  offer: { type: offerDesc.type, sdp: offerDesc.sdp },
+                  answer: null, callerId: currentUser.id, callerName: currentUser.name, status: 'waiting'
+              });
+              setUiState('waiting');
+
+              unsubRoom = onSnapshot(roomRef, async (snap) => {
+                  const data = snap.data();
+                  if (data && data.answer && pc && !pc.currentRemoteDescription) {
+                      await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+                      setUiState('connected');
+                  }
+                  if (!snap.exists()) { await cleanupPeer(); setUiState('idle'); }
+              });
+              unsubCandidates = onSnapshot(calleeCandidatesRef, (snap) => {
+                  snap.docChanges().forEach(change => {
+                      if (change.type === 'added' && pc) pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                  });
+              });
+          } else if (existing.callerId === currentUser.id) {
+              alert('You already have a call waiting — open this on the other device to answer it.');
+              await cleanupPeer();
+              return;
+          } else if (!existing.answer) {
+              // Someone is calling and it isn't me — become the callee.
+              role = 'callee';
+              pc.onicecandidate = (e) => { if (e.candidate) addDoc(calleeCandidatesRef, e.candidate.toJSON()); };
+
+              await pc.setRemoteDescription(new RTCSessionDescription(existing.offer));
+              const answerDesc = await pc.createAnswer();
+              await pc.setLocalDescription(answerDesc);
+              await updateDoc(roomRef, {
+                  answer: { type: answerDesc.type, sdp: answerDesc.sdp },
+                  calleeId: currentUser.id, calleeName: currentUser.name, status: 'connected'
+              });
+              setUiState('connected');
+
+              unsubCandidates = onSnapshot(callerCandidatesRef, (snap) => {
+                  snap.docChanges().forEach(change => {
+                      if (change.type === 'added' && pc) pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
+                  });
+              });
+              unsubRoom = onSnapshot(roomRef, (snap) => { if (!snap.exists()) { cleanupPeer(); setUiState('idle'); } });
+          } else {
+              alert('The Voice Room already has two people in it.');
+              await cleanupPeer();
+              return;
+          }
+      });
+
+      setUiState('idle');
   }
 
   function initWatchParty() {
@@ -503,6 +872,21 @@
           triggerHaptic();
           joinOverlay.style.display = 'none';
           document.getElementById('theater-player-slot').style.display = 'flex';
+      });
+
+      // Fixed: the "Stream" button previously had no click listener at all —
+      // typing a URL and pressing it did nothing. It now actually mounts the
+      // media locally and writes the session to Firestore so the other
+      // person's Theater tab picks it up via the watch_party listener below.
+      document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
+          const urlInput = document.getElementById('cowatch-url-input');
+          const url = urlInput.value.trim();
+          if (!url) return;
+          triggerHaptic();
+          joinOverlay.style.display = 'none';
+          await mountMedia(url);
+          pushState(true, 0);
+          urlInput.value = '';
       });
 
       const pushState = (isPlaying, time) => {
@@ -549,8 +933,25 @@
               if(ytPlayer && ytPlayer.stopVideo) { ytPlayer.stopVideo(); }
               if(art) art.destroy();
 
-              const token = await auth.currentUser.getIdToken(true);
-              const secureUrl = rawUrl.includes('?') ? `${rawUrl}&token=${token}` : `${rawUrl}?token=${token}`;
+              // Fixed: previously appended a raw 1-hour Firebase ID token to
+              // the <video> src. Anything longer than an hour would hit the
+              // server's old "expired token but has a Range header" bypass,
+              // which was itself a security hole. Now we ask the server for
+              // a short-lived token scoped to just this filename, valid for
+              // hours, and use that instead — no bypass needed on either end.
+              let secureUrl = rawUrl;
+              if (rawUrl.startsWith(`${TUNNEL_URL}/stream/`)) {
+                  try {
+                      const filename = decodeURIComponent(rawUrl.split('/').pop().split('?')[0]);
+                      const tokRes = await fetchWithAuth(`${TUNNEL_URL}/api/stream-token`, {
+                          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename })
+                      });
+                      if (tokRes.ok) {
+                          const { token } = await tokRes.json();
+                          secureUrl = rawUrl.includes('?') ? `${rawUrl}&stream_token=${token}` : `${rawUrl}?stream_token=${token}`;
+                      }
+                  } catch (e) { /* fall back to rawUrl as-is (e.g. external mp4) */ }
+              }
 
               art = new Artplayer({
                   container: '#theater-player-slot', url: secureUrl, theme: '#70947A',
@@ -566,6 +967,16 @@
                       art.video.webkitEnterFullscreen(); art.fullscreen = false;
                   }
               });
+          }
+      };
+
+      // Exposed so a click on a Watchlist card (wired up in initWatchlist)
+      // can load that title straight into the shared player.
+      window.__lairTheater = {
+          mountMediaFromWatchlist: async (url) => {
+              document.getElementById('theater-player-slot').style.display = 'flex';
+              await mountMedia(url);
+              pushState(true, 0);
           }
       };
 

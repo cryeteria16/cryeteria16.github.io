@@ -27,6 +27,8 @@
   .orb-2 { width: 50vw; height: 50vh; background: #2b4c59; bottom: -10%; right: -10%; animation-delay: -5s; }
   @keyframes floatOrb { 0% { transform: translate(0, 0) scale(1) rotate(0deg); } 100% { transform: translate(10vw, 15vh) scale(1.1) rotate(20deg); } }
 
+  #broadcast-banner { display:none; width:100%; background:var(--accent); color:#000; font-family:var(--font-mono); font-size:12px; font-weight:600; text-align:center; padding:10px; z-index:1000; position:fixed; top:0; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5); }
+
   .floating-header-wrapper { position: sticky; top: env(safe-area-inset-top, 20px); z-index: 50; padding: 20px; display: flex; justify-content: center; pointer-events: none; }
   .floating-pill { background: rgba(16,16,22,0.6); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 50px; padding: 10px 24px; display: flex; align-items: center; gap: 32px; box-shadow: var(--glass-glow); pointer-events: auto; }
   .pub-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
@@ -42,6 +44,11 @@
   .view-container { display: none; opacity: 0; }
   .view-container.active { display: block; animation: smoothFadeIn 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
   @keyframes smoothFadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+  .about-card { background: var(--glass-bg); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: var(--radius); padding: 36px; max-width: 720px; margin-bottom: 24px; }
+  .about-card p { font-size: 15px; color: var(--ink-soft); white-space: pre-line; }
+  .social-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .social-pill { background: var(--glass-bg); border: var(--glass-border); border-radius: 30px; padding: 10px 20px; font-size: 13px; font-family: var(--font-mono); backdrop-filter: var(--glass-blur); }
 
   .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 24px; }
   .contact-card { background: var(--glass-bg); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: var(--radius); padding: 32px; transition: 0.4s; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between;}
@@ -59,6 +66,7 @@
 <body>
 
   <div class="aurora-mesh"><div class="aurora-orb orb-1"></div><div class="aurora-orb orb-2"></div></div>
+  <div id="broadcast-banner"></div>
 
   <div class="floating-header-wrapper">
     <header class="floating-pill">
@@ -76,10 +84,18 @@
 
   <main class="pub-content">
     <section id="pub-view-work" class="view-container active">
-      <div class="pub-hero"><h2 id="dynamic-hero-title">Visual Archival</h2></div>
+      <div class="pub-hero">
+        <h2 id="dynamic-hero-title">Visual Archival</h2>
+        <p id="dynamic-hero-sub"></p>
+      </div>
     </section>
 
     <section id="pub-view-about" class="view-container">
+      <div class="pub-hero"><h2>Identity</h2></div>
+      <div class="about-card">
+        <p id="dynamic-bio">Bio coming soon.</p>
+      </div>
+      <div class="social-row" id="dynamic-socials"></div>
     </section>
 
     <section id="pub-view-contact" class="view-container">
@@ -151,13 +167,45 @@
 
   let vcardData = { name: "Ibad Hasan", phone: "" };
 
+  // Fixed: previously only read d.email/vcardName/vcardPhone from the
+  // profile doc. heroTitle, heroSub, bio and the social links admin.html
+  // lets you edit were captured in Firestore but never rendered anywhere
+  // on the public site — "Identity" was a permanently empty tab.
   onSnapshot(doc(db, 'system', 'profile'), (snap) => {
     if(snap.exists()) {
       const d = snap.data();
       if(d.email) { document.getElementById('contact-email-link').href = `mailto:${d.email}`; document.getElementById('contact-email-text').textContent = d.email; }
       if(d.vcardName) vcardData.name = d.vcardName;
       if(d.vcardPhone) vcardData.phone = d.vcardPhone;
+
+      if(d.heroTitle) document.getElementById('dynamic-hero-title').textContent = d.heroTitle;
+      document.getElementById('dynamic-hero-sub').textContent = d.heroSub || '';
+      document.getElementById('dynamic-bio').textContent = d.bio || 'Bio coming soon.';
+
+      const socialsEl = document.getElementById('dynamic-socials');
+      socialsEl.innerHTML = '';
+      const socials = d.socials || {};
+      const labels = { ig: 'Instagram', x: 'X (Twitter)', git: 'GitHub' };
+      Object.keys(labels).forEach(key => {
+        if (socials[key]) {
+          const a = document.createElement('a');
+          a.href = socials[key]; a.target = '_blank'; a.rel = 'noopener noreferrer';
+          a.className = 'social-pill'; a.textContent = labels[key];
+          socialsEl.appendChild(a);
+        }
+      });
     }
+  });
+
+  // Fixed: admin.html's "Broadcast Banner" and accent color were written to
+  // system/config, but the public site never read that document at all.
+  onSnapshot(doc(db, 'system', 'config'), (snap) => {
+    if (!snap.exists()) return;
+    const d = snap.data();
+    const banner = document.getElementById('broadcast-banner');
+    if (d.broadcast) { banner.textContent = d.broadcast; banner.style.display = 'block'; }
+    else { banner.style.display = 'none'; }
+    if (d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
   });
 
   document.getElementById('btn-download-vcard').addEventListener('click', () => {
