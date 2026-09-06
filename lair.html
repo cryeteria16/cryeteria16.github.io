@@ -117,7 +117,8 @@
       <div class="dock-app app-link active haptic-btn" data-target="dashboard">Dashboard</div>
       <div class="dock-app app-link haptic-btn" data-target="drop">Vault</div>
       <div class="dock-app app-link haptic-btn" data-target="theater" id="dock-theater-link">Theater</div>
-      <a href="admin.html" class="dock-app haptic-btn">Settings</a>
+      <!-- Fixed: This link defaults to display:none until RBAC verifies an admin -->
+      <a href="admin.html" id="dock-admin-link" class="dock-app haptic-btn" style="display:none;">Settings</a>
     </div>
   </div>
 
@@ -166,21 +167,10 @@
           <div id="relay-list" style="margin-top:16px; display:flex; flex-direction:column; gap:8px; max-height:170px; overflow-y:auto;"></div>
         </div>
 
-     <div class="card" style="padding:24px; display:flex; flex-direction:column;">
-          <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Gateway Telemetry</h2>
+        <div class="card" style="padding:24px; display:flex; flex-direction:column;">
+          <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Live Radar</h2>
           <div id="radar-feed" style="flex:1; overflow-y:auto; max-height:140px;">
              <p style="font-size:12px; color:var(--ink-soft);">Waiting for telemetry...</p>
-          </div>
-        </div>
-
-        <div class="card" style="padding:24px; display:flex; flex-direction:column;">
-          <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Aviation Tracking</h2>
-          <div style="display:flex; gap:10px; margin-bottom:12px;">
-             <input type="text" id="flight-input" placeholder="Callsign (e.g., UAE202)" style="padding:10px 14px; border-radius:12px; flex:1;">
-             <button class="btn-primary haptic-btn" id="btn-track-flight" style="padding:10px 16px;">Track</button>
-          </div>
-          <div id="flight-frame-container" style="flex:1; background:#000; border-radius:12px; overflow:hidden; min-height:220px; display:flex; align-items:center; justify-content:center;">
-             <p style="font-size:12px; color:var(--ink-soft); font-family:var(--font-mono);">No flight selected.</p>
           </div>
         </div>
       </div>
@@ -213,8 +203,13 @@
         <div id="timeline-photos" class="vault-timeline active">
             <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
         </div>
-        <div id="timeline-videos" class="vault-timeline"></div>
-        <div id="timeline-docs" class="vault-timeline"></div>
+        <div id="timeline-videos" class="vault-timeline">
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
+        </div>
+        <!-- Fixed: Documents timeline container -->
+        <div id="timeline-docs" class="vault-timeline">
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
+        </div>
       </section>
     </section>
 
@@ -331,7 +326,6 @@
       }
   }, {passive: true});
 
-  // Fail-safed Clock Function
   function syncEnvironment() {
       try {
           const now = new Date();
@@ -371,7 +365,7 @@
       }
   });
 
-async function pollSystemStats() {
+  async function pollSystemStats() {
       try {
           const res = await fetchWithAuth(`${TUNNEL_URL}/api/stats`);
           if (res.ok) {
@@ -380,11 +374,8 @@ async function pollSystemStats() {
               document.getElementById('sys-ram').textContent = `${stats.ram}%`;
               document.getElementById('health-dot').style.color = "var(--con)";
               document.getElementById('health-text').textContent = "LINK ACTIVE";
-          } else { 
-              throw new Error(`Server returned HTTP ${res.status}`); 
-          }
+          } else { throw new Error(); }
       } catch(e) {
-          console.error("[Lair OS] Tunnel Health Check Failed:", e.message);
           document.getElementById('health-dot').style.color = "var(--err)";
           document.getElementById('health-text').textContent = "TUNNEL OFFLINE";
       }
@@ -393,6 +384,20 @@ async function pollSystemStats() {
   onAuthStateChanged(auth, (user) => {
     if (!user) window.location.replace("index.html");
     currentUser = { name: user.email.split('@')[0], id: user.uid };
+    
+    // Fixed: RBAC for displaying Admin settings in the dock
+    onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
+        if(snap.exists()) {
+            if (snap.data().role === 'admin') {
+                document.getElementById('dock-admin-link').style.display = 'block';
+            }
+            if(snap.data().theme) {
+                document.body.setAttribute('data-theme', snap.data().theme);
+                document.getElementById('btn-theme-toggle').textContent = snap.data().theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+            }
+        }
+    });
+    
     initOS();
   });
 
@@ -435,13 +440,6 @@ async function pollSystemStats() {
         const newTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
         setDoc(doc(db, 'users', currentUser.id), { theme: newTheme }, { merge: true });
     });
-    
-    onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
-        if(snap.exists() && snap.data().theme) {
-            document.body.setAttribute('data-theme', snap.data().theme);
-            themeBtn.textContent = snap.data().theme === 'dark' ? '☀️ Light' : '🌙 Dark';
-        }
-    });
 
     let currentClips = [];
     const relayIn = document.getElementById('relay-input');
@@ -470,7 +468,7 @@ async function pollSystemStats() {
         }
     });
 
-relayIn.addEventListener('keydown', (e) => {
+    relayIn.addEventListener('keydown', (e) => {
         if(e.key === 'Enter' && relayIn.value.trim() !== '') {
             e.preventDefault();
             const updated = [{ text: relayIn.value.trim(), by: currentUser.name, time: Date.now() }, ...currentClips].slice(0, 20); 
@@ -479,21 +477,10 @@ relayIn.addEventListener('keydown', (e) => {
         }
     });
 
-    // AVIATION TRACKING ENGINE
-    document.getElementById('btn-track-flight').addEventListener('click', () => {
-        const flightNo = document.getElementById('flight-input').value.trim().toUpperCase();
-        if(!flightNo) return;
-        triggerHaptic();
-        
-        const container = document.getElementById('flight-frame-container');
-        // Employs ADSBExchange: An open, iframe-friendly tracker without paywalls or CORS blocks.
-        container.innerHTML = `<iframe src="https://globe.adsbexchange.com/?hideSidebar&hideButtons&callsign=${flightNo}" style="width:100%; height:100%; border:none;"></iframe>`;
-    });
-
     initWatchParty();
     initVault();
   }
-  // --- HYBRID WATCH PARTY ENGINE ---
+
   function initWatchParty() {
       let currentSessionUrl = null;
       let isYt = false;
@@ -504,17 +491,12 @@ relayIn.addEventListener('keydown', (e) => {
 
       const requestWakeLock = async () => { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
 
-  // Safe YouTube API Loader (Thread Quarantined)
-      window.ytApiReady = false;
-      try {
-          window.onYouTubeIframeAPIReady = function() { window.ytApiReady = true; };
-          const tag = document.createElement('script');
-          tag.src = "https://www.youtube.com/iframe_api";
-          tag.onerror = () => console.error("[Lair OS] YouTube API blocked or offline");
-          const firstScriptTag = document.getElementsByTagName('script')[0];
-          if(firstScriptTag) firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-          else document.head.appendChild(tag);
-      } catch (err) { console.error("[Lair OS] YouTube API Init Failed:", err); }
+      let ytApiReady = false;
+      window.onYouTubeIframeAPIReady = function() { ytApiReady = true; };
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
       const joinOverlay = document.getElementById('theater-join-overlay');
       document.getElementById('btn-join-party').addEventListener('click', () => {
@@ -547,7 +529,7 @@ relayIn.addEventListener('keydown', (e) => {
               if (ytPlayer && ytPlayer.loadVideoById) {
                   ytPlayer.loadVideoById(videoId);
               } else {
-                  if (!window.ytApiReady || typeof YT === 'undefined' || !YT.Player) { 
+                  if (!ytApiReady || typeof YT === 'undefined' || !YT.Player) { 
                       setTimeout(() => mountMedia(rawUrl), 1000); 
                       return; 
                   }
@@ -584,13 +566,6 @@ relayIn.addEventListener('keydown', (e) => {
                       art.video.webkitEnterFullscreen(); art.fullscreen = false;
                   }
               });
-
-              document.addEventListener('visibilitychange', () => {
-                  if (document.visibilityState === 'visible' && art.playing) requestWakeLock();
-                  if (document.visibilityState === 'hidden' && art.playing && document.pictureInPictureEnabled && !document.pictureInPictureElement) {
-                      art.video.requestPictureInPicture().catch(() => {});
-                  }
-              });
           }
       };
 
@@ -614,130 +589,6 @@ relayIn.addEventListener('keydown', (e) => {
           }
           setTimeout(() => { ignoreNextSync = false; }, 500);
       });
-
-      // RESTORED TMDB SEARCH LOGIC
-      document.getElementById('btn-tmdb-search').addEventListener('click', async () => {
-          const queryStr = document.getElementById('tmdb-search-input').value.trim();
-          if(!queryStr) return;
-          triggerHaptic();
-          
-          const resultsDiv = document.getElementById('tmdb-results');
-          resultsDiv.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Searching TMDB...</p>';
-          
-         try {
-              const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=4b52b76174a761002dc02aa11e0394c8&query=${encodeURIComponent(queryStr)}`);
-              
-              if (!res.ok) {
-                  throw new Error(`API Error ${res.status}: ${res.statusText}`);
-              }
-              
-              const data = await res.json();
-              resultsDiv.innerHTML = '';
-              
-              const validResults = (data.results || []).filter(r => r.media_type === 'movie' || r.media_type === 'tv').slice(0, 10);
-              if(validResults.length === 0) {
-                  resultsDiv.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">No results found.</p>'; return;
-              }
-              
-              validResults.forEach(match => {
-                  const card = document.createElement('div');
-                  card.style.cssText = 'flex: 0 0 110px; display:flex; flex-direction:column; gap:8px;';
-                  const poster = match.poster_path ? `https://image.tmdb.org/t/p/w200${match.poster_path}` : '';
-                  const title = match.title || match.name;
-                  
-                  card.innerHTML = `
-                      <div style="aspect-ratio:2/3; background:url('${poster}') center/cover; border-radius:8px; border:var(--glass-border); background-color:#111;"></div>
-                      <div style="font-size:11px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${title}">${title}</div>
-                      <button class="btn-secondary haptic-btn add-wishlist-btn" style="padding:6px 0; font-size:10px;">Add +</button>
-                  `;
-                  
-                  card.querySelector('.add-wishlist-btn').addEventListener('click', async (e) => {
-                      triggerHaptic(); e.currentTarget.textContent = 'Adding...';
-                      await addDoc(collection(db, 'watchlist'), {
-                          title: title,
-                          poster: match.poster_path ? `https://image.tmdb.org/t/p/w500${match.poster_path}` : '',
-                          type: match.media_type === 'movie' ? 'Movie' : 'TV Show',
-                          status: 'Want to Watch',
-                          streamUrl: '', 
-                          addedBy: currentUser.name,
-                          timestamp: serverTimestamp()
-                      });
-                      e.currentTarget.textContent = 'Added'; e.currentTarget.style.color = 'var(--con)'; e.currentTarget.disabled = true;
-                  });
-                  resultsDiv.appendChild(card);
-              });
-          } catch(e) { resultsDiv.innerHTML = '<p style="font-size:12px; color:var(--err);">Search failed. Check network.</p>'; }
-      });
-
-      // WATCHLIST RENDERER (Handles Local vs. Wishlist files)
-      onSnapshot(query(collection(db, 'watchlist'), orderBy('timestamp', 'desc')), (snap) => {
-          const list = document.getElementById('shared-watchlist');
-          list.innerHTML = '';
-          if(snap.empty) { list.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Watchlist is empty.</p>'; return; }
-
-          snap.forEach(d => {
-              const data = d.data();
-              const docId = d.id;
-              const card = document.createElement('div');
-              card.className = 'card';
-              card.style.cssText = 'flex: 0 0 140px; padding:12px; display:flex; flex-direction:column; gap:10px; background:var(--glass-bg);';
-              
-              let actionButtons = '';
-              if (data.streamUrl) {
-                  actionButtons = `
-                      <div style="display:flex; gap:6px;">
-                          <button class="btn-primary play-btn haptic-btn" data-rawurl="${data.streamUrl}" style="flex:1; padding:8px 0; font-size:11px;">Play</button>
-                          <button class="btn-secondary save-btn haptic-btn" data-rawurl="${data.streamUrl}" style="flex:1; padding:8px 0; font-size:11px; text-align:center;">Save</button>
-                      </div>
-                  `;
-              } else {
-                  actionButtons = `
-                      <div style="display:flex; gap:6px; flex-direction:column;">
-                          <span style="font-size:9px; color:var(--con); text-transform:uppercase;">Added by ${data.addedBy}</span>
-                          <button class="btn-secondary delete-btn haptic-btn" data-id="${docId}" style="width:100%; padding:8px 0; font-size:11px; color:var(--err);">Remove</button>
-                      </div>
-                  `;
-              }
-
-              card.innerHTML = `
-                  <div style="aspect-ratio:2/3; background:url('${data.poster || ''}') center/cover; border-radius:8px; border:var(--glass-border); background-color:#111;"></div>
-                  <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${data.title}">${data.title}</div>
-                  ${actionButtons}
-              `;
-              
-              if (data.streamUrl) {
-                  card.querySelector('.play-btn').addEventListener('click', (e) => {
-                      triggerHaptic();
-                      const rawUrl = e.currentTarget.getAttribute('data-rawurl');
-                      pushState(true, 0); 
-                      setDoc(doc(db, 'system', 'watch_party'), { url: rawUrl, isPlaying: true, timestamp: 0, updatedAt: serverTimestamp(), updatedBy: currentUser.name });
-                  });
-
-                  card.querySelector('.save-btn').addEventListener('click', async (e) => {
-                      e.preventDefault(); triggerHaptic();
-                      const btn = e.currentTarget; btn.textContent = "Saving...";
-                      const rawUrl = btn.getAttribute('data-rawurl');
-                      const token = await auth.currentUser.getIdToken(true); 
-                      const dlUrl = rawUrl.replace('/stream/movies/', '/api/download/movies/') + `?token=${token}`;
-                      const a = document.createElement('a'); a.href = dlUrl; a.download = ''; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                      setTimeout(() => btn.textContent = "Save", 2000);
-                  });
-              } else {
-                  card.querySelector('.delete-btn').addEventListener('click', (e) => {
-                      triggerHaptic();
-                      deleteDoc(doc(db, 'watchlist', e.currentTarget.getAttribute('data-id')));
-                  });
-              }
-              list.appendChild(card);
-          });
-      });
-
-      document.getElementById('btn-load-cowatch').addEventListener('click', () => {
-          const url = document.getElementById('cowatch-url-input').value;
-          if(!url) return; triggerHaptic(); document.getElementById('cowatch-url-input').value = '';
-          pushState(true, 0);
-          setDoc(doc(db, 'system', 'watch_party'), { url: url, isPlaying: true, timestamp: 0, updatedAt: serverTimestamp(), updatedBy: currentUser.name });
-      });
   }
 
   document.querySelectorAll('.seg-btn').forEach(btn => {
@@ -759,23 +610,44 @@ relayIn.addEventListener('keydown', (e) => {
       if(filesRes.ok) {
           const allFiles = await filesRes.json();
           const renderGrid = (list, containerId) => {
-              const container = document.getElementById(containerId);
+              const container = document.querySelector(`#${containerId} > div`);
               if(!list.length) { container.innerHTML = '<p style="color:var(--ink-soft); font-size:13px; text-align:center;">Empty directory.</p>'; return; }
+              
               const grouped = {}; 
               list.forEach(p => { if(!grouped[p.dateFormatted]) grouped[p.dateFormatted] = []; grouped[p.dateFormatted].push(p); });
               container.innerHTML = '';
               for(const [dateStr, items] of Object.entries(grouped)) {
-                let gridHtml = `<div><h3 style="font-family:var(--font-mono); font-size:12px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px;">${dateStr}</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;">`;
-                items.forEach(p => { gridHtml += `<div class="vault-thumb-card media-card haptic-btn" data-url="${p.url}" data-filename="${p.filename}" style="background:url('${p.url}') center/cover;"></div>`; });
-                container.innerHTML += gridHtml + `</div></div>`;
+                let gridHtml = `<div style="grid-column: 1 / -1;"><h3 style="font-family:var(--font-mono); font-size:12px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; margin-top:12px;">${dateStr}</h3></div>`;
+                
+                items.forEach(p => { 
+                  // Fixed: Added specific PDF icon mapping to ensure documents don't display a broken image link
+                  const isPdf = p.filename.toLowerCase().endsWith('.pdf');
+                  const bgImage = isPdf ? 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg' : p.url;
+                  const bgStyle = isPdf ? `background:url('${bgImage}') center/contain no-repeat; background-color: var(--glass-bg);` : `background:url('${p.url}') center/cover;`;
+                  
+                  gridHtml += `<div class="vault-thumb-card media-card haptic-btn" data-url="${p.url}" data-filename="${p.filename}" style="${bgStyle}"></div>`; 
+                });
+                container.innerHTML += gridHtml;
               }
           };
+
+          // Fixed: Explicit routing based on file extension
           renderGrid(allFiles.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f.filename)), 'timeline-photos');
           renderGrid(allFiles.filter(f => /\.(mp4|mov|m4v)$/i.test(f.filename)), 'timeline-videos');
+          renderGrid(allFiles.filter(f => /\.(pdf)$/i.test(f.filename)), 'timeline-docs');
+
           document.querySelectorAll('.media-card').forEach(card => {
             card.addEventListener('click', () => {
-              triggerHaptic(); activeLightboxFile = card.getAttribute('data-filename');
-              document.getElementById('lightbox-img').src = card.getAttribute('data-url'); document.getElementById('photo-lightbox').classList.add('active');
+              triggerHaptic(); 
+              activeLightboxFile = card.getAttribute('data-filename');
+              
+              // Fixed: Pushing PDFs to a new tab instead of breaking the photo lightbox
+              if (activeLightboxFile.toLowerCase().endsWith('.pdf')) {
+                  window.open(card.getAttribute('data-url'), '_blank');
+              } else {
+                  document.getElementById('lightbox-img').src = card.getAttribute('data-url'); 
+                  document.getElementById('photo-lightbox').classList.add('active');
+              }
             });
           });
       }

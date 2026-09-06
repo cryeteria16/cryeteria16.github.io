@@ -29,7 +29,7 @@
 
   .floating-header-wrapper { position: sticky; top: env(safe-area-inset-top, 20px); z-index: 50; padding: 20px; display: flex; justify-content: center; pointer-events: none; }
   .floating-pill { background: rgba(16,16,22,0.6); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 50px; padding: 10px 24px; display: flex; align-items: center; gap: 32px; box-shadow: var(--glass-glow); pointer-events: auto; }
-  .pub-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+  .pub-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
   .pub-brand h1 { font-family: var(--font-display); font-size: 18px; font-weight: 500; }
   .pub-nav { display: flex; gap: 24px; font-size: 13px; font-family: var(--font-mono); color: var(--ink-soft); }
   .pub-nav a.active { color: var(--ink); border-bottom: 1px solid var(--ink); padding-bottom: 2px; }
@@ -167,7 +167,8 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${vcardData.name.replace(" ", "_")}.vcf`;
+      // Fixed: Replaces ALL spaces instead of just the first one
+      link.download = `${vcardData.name.replace(/ /g, "_")}.vcf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -176,10 +177,25 @@
 
   const sm = document.getElementById('modal-secret-login');
   const brandBtn = document.getElementById('brand-secret-trigger');
-  brandBtn.addEventListener('dblclick', () => { sm.classList.add('active'); if(navigator.vibrate) navigator.vibrate(20); });
+  
+  // Fixed: Replaced desktop dblclick with mobile-friendly double tap listener
+  let tapCount = 0;
+  let tapTimer;
+  brandBtn.addEventListener('click', () => { 
+      tapCount++;
+      if (tapCount === 1) {
+          tapTimer = setTimeout(() => { tapCount = 0; }, 400);
+      } else if (tapCount === 2) {
+          clearTimeout(tapTimer);
+          tapCount = 0;
+          sm.classList.add('active'); 
+          if(navigator.vibrate) navigator.vibrate(20);
+      }
+  });
+
   document.getElementById('btn-cancel-login').addEventListener('click', () => sm.classList.remove('active'));
   
-async function performLogin() {
+  async function performLogin() {
     const btn = document.getElementById('btn-do-login'); 
     const usr = document.getElementById('login-username').value.trim().toLowerCase(); 
     const pwd = document.getElementById('login-password').value;
@@ -188,20 +204,8 @@ async function performLogin() {
     btn.textContent = "Authenticating...";
     document.getElementById('login-error-msg').style.display = 'none';
 
-    // Legacy User Mapping 
-    // Note: These email addresses will be visible in the public source code
-    const aliases = {
-        "con": "justibadx@gmail.com",
-        "cryeteria": "theibadhasan@gmail.com"
-    };
-
-    // 1. Check legacy aliases first. 2. Use typed email if provided. 3. Fallback to local domain.
-    let authEmail = usr;
-    if (aliases[usr]) {
-        authEmail = aliases[usr];
-    } else if (!usr.includes('@')) {
-        authEmail = `${usr}@lair.local`;
-    }
+    // Local Domain Routing
+    const authEmail = usr.includes('@') ? usr : `${usr}@lair.local`;
 
     try { 
         await signInWithEmailAndPassword(auth, authEmail, pwd); 

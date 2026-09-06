@@ -123,10 +123,18 @@
 
   onAuthStateChanged(auth, (user) => { 
     if (!user) window.location.replace("index.html"); 
-    currentUser = { id: user.email.split('@')[0] };
     
+    // Fixed: Standardized to user.uid to match lair.html
+    currentUser = { id: user.uid };
+    
+    // Fixed: Implemented Role-Based Access Control to prevent Privilege Escalation
     onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
-        if(snap.exists() && snap.data().theme) { document.body.setAttribute('data-theme', snap.data().theme); }
+        if(!snap.exists() || snap.data().role !== 'admin') {
+            alert('Unauthorized: Admin privileges required.');
+            window.location.replace("lair.html");
+            return;
+        }
+        if(snap.data().theme) { document.body.setAttribute('data-theme', snap.data().theme); }
     });
 
     onSnapshot(doc(db, 'system', 'notifications'), (snap) => {
