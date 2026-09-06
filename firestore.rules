@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // 1. PUBLIC PORTFOLIO & IDENTITY (Open read, Admin write)
     match /portfolio/{document} {
       allow read: if true;
       allow write: if request.auth != null;
@@ -16,7 +15,6 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
     
-    // 2. THE OVERSEER (Strict Schema Protection against quota exhaustion)
     match /radar_logs/{document} {
       allow create: if true 
                     && request.resource.data.keys().hasAll(['type', 'ip', 'city', 'country', 'device', 'timestamp'])
@@ -27,7 +25,6 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
-    // 3. GUEST LOUNGE (Open communication, Admin controls playback)
     match /guest_chat/{document} {
       allow read, create: if true;
       allow update, delete: if request.auth != null;
@@ -41,7 +38,6 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
-    // 4. THE LAIR SECURE ZONE (Strictly Auth Only)
     match /chat/{document} {
       allow read, write: if request.auth != null;
     }
@@ -49,8 +45,9 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
     match /users/{userId} {
-      // Aligned strictly with user.uid
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // RULE UPDATED: Any authenticated user can read (for live presence)
+      allow read: if request.auth != null; 
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
