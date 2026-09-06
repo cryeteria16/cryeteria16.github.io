@@ -12,7 +12,7 @@
 
 <style>
   :root { 
-    --con: #70947A; --accent: var(--con); 
+    --con: #70947A; --accent: var(--con); --err: #D9534F;
     --font-display: 'Fraunces', serif; --font-body: 'Inter', sans-serif; --font-mono: 'IBM Plex Mono', monospace; 
     --radius: 28px; --radius-sm: 18px; 
     
@@ -152,7 +152,7 @@
                 <span style="font-family:var(--font-mono); font-size:11px; color:#0f0;">root@lair-server:~</span>
                 <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">CPU: <span id="sys-cpu">--%</span> | RAM: <span id="sys-ram">--%</span></span>
             </div>
-            <div id="terminal-out" style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); height:90px; overflow-y:auto; margin-bottom:12px; line-height:1.6;">> Boot sequence initialized...<br>> Securing websocket to home PC...<br>> Waiting for bridge API...</div>
+            <div id="terminal-out" style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); height:120px; overflow-y:auto; margin-bottom:12px; line-height:1.6;">> System link verified.<br>> Type 'help' for executable commands.</div>
             <div style="display:flex; gap:8px; align-items:center;">
                 <span style="font-family:var(--font-mono); font-size:12px; color:#0f0;">$</span>
                 <input type="text" id="terminal-in" style="background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.2); border-radius:0; padding:8px 0; color:#fff; font-family:var(--font-mono); font-size:13px; width:100%; outline:none;" placeholder="Execute command..." autocomplete="off">
@@ -262,7 +262,6 @@
     <div class="card" style="max-width:90%; text-align:center; padding:24px;">
       <img id="lightbox-img" src="" style="max-width:100%; max-height:70vh; border-radius:var(--radius-sm); margin-bottom:20px;">
       <div style="display:flex; justify-content:space-between; align-items:center; gap: 12px;">
-        <button id="btn-publish-photo" class="btn-primary haptic-btn" style="background:var(--con); color:#fff; width:auto;">Publish</button>
         <button id="btn-delete-vault-photo" class="haptic-btn" style="color:var(--err); font-size:13px; font-weight:600; flex:1; text-align:left;">Delete from Vault</button>
         <button class="btn-secondary haptic-btn" onclick="document.getElementById('photo-lightbox').classList.remove('active')">Close</button>
       </div>
@@ -277,31 +276,28 @@
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
   const TUNNEL_URL = "https://vault.ibadhasan.com"; 
-  const TMDB_API_KEY = "4b52b76174a761002dc02aa11e0394c8";
 
   const app = initializeApp(firebaseConfig); 
   const auth = getAuth(app); 
   const db = getFirestore(app);
   let currentUser = null;
+  let activeLightboxFile = null;
 
-  // Haptics Engine (Upgraded with iOS Safari Bypass)
   const triggerHaptic = () => { 
       if(navigator.vibrate) { navigator.vibrate(15); }
-      // Safari iOS Taptic Engine Exploit
       try {
           const iosHack = document.createElement('input');
           iosHack.type = 'checkbox';
-          iosHack.setAttribute('switch', ''); // Triggers native Taptic Engine
+          iosHack.setAttribute('switch', '');
           iosHack.style.position = 'absolute';
           iosHack.style.left = '-9999px';
           document.body.appendChild(iosHack);
-          iosHack.click(); // Force interaction
+          iosHack.click();
           iosHack.remove();
       } catch(e) {}
   };
   document.querySelectorAll('.haptic-btn').forEach(b => b.addEventListener('click', triggerHaptic));
 
-  // Fluid Swipe Gestures (Fixed filtering for horizontal widgets)
   let touchStartX = 0;
   let touchStartY = 0;
   const swipeZone = document.getElementById('swipe-zone');
@@ -312,7 +308,6 @@
   }, {passive: true});
   
   swipeZone.addEventListener('touchend', e => {
-      // 1. Ignore if you are touching the Command Bay, Watchlist, or Text Inputs
       if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, input, textarea')) return;
 
       const touchEndX = e.changedTouches[0].screenX;
@@ -320,7 +315,6 @@
       const diffX = touchStartX - touchEndX;
       const diffY = touchStartY - touchEndY;
       
-      // 2. Ignore if the swipe is mostly vertical (scrolling down the page)
       if (Math.abs(diffY) > Math.abs(diffX)) return;
 
       const views = ['dashboard', 'drop', 'theater'];
@@ -333,7 +327,6 @@
       }
   }, {passive: true});
 
-  // Gyroscope Parallax
   window.addEventListener('deviceorientation', (e) => {
       if(!e.gamma || !e.beta) return;
       const x = (e.gamma / 4).toFixed(2);
@@ -341,35 +334,13 @@
       document.querySelector('.os-wallpaper').style.transform = `translate(${x}px, ${y}px)`;
   });
 
-  // Dual Environment Engine
   function syncEnvironment() {
       const now = new Date();
       document.getElementById('clock-dxb').textContent = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Dubai', hour:'2-digit', minute:'2-digit', hour12:false });
       document.getElementById('clock-pkt').textContent = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Karachi', hour:'2-digit', minute:'2-digit', hour12:false });
-      
-      const hour = parseInt(now.toLocaleTimeString('en-US', { timeZone: 'Asia/Dubai', hour:'numeric', hour12:false }));
-      const wallpaper = document.querySelector('.os-wallpaper');
-      
-      if (document.body.getAttribute('data-theme') === 'dark') {
-          if (hour >= 19 || hour < 5) wallpaper.style.background = 'radial-gradient(circle at 50% 50%, #050508 0%, #020203 100%)'; // Deep night
-          else if (hour >= 5 && hour < 8) wallpaper.style.background = 'radial-gradient(circle at 50% 50%, #0a0b12 0%, #040406 100%)'; // Dawn
-          else wallpaper.style.background = 'radial-gradient(circle at 50% 50%, #070709 0%, #000000 100%)'; // Standard
-      }
   }
   setInterval(syncEnvironment, 1000);
   syncEnvironment();
-
-  // Terminal UI Simulator
-  const termIn = document.getElementById('terminal-in');
-  const termOut = document.getElementById('terminal-out');
-  termIn.addEventListener('keydown', (e) => {
-      if(e.key === 'Enter' && termIn.value.trim() !== '') {
-          termOut.innerHTML += `<br><span style="color:#fff;">$ ${termIn.value}</span><br>> Command relayed to PC. Awaiting response...`;
-          termOut.scrollTop = termOut.scrollHeight;
-          termIn.value = '';
-          triggerHaptic();
-      }
-  });
 
   async function fetchWithAuth(url, options = {}) {
       if (!auth.currentUser) return fetch(url, options);
@@ -378,9 +349,51 @@
       return fetch(url, { ...options, headers });
   }
 
+  // TERMINAL & TELEMETRY ENGINE
+  const termIn = document.getElementById('terminal-in');
+  const termOut = document.getElementById('terminal-out');
+
+  termIn.addEventListener('keydown', async (e) => {
+      if(e.key === 'Enter' && termIn.value.trim() !== '') {
+          const cmd = termIn.value.trim();
+          termIn.value = '';
+          triggerHaptic();
+          
+          termOut.innerHTML += `<div><span style="color:#0f0;">$</span> <span style="color:#fff;">${cmd}</span></div>`;
+          termOut.scrollTop = termOut.scrollHeight;
+          
+          try {
+              const res = await fetchWithAuth(`${TUNNEL_URL}/api/terminal`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ command: cmd })
+              });
+              const data = await res.json();
+              const cleanOut = (data.output || 'Done.').replace(/\n/g, '<br>');
+              termOut.innerHTML += `<div style="color:var(--ink-soft); margin-bottom:8px;">${cleanOut}</div>`;
+          } catch(err) {
+              termOut.innerHTML += `<div style="color:var(--err); margin-bottom:8px;">> Connection failed to PC terminal.</div>`;
+          }
+          termOut.scrollTop = termOut.scrollHeight;
+      }
+  });
+
+  async function pollSystemStats() {
+      try {
+          const res = await fetchWithAuth(`${TUNNEL_URL}/api/stats`);
+          if (res.ok) {
+              const stats = await res.json();
+              document.getElementById('sys-cpu').textContent = `${stats.cpu}%`;
+              document.getElementById('sys-ram').textContent = `${stats.ram}%`;
+          }
+      } catch(e) {}
+  }
+  setInterval(pollSystemStats, 4000);
+
   onAuthStateChanged(auth, (user) => {
     if (!user) window.location.replace("index.html");
-    currentUser = { name: user.email.split('@')[0], id: user.email.split('@')[0] };
+    // ID utilizes user.uid to align with strict Firestore Security Rules
+    currentUser = { name: user.email.split('@')[0], id: user.uid };
     initOS();
   });
 
@@ -397,6 +410,8 @@
   });
 
   function initOS() {
+    pollSystemStats();
+
     onSnapshot(doc(db, 'system', 'config'), (snap) => {
       if(snap.exists()) {
         const d = snap.data();
@@ -410,7 +425,6 @@
         const current = document.body.getAttribute('data-theme');
         const newTheme = current === 'dark' ? 'light' : 'dark';
         setDoc(doc(db, 'users', currentUser.id), { theme: newTheme }, { merge: true });
-        syncEnvironment();
     });
     onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
         if(snap.exists() && snap.data().theme) {
@@ -419,7 +433,6 @@
         }
     });
 
-    // Radar Feed
     onSnapshot(query(collection(db, 'radar_logs'), orderBy('timestamp', 'desc'), limit(12)), (snap) => {
         const feed = document.getElementById('radar-feed');
         feed.innerHTML = '';
@@ -439,7 +452,6 @@
         });
     });
 
-    // Relay
     const relayIn = document.getElementById('relay-input');
     relayIn.addEventListener('input', () => {
         document.getElementById('relay-status').textContent = "Saving...";
@@ -462,46 +474,90 @@
 
   async function initVault() {
     try {
-      const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos`); 
-      const allFiles = await res.json();
-      
-      const photos = allFiles.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f.filename));
-      const videos = allFiles.filter(f => /\.(mp4|mov|m4v)$/i.test(f.filename));
+      const [storageRes, filesRes] = await Promise.all([
+          fetchWithAuth(`${TUNNEL_URL}/api/storage`),
+          fetchWithAuth(`${TUNNEL_URL}/api/photos`)
+      ]);
 
-      const renderGrid = (list, containerId) => {
-          const container = document.getElementById(containerId);
-          if(!list.length) { container.innerHTML = '<p style="color:var(--ink-soft); font-size:13px; text-align:center;">Empty directory.</p>'; return; }
+      if(storageRes.ok) {
+          const s = await storageRes.json();
+          const gb = (s.totalBytes / (1024*1024*1024)).toFixed(1);
+          const pct = Math.min(100, Math.round((s.totalBytes / s.maxBytes) * 100));
+          document.getElementById('drop-usage-text').textContent = `${gb}GB`;
+          document.getElementById('drop-gauge').style.setProperty('--pct', pct);
+      }
+
+      if(filesRes.ok) {
+          const allFiles = await filesRes.json();
+          const photos = allFiles.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f.filename));
+          const videos = allFiles.filter(f => /\.(mp4|mov|m4v)$/i.test(f.filename));
+
+          const renderGrid = (list, containerId) => {
+              const container = document.getElementById(containerId);
+              if(!list.length) { container.innerHTML = '<p style="color:var(--ink-soft); font-size:13px; text-align:center;">Empty directory.</p>'; return; }
+              
+              const grouped = {}; 
+              list.forEach(p => { if(!grouped[p.dateFormatted]) grouped[p.dateFormatted] = []; grouped[p.dateFormatted].push(p); });
+              container.innerHTML = '';
+              for(const [dateStr, items] of Object.entries(grouped)) {
+                let gridHtml = `<div><h3 style="font-family:var(--font-mono); font-size:12px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px;">${dateStr}</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;">`;
+                items.forEach(p => { 
+                    gridHtml += `<div class="vault-thumb-card media-card haptic-btn" data-url="${p.url}" data-filename="${p.filename}" style="background:url('${p.url}') center/cover;"></div>`; 
+                });
+                container.innerHTML += gridHtml + `</div></div>`;
+              }
+          };
           
-          const grouped = {}; 
-          list.forEach(p => { if(!grouped[p.dateFormatted]) grouped[p.dateFormatted] = []; grouped[p.dateFormatted].push(p); });
-          container.innerHTML = '';
-          for(const [dateStr, items] of Object.entries(grouped)) {
-            let gridHtml = `<div><h3 style="font-family:var(--font-mono); font-size:12px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px;">${dateStr}</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;">`;
-            items.forEach(p => { 
-                gridHtml += `<div class="vault-thumb-card media-card haptic-btn" data-url="${p.url}" data-filename="${p.filename}" style="background:url('${p.url}') center/cover;"></div>`; 
+          renderGrid(photos, 'timeline-photos');
+          renderGrid(videos, 'timeline-videos');
+
+          document.querySelectorAll('.media-card').forEach(card => {
+            card.addEventListener('click', () => {
+              triggerHaptic();
+              activeLightboxFile = card.getAttribute('data-filename');
+              document.getElementById('lightbox-img').src = card.getAttribute('data-url');
+              document.getElementById('photo-lightbox').classList.add('active');
             });
-            container.innerHTML += gridHtml + `</div></div>`;
-          }
-      };
-      
-      renderGrid(photos, 'timeline-photos');
-      renderGrid(videos, 'timeline-videos');
-
-      document.querySelectorAll('.media-card').forEach(card => {
-        card.addEventListener('click', () => {
-          triggerHaptic();
-          document.getElementById('lightbox-img').src = card.getAttribute('data-url');
-          document.getElementById('photo-lightbox').classList.add('active');
-        });
-      });
-
-    } catch(err) { document.getElementById('timeline-photos').innerHTML = '<p style="color:var(--err); font-size:13px; text-align:center;">Storage node offline.</p>'; }
+          });
+      }
+    } catch(err) { 
+        document.getElementById('timeline-photos').innerHTML = '<p style="color:var(--err); font-size:13px; text-align:center;">Storage node offline.</p>'; 
+    }
   }
 
+  document.getElementById('btn-delete-vault-photo').addEventListener('click', async () => {
+      if (!activeLightboxFile) return;
+      if (!confirm(`Permanently remove ${activeLightboxFile}?`)) return;
+      try {
+          const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/delete/${encodeURIComponent(activeLightboxFile)}`, { method: 'DELETE' });
+          if(res.ok) {
+              document.getElementById('photo-lightbox').classList.remove('active');
+              initVault();
+          }
+      } catch(e) { alert('Delete failed: Local vault error'); }
+  });
+
   document.getElementById('vault-photo-input').addEventListener('change', async (e) => {
-    if(!e.target.files.length) return;
-    const status = document.getElementById('vault-status'); status.style.display = 'block';
-    status.textContent = 'Upload Complete ✔'; setTimeout(() => status.style.display = 'none', 3000); initVault(); 
+    const files = e.target.files;
+    if(!files.length) return;
+    const status = document.getElementById('vault-status'); 
+    status.style.display = 'block';
+    
+    for(let i=0; i<files.length; i++) {
+        status.textContent = `Uploading ${i+1}/${files.length}: ${files[i].name}...`;
+        const fd = new FormData();
+        fd.append('photo', files[i]);
+        try {
+            await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd });
+        } catch(err) {
+            status.textContent = `Error uploading ${files[i].name}`;
+        }
+    }
+    
+    status.textContent = 'Upload Complete ✔'; 
+    setTimeout(() => status.style.display = 'none', 3000); 
+    initVault(); 
+    e.target.value = '';
   });
 </script>
 </body>

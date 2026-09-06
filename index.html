@@ -9,7 +9,6 @@
 <title>Ibad Hasan — Visuals & Archive</title>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;500&family=Inter:wght@300;400;500&display=swap">
 <style>
-  /* All your existing CSS from index.html remains identical here */
   :root { 
     --bg: #070709; --ink: #FFFFFF; --ink-soft: rgba(255,255,255,0.65); 
     --con: #70947A; --accent: var(--con); 
@@ -78,11 +77,9 @@
   <main class="pub-content">
     <section id="pub-view-work" class="view-container active">
       <div class="pub-hero"><h2 id="dynamic-hero-title">Visual Archival</h2></div>
-      <!-- Portfolio Grid omitted for brevity, logic remains identical -->
     </section>
 
     <section id="pub-view-about" class="view-container">
-        <!-- Identity Bio omitted for brevity, logic remains identical -->
     </section>
 
     <section id="pub-view-contact" class="view-container">
@@ -93,7 +90,6 @@
         </a>
         <div class="contact-card" style="align-items:center; text-align:center; justify-content:center;">
           <p class="field-label">Native Integration</p>
-          <!-- Zero-Click V-Card Button -->
           <button id="btn-download-vcard" class="btn-primary" style="margin-top:12px; margin-bottom:12px;">Save to Contacts</button>
           <p style="font-family:var(--font-mono); font-size:11px; color:var(--accent);">iOS / Android Supported</p>
         </div>
@@ -108,7 +104,7 @@
       <input type="password" id="login-password" placeholder="PASSKEY">
       <button class="btn-primary" id="btn-do-login" style="margin-top:12px;">Authenticate</button>
       <button id="btn-cancel-login" style="background:transparent; border:none; color:var(--ink-soft); font-size:12px; font-family:var(--font-mono); margin-top:16px; width:100%;">Abort</button>
-      <p id="login-error-msg" style="font-size:11px; color:#E65C58; margin-top:16px; display:none;"></p>
+      <p id="login-error-msg" style="font-size:11px; color:#E65C58; margin-top:16px; display:none;">Access Denied: Invalid Credentials</p>
     </div>
   </div>
 
@@ -122,7 +118,6 @@
   const auth = getAuth(app); 
   const db = getFirestore(app); 
   
-  // Google Sheets Telemetry & Firebase Radar Sync
   async function fireSilentRadar(actionType) {
     try {
       const geoRes = await fetch('https://ipapi.co/json/');
@@ -139,11 +134,7 @@
           timestamp: serverTimestamp()
       };
 
-      // 1. Push to Firebase Lair UI
       await addDoc(collection(db, 'radar_logs'), payload);
-      
-      // 2. Push to Google Sheets (Replace URL when you create the Web App)
-      // fetch('YOUR_GOOGLE_SCRIPT_URL_HERE', { method: 'POST', body: JSON.stringify(payload) });
     } catch(e) {}
   }
   fireSilentRadar('Portfolio View');
@@ -169,7 +160,6 @@
     }
   });
 
-  // Zero-Click V-Card Generator
   document.getElementById('btn-download-vcard').addEventListener('click', () => {
       if(navigator.vibrate) navigator.vibrate(15);
       const vcfStr = `BEGIN:VCARD\nVERSION:3.0\nFN:${vcardData.name}\nTEL;TYPE=CELL:${vcardData.phone}\nEND:VCARD`;
@@ -184,25 +174,34 @@
       URL.revokeObjectURL(url);
   });
 
-  // Gateway Login Logic
   const sm = document.getElementById('modal-secret-login');
   const brandBtn = document.getElementById('brand-secret-trigger');
   brandBtn.addEventListener('dblclick', () => { sm.classList.add('active'); if(navigator.vibrate) navigator.vibrate(20); });
   document.getElementById('btn-cancel-login').addEventListener('click', () => sm.classList.remove('active'));
   
-  document.getElementById('btn-do-login').addEventListener('click', async () => {
+  async function performLogin() {
     const btn = document.getElementById('btn-do-login'); 
     const usr = document.getElementById('login-username').value.trim().toLowerCase(); 
     const pwd = document.getElementById('login-password').value;
+    if (!usr || !pwd) return;
+
     btn.textContent = "Authenticating...";
+    document.getElementById('login-error-msg').style.display = 'none';
+
+    // Local Domain Routing: maps pure usernames to Firebase-compliant format
+    const authEmail = usr.includes('@') ? usr : `${usr}@lair.local`;
+
     try { 
-        const USERS = { "cryeteria": { email: "theibadhasan@gmail.com" } };
-        await signInWithEmailAndPassword(auth, USERS[usr]?.email || usr, pwd); 
+        await signInWithEmailAndPassword(auth, authEmail, pwd); 
     } catch(e) { 
-        document.getElementById('login-error-msg').style.display='block'; btn.textContent = "Authenticate"; 
+        document.getElementById('login-error-msg').style.display = 'block'; 
+        btn.textContent = "Authenticate"; 
         fireSilentRadar('Failed Auth');
     }
-  });
+  }
+
+  document.getElementById('btn-do-login').addEventListener('click', performLogin);
+  document.getElementById('login-password').addEventListener('keydown', (e) => { if(e.key === 'Enter') performLogin(); });
   
   onAuthStateChanged(auth, (user) => { if (user) window.location.replace("lair.html"); });
 </script>
