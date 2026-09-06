@@ -128,7 +128,6 @@
       <div class="dock-app app-link haptic-btn" data-target="drop">Vault</div>
       <div class="dock-app app-link haptic-btn" data-target="theater" id="dock-theater-link">Theater</div>
       <div class="dock-app app-link haptic-btn" data-target="voice" id="dock-voice-link">Voice</div>
-      <!-- Fixed: This link defaults to display:none until RBAC verifies an admin -->
       <a href="admin.html" id="dock-admin-link" class="dock-app haptic-btn" style="display:none;">Settings</a>
     </div>
   </div>
@@ -172,10 +171,12 @@
             </div>
         </div>
 
-        <div class="card" style="padding:24px;">
-          <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Universal Clipboard</h2>
-          <input type="text" id="relay-input" placeholder="Type and press Enter to sync...">
-          <div id="relay-list" style="margin-top:16px; display:flex; flex-direction:column; gap:8px; max-height:170px; overflow-y:auto;"></div>
+        <div class="card" style="padding:24px; display:flex; flex-direction:column;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+              <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft);">The Fridge Door</h2>
+              <span id="fridge-status" style="font-size:11px; font-family:var(--font-mono); color:var(--ink-soft);">Synced</span>
+          </div>
+          <textarea id="fridge-door-text" placeholder="Write a shared note here..." spellcheck="false" style="flex:1; min-height:140px; resize:none; font-family:var(--font-body); font-size:14px; line-height:1.6; background:transparent; padding:0; border:none;"></textarea>
         </div>
 
         <div class="card" style="padding:24px; display:flex; flex-direction:column;">
@@ -217,7 +218,6 @@
         <div id="timeline-videos" class="vault-timeline">
             <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
         </div>
-        <!-- Fixed: Documents timeline container -->
         <div id="timeline-docs" class="vault-timeline">
             <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
         </div>
@@ -254,14 +254,12 @@
                 <h2 style="font-family:var(--font-display); font-size:20px;">Vault Watchlist</h2>
             </div>
             
-            <!-- TMDB Search Bar Restored -->
             <div style="display:flex; gap:12px; margin-bottom:20px;">
               <input type="text" id="tmdb-search-input" placeholder="Search TMDB to add to Wishlist...">
               <button class="btn-secondary haptic-btn" id="btn-tmdb-search" style="width:auto;">Search</button>
             </div>
             <div id="tmdb-results" style="display:flex; gap:16px; overflow-x:auto; margin-bottom:20px; padding-bottom:8px;"></div>
             
-            <!-- Shared List Container -->
             <div id="shared-watchlist" style="display:flex; gap:16px; overflow-x:auto; padding-bottom:12px;">
                 <p style="font-size:12px; color:var(--ink-soft);">Loading movies...</p>
             </div>
@@ -413,7 +411,6 @@
     if (!user) window.location.replace("index.html");
     currentUser = { name: user.email.split('@')[0], id: user.uid };
     
-    // Fixed: RBAC for displaying Admin settings in the dock
     onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
         if(snap.exists()) {
             if (snap.data().role === 'admin') {
@@ -469,41 +466,39 @@
         setDoc(doc(db, 'users', currentUser.id), { theme: newTheme }, { merge: true });
     });
 
-    let currentClips = [];
-    const relayIn = document.getElementById('relay-input');
-    
-    onSnapshot(doc(db, 'system', 'relay'), (snap) => {
+    // Fridge Door Collaborative Scratchpad
+    const fridgeText = document.getElementById('fridge-door-text');
+    const fridgeStatus = document.getElementById('fridge-status');
+    let fridgeTimeout;
+    let isTyping = false;
+
+    onSnapshot(doc(db, 'system', 'fridge_door'), (snap) => {
         if(snap.exists()) {
-            currentClips = snap.data().items || [];
-            const list = document.getElementById('relay-list');
-            list.innerHTML = '';
-            currentClips.forEach(clip => {
-                const row = document.createElement('div');
-                row.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); padding:10px 14px; border-radius:12px; border:var(--glass-border);";
-                row.innerHTML = `
-                    <div style="overflow:hidden; padding-right:10px;">
-                        <span style="font-size:10px; color:var(--con); font-family:var(--font-mono); text-transform:uppercase;">${clip.by}</span>
-                        <div style="font-size:13px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${clip.text}</div>
-                    </div>
-                    <button class="btn-secondary haptic-btn clip-copy-btn" style="padding:6px 12px; font-size:11px; flex-shrink:0;">Copy</button>
-                `;
-                row.querySelector('.clip-copy-btn').addEventListener('click', (e) => {
-                    navigator.clipboard.writeText(clip.text);
-                    e.currentTarget.textContent = 'Copied'; setTimeout(() => e.currentTarget.textContent = 'Copy', 1000);
-                });
-                list.appendChild(row);
-            });
+            const data = snap.data();
+            if(data.updatedBy !== currentUser.id && !isTyping) {
+                fridgeText.value = data.content || '';
+                fridgeStatus.textContent = `Last update: ${data.updatedByName}`;
+            }
         }
     });
 
-    relayIn.addEventListener('keydown', (e) => {
-        if(e.key === 'Enter' && relayIn.value.trim() !== '') {
-            e.preventDefault();
-            const updated = [{ text: relayIn.value.trim(), by: currentUser.name, time: Date.now() }, ...currentClips].slice(0, 20); 
-            setDoc(doc(db, 'system', 'relay'), { items: updated }, {merge: true});
-            relayIn.value = '';
-        }
+    fridgeText.addEventListener('input', () => {
+        isTyping = true;
+        fridgeStatus.textContent = 'Typing...';
+        clearTimeout(fridgeTimeout);
+        fridgeTimeout = setTimeout(async () => {
+            await setDoc(doc(db, 'system', 'fridge_door'), { 
+                content: fridgeText.value, 
+                updatedBy: currentUser.id,
+                updatedByName: currentUser.name,
+                timestamp: serverTimestamp() 
+            }, {merge: true});
+            isTyping = false;
+            fridgeStatus.textContent = 'Saved to Cloud';
+        }, 500); 
     });
+    
+    fridgeText.addEventListener('blur', () => { isTyping = false; });
 
     initWatchParty();
     initVault();
@@ -514,8 +509,6 @@
     initVoiceRoom();
   }
 
-  // Fixed: chat input/button previously had no listeners and no messages
-  // were ever read from Firestore, so "Live Chat" just sat empty forever.
   function initTheaterChat() {
       const chatWindow = document.getElementById('chat-window');
       const chatInput = document.getElementById('chat-input');
@@ -546,9 +539,6 @@
       chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
   }
 
-  // Fixed: "Vault Watchlist" rendered "Loading movies..." forever because
-  // nothing ever queried Firestore. TMDB search also had no listener, so
-  // typing a title and pressing Search silently did nothing.
   function initWatchlist() {
       const listEl = document.getElementById('shared-watchlist');
       const watchQuery = query(collection(db, 'watchlist'), orderBy('timestamp', 'desc'), limit(40));
@@ -615,9 +605,6 @@
       searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
   }
 
-  // Fixed: admin.html writes broadcast banner text and theater/voice/radar
-  // kill switches to system/config, but lair.html never read that document,
-  // so none of the OS Control toggles in the admin panel did anything here.
   function initConfigAndFeatures() {
       onSnapshot(doc(db, 'system', 'config'), (snap) => {
           if (!snap.exists()) return;
@@ -641,7 +628,6 @@
           const radarCard = document.getElementById('radar-feed')?.closest('.card');
           if (radarCard) radarCard.style.display = f.radar === false ? 'none' : 'flex';
 
-          // If the current view got killed from under the user, bounce to dashboard.
           const activeTarget = document.querySelector('.dock-app.active')?.getAttribute('data-target');
           if ((activeTarget === 'theater' && f.theater === false) || (activeTarget === 'voice' && f.voice === false)) {
               document.querySelector('.dock-app[data-target="dashboard"]').click();
@@ -649,10 +635,6 @@
       });
   }
 
-  // Fixed: index.html's fireSilentRadar() has been writing visits into
-  // radar_logs the whole time, but the "Live Radar" card in the dashboard
-  // never queried that collection, so it just said "Waiting for telemetry"
-  // forever.
   function initRadarFeed() {
       const feed = document.getElementById('radar-feed');
       const radarQuery = query(collection(db, 'radar_logs'), orderBy('timestamp', 'desc'), limit(20));
@@ -670,12 +652,6 @@
       });
   }
 
-  // Fixed: "Voice Room" was a kill-switch in the admin panel and a promise
-  // in this app's name only — there was no dock item, no UI, and no code
-  // anywhere. This adds a real 1:1 WebRTC voice call, using a single fixed
-  // Firestore document ("voice_calls/main-room") purely for signaling
-  // (SDP offer/answer + ICE candidates). Once connected, audio itself flows
-  // directly between the two browsers — Firestore never sees or relays it.
   function initVoiceRoom() {
       const ROOM_ID = 'main-room';
       const roomRef = doc(db, 'voice_calls', ROOM_ID);
@@ -686,7 +662,7 @@
       let pc = null;
       let localStream = null;
       let remoteStream = null;
-      let role = null; // 'caller' | 'callee'
+      let role = null; 
       let unsubRoom = null, unsubCandidates = null;
       let analyser = null, analyserRaf = null;
 
@@ -726,7 +702,7 @@
                   analyserRaf = requestAnimationFrame(tick);
               };
               tick();
-          } catch (e) { /* non-fatal, just skip the speaking glow */ }
+          } catch (e) { }
       };
 
       async function cleanupPeer() {
@@ -753,7 +729,7 @@
                       ...calleeDocs.docs.map(d => deleteDoc(d.ref))
                   ]);
                   await deleteDoc(roomRef);
-              } catch (e) { /* room may already be gone */ }
+              } catch (e) { }
           }
           setUiState('idle');
       }
@@ -791,7 +767,6 @@
           const existing = existingSnap.exists() ? existingSnap.data() : null;
 
           if (!existing || !existing.offer || (existing.status === 'ended')) {
-              // No one is calling yet — become the caller.
               role = 'caller';
               pc.onicecandidate = (e) => { if (e.candidate) addDoc(callerCandidatesRef, e.candidate.toJSON()); };
 
@@ -821,7 +796,6 @@
               await cleanupPeer();
               return;
           } else if (!existing.answer) {
-              // Someone is calling and it isn't me — become the callee.
               role = 'callee';
               pc.onicecandidate = (e) => { if (e.candidate) addDoc(calleeCandidatesRef, e.candidate.toJSON()); };
 
@@ -874,10 +848,6 @@
           document.getElementById('theater-player-slot').style.display = 'flex';
       });
 
-      // Fixed: the "Stream" button previously had no click listener at all —
-      // typing a URL and pressing it did nothing. It now actually mounts the
-      // media locally and writes the session to Firestore so the other
-      // person's Theater tab picks it up via the watch_party listener below.
       document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
           const urlInput = document.getElementById('cowatch-url-input');
           const url = urlInput.value.trim();
@@ -933,12 +903,6 @@
               if(ytPlayer && ytPlayer.stopVideo) { ytPlayer.stopVideo(); }
               if(art) art.destroy();
 
-              // Fixed: previously appended a raw 1-hour Firebase ID token to
-              // the <video> src. Anything longer than an hour would hit the
-              // server's old "expired token but has a Range header" bypass,
-              // which was itself a security hole. Now we ask the server for
-              // a short-lived token scoped to just this filename, valid for
-              // hours, and use that instead — no bypass needed on either end.
               let secureUrl = rawUrl;
               if (rawUrl.startsWith(`${TUNNEL_URL}/stream/`)) {
                   try {
@@ -950,7 +914,7 @@
                           const { token } = await tokRes.json();
                           secureUrl = rawUrl.includes('?') ? `${rawUrl}&stream_token=${token}` : `${rawUrl}?stream_token=${token}`;
                       }
-                  } catch (e) { /* fall back to rawUrl as-is (e.g. external mp4) */ }
+                  } catch (e) { }
               }
 
               art = new Artplayer({
@@ -970,8 +934,6 @@
           }
       };
 
-      // Exposed so a click on a Watchlist card (wired up in initWatchlist)
-      // can load that title straight into the shared player.
       window.__lairTheater = {
           mountMediaFromWatchlist: async (url) => {
               document.getElementById('theater-player-slot').style.display = 'flex';
@@ -1031,7 +993,6 @@
                 let gridHtml = `<div style="grid-column: 1 / -1;"><h3 style="font-family:var(--font-mono); font-size:12px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; margin-top:12px;">${dateStr}</h3></div>`;
                 
                 items.forEach(p => { 
-                  // Fixed: Added specific PDF icon mapping to ensure documents don't display a broken image link
                   const isPdf = p.filename.toLowerCase().endsWith('.pdf');
                   const bgImage = isPdf ? 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg' : p.url;
                   const bgStyle = isPdf ? `background:url('${bgImage}') center/contain no-repeat; background-color: var(--glass-bg);` : `background:url('${p.url}') center/cover;`;
@@ -1042,7 +1003,6 @@
               }
           };
 
-          // Fixed: Explicit routing based on file extension
           renderGrid(allFiles.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f.filename)), 'timeline-photos');
           renderGrid(allFiles.filter(f => /\.(mp4|mov|m4v)$/i.test(f.filename)), 'timeline-videos');
           renderGrid(allFiles.filter(f => /\.(pdf)$/i.test(f.filename)), 'timeline-docs');
@@ -1052,7 +1012,6 @@
               triggerHaptic(); 
               activeLightboxFile = card.getAttribute('data-filename');
               
-              // Fixed: Pushing PDFs to a new tab instead of breaking the photo lightbox
               if (activeLightboxFile.toLowerCase().endsWith('.pdf')) {
                   window.open(card.getAttribute('data-url'), '_blank');
               } else {
