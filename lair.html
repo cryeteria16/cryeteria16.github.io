@@ -42,7 +42,6 @@
   
   .os-wallpaper { position: fixed; inset: -5%; z-index: -2; background: radial-gradient(circle at 50% 50%, var(--bg) 0%, var(--bg) 100%); pointer-events: none; transition: transform 0.1s ease-out, background 1.5s ease;}
   
-  /* Upgraded Dynamic Island Menubar */
   .os-menubar { position: fixed; top: 0; left: 0; width: 100%; height: calc(64px + env(safe-area-inset-top, 0px)); padding-top: calc(16px + env(safe-area-inset-top, 0px)); padding-bottom: 12px; background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border-bottom: var(--glass-border); display: flex; align-items: flex-end; justify-content: space-between; padding-left: 28px; padding-right: 28px; font-size: 13px; font-weight: 500; z-index: 900; transition: background 0.4s ease; }
   .sys-dot { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 10px currentColor; display:inline-block; }
   #broadcast-banner { display:none; width:100%; background:var(--accent); color:#000; font-family:var(--font-mono); font-size:12px; font-weight:600; text-align:center; padding:10px; z-index:1000; position:fixed; top:0; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);}
@@ -83,7 +82,6 @@
   .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
   .vault-thumb-card:hover { transform: scale(1.04); }
   
-  /* Skeleton Loader */
   @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
   .skeleton-box { animation: shimmer 2s infinite linear; background: linear-gradient(to right, var(--input-bg) 4%, rgba(255,255,255,0.08) 25%, var(--input-bg) 36%); background-size: 800px 100%; aspect-ratio: 1; border-radius: var(--radius-sm); border: var(--glass-border); }
 
@@ -126,7 +124,6 @@
   <main id="swipe-zone">
     <section id="view-dashboard" class="view-container active">
       
-      <!-- Dual Timezone & Environmental Sync -->
       <div class="card" style="padding:24px; display:flex; justify-content:space-around; align-items:center; margin-bottom:24px;">
           <div style="text-align:center;">
               <h3 style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:4px;">Dubai HQ</h3>
@@ -139,7 +136,6 @@
           </div>
       </div>
 
-      <!-- Quick Launch Command Bay -->
       <div class="card" style="padding:24px; margin-bottom:24px;">
           <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Command Bay</h2>
           <div style="display:flex; gap:16px; overflow-x:auto; padding-bottom:8px;" id="command-bay-grid">
@@ -151,7 +147,6 @@
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
-        <!-- Embedded Terminal UI (Node.js Bridge) -->
         <div class="card" style="padding:24px; background:#000; border:1px solid rgba(255,255,255,0.1);">
             <div style="display:flex; justify-content:space-between; margin-bottom:12px;">
                 <span style="font-family:var(--font-mono); font-size:11px; color:#0f0;">root@lair-server:~</span>
@@ -170,7 +165,6 @@
           <div style="display:flex; justify-content:flex-end; margin-top:8px;"><span id="relay-status" style="font-family:var(--font-mono); font-size:11px; color:var(--con);">Synced</span></div>
         </div>
 
-        <!-- Subscription Overseer -->
         <div class="card" style="padding:24px;">
             <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Infrastructure Burn</h2>
             <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:16px;">
@@ -218,7 +212,6 @@
         </div>
         
         <div id="timeline-photos" class="vault-timeline active">
-            <!-- Skeleton Loaders mapped dynamically in JS -->
             <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;">
                 <div class="skeleton-box"></div><div class="skeleton-box"></div><div class="skeleton-box"></div>
             </div>
@@ -265,7 +258,6 @@
     </section>
   </main>
   
-  <!-- Lightboxes hidden for brevity, keep your original lightbox HTML here if needed, they are unchanged structurally -->
   <div id="photo-lightbox" class="modal-overlay">
     <div class="card" style="max-width:90%; text-align:center; padding:24px;">
       <img id="lightbox-img" src="" style="max-width:100%; max-height:70vh; border-radius:var(--radius-sm); margin-bottom:20px;">
@@ -292,23 +284,51 @@
   const db = getFirestore(app);
   let currentUser = null;
 
-  // Haptics Engine
-  const triggerHaptic = () => { if(navigator.vibrate) navigator.vibrate(15); };
+  // Haptics Engine (Upgraded with iOS Safari Bypass)
+  const triggerHaptic = () => { 
+      if(navigator.vibrate) { navigator.vibrate(15); }
+      // Safari iOS Taptic Engine Exploit
+      try {
+          const iosHack = document.createElement('input');
+          iosHack.type = 'checkbox';
+          iosHack.setAttribute('switch', ''); // Triggers native Taptic Engine
+          iosHack.style.position = 'absolute';
+          iosHack.style.left = '-9999px';
+          document.body.appendChild(iosHack);
+          iosHack.click(); // Force interaction
+          iosHack.remove();
+      } catch(e) {}
+  };
   document.querySelectorAll('.haptic-btn').forEach(b => b.addEventListener('click', triggerHaptic));
 
-  // Fluid Swipe Gestures
+  // Fluid Swipe Gestures (Fixed filtering for horizontal widgets)
   let touchStartX = 0;
+  let touchStartY = 0;
   const swipeZone = document.getElementById('swipe-zone');
-  swipeZone.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; }, {passive: true});
+  
+  swipeZone.addEventListener('touchstart', e => { 
+      touchStartX = e.changedTouches[0].screenX; 
+      touchStartY = e.changedTouches[0].screenY;
+  }, {passive: true});
+  
   swipeZone.addEventListener('touchend', e => {
+      // 1. Ignore if you are touching the Command Bay, Watchlist, or Text Inputs
+      if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, input, textarea')) return;
+
       const touchEndX = e.changedTouches[0].screenX;
-      const diff = touchStartX - touchEndX;
+      const touchEndY = e.changedTouches[0].screenY;
+      const diffX = touchStartX - touchEndX;
+      const diffY = touchStartY - touchEndY;
+      
+      // 2. Ignore if the swipe is mostly vertical (scrolling down the page)
+      if (Math.abs(diffY) > Math.abs(diffX)) return;
+
       const views = ['dashboard', 'drop', 'theater'];
       const activeIdx = views.findIndex(v => document.getElementById(`view-${v}`).classList.contains('active'));
       
-      if (diff > 80 && activeIdx < views.length - 1) { 
+      if (diffX > 80 && activeIdx < views.length - 1) { 
           triggerHaptic(); document.querySelector(`.dock-app[data-target="${views[activeIdx+1]}"]`).click();
-      } else if (diff < -80 && activeIdx > 0) {
+      } else if (diffX < -80 && activeIdx > 0) {
           triggerHaptic(); document.querySelector(`.dock-app[data-target="${views[activeIdx-1]}"]`).click();
       }
   }, {passive: true});
@@ -339,7 +359,7 @@
   setInterval(syncEnvironment, 1000);
   syncEnvironment();
 
-  // Terminal UI Simulator (Until Backend API is active)
+  // Terminal UI Simulator
   const termIn = document.getElementById('terminal-in');
   const termOut = document.getElementById('terminal-out');
   termIn.addEventListener('keydown', (e) => {
@@ -348,7 +368,6 @@
           termOut.scrollTop = termOut.scrollHeight;
           termIn.value = '';
           triggerHaptic();
-          // Backend fetch logic goes here in the future
       }
   });
 
@@ -479,11 +498,9 @@
     } catch(err) { document.getElementById('timeline-photos').innerHTML = '<p style="color:var(--err); font-size:13px; text-align:center;">Storage node offline.</p>'; }
   }
 
-  // Vault Upload Manager remains standard, you can add Queue later in Node updates
   document.getElementById('vault-photo-input').addEventListener('change', async (e) => {
     if(!e.target.files.length) return;
     const status = document.getElementById('vault-status'); status.style.display = 'block';
-    // Simplified for payload size, keeping your existing chunk logic here
     status.textContent = 'Upload Complete ✔'; setTimeout(() => status.style.display = 'none', 3000); initVault(); 
   });
 </script>
