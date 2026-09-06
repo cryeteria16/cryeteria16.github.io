@@ -179,7 +179,7 @@
   brandBtn.addEventListener('dblclick', () => { sm.classList.add('active'); if(navigator.vibrate) navigator.vibrate(20); });
   document.getElementById('btn-cancel-login').addEventListener('click', () => sm.classList.remove('active'));
   
-  async function performLogin() {
+async function performLogin() {
     const btn = document.getElementById('btn-do-login'); 
     const usr = document.getElementById('login-username').value.trim().toLowerCase(); 
     const pwd = document.getElementById('login-password').value;
@@ -188,8 +188,20 @@
     btn.textContent = "Authenticating...";
     document.getElementById('login-error-msg').style.display = 'none';
 
-    // Local Domain Routing: maps pure usernames to Firebase-compliant format
-    const authEmail = usr.includes('@') ? usr : `${usr}@lair.local`;
+    // Legacy User Mapping 
+    // Note: These email addresses will be visible in the public source code
+    const aliases = {
+        "con": "justibadx@gmail.com",
+        "cryeteria": "theibadhasan@gmail.com"
+    };
+
+    // 1. Check legacy aliases first. 2. Use typed email if provided. 3. Fallback to local domain.
+    let authEmail = usr;
+    if (aliases[usr]) {
+        authEmail = aliases[usr];
+    } else if (!usr.includes('@')) {
+        authEmail = `${usr}@lair.local`;
+    }
 
     try { 
         await signInWithEmailAndPassword(auth, authEmail, pwd); 
