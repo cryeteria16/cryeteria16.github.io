@@ -75,8 +75,6 @@
   @media (max-width: 1024px) { .theater-grid { grid-template-columns: 1fr; } }
   
   .theater-container { width: 100%; max-height: 70vh; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); border: var(--glass-border); box-shadow: 0 35px 70px -15px rgba(0,0,0,0.6); position: relative; overflow: hidden; display: block; }
-  
-  /* Hardware Notch Avoidance */
   .artplayer-app { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
   
   .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
@@ -125,7 +123,6 @@
 
   <main id="swipe-zone">
     <section id="view-dashboard" class="view-container active">
-      
       <div class="card" style="padding:24px; display:flex; justify-content:space-around; align-items:center; margin-bottom:24px;">
           <div style="text-align:center;">
               <h3 style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:4px;">Dubai HQ</h3>
@@ -149,7 +146,6 @@
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
-        
         <div class="card" style="padding:24px; background:#000; border:1px solid rgba(255,255,255,0.1);">
             <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
                 <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); display:flex; align-items:center;">
@@ -203,7 +199,6 @@
                 <button class="seg-btn haptic-btn" data-seg="docs">Documents</button>
             </div>
         </div>
-        
         <div id="timeline-photos" class="vault-timeline active">
             <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
         </div>
@@ -216,7 +211,6 @@
       <div class="theater-grid">
         <div style="display:flex; flex-direction:column; gap:28px;">
           <section class="card" style="padding:24px;">
-            
             <div class="theater-container" id="theater-frame-box" style="margin-bottom:20px;">
                 <div id="theater-join-overlay" style="position:absolute; inset:0; z-index:50; background:rgba(0,0,0,0.8); display:flex; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:var(--glass-blur);">
                     <h3 style="font-family:var(--font-display); font-size:24px; margin-bottom:16px;">The Lair Theater</h3>
@@ -224,12 +218,9 @@
                     <p style="font-size:11px; color:var(--ink-soft); margin-top:12px; text-align:center;">Required to bypass mobile autoplay blocks</p>
                 </div>
                 
-                <!-- Artplayer Container -->
                 <div id="theater-player-slot" style="width:100%; height:100%; display:none; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px;">
                     <span id="theater-placeholder-text">Waiting for media link...</span>
                 </div>
-                
-                <!-- YouTube Container -->
                 <div id="yt-container" style="width:100%; height:100%; display:none; pointer-events:auto;">
                     <div id="yt-player-slot"></div>
                 </div>
@@ -245,6 +236,15 @@
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <h2 style="font-family:var(--font-display); font-size:20px;">Vault Watchlist</h2>
             </div>
+            
+            <!-- TMDB Search Bar Restored -->
+            <div style="display:flex; gap:12px; margin-bottom:20px;">
+              <input type="text" id="tmdb-search-input" placeholder="Search TMDB to add to Wishlist...">
+              <button class="btn-secondary haptic-btn" id="btn-tmdb-search" style="width:auto;">Search</button>
+            </div>
+            <div id="tmdb-results" style="display:flex; gap:16px; overflow-x:auto; margin-bottom:20px; padding-bottom:8px;"></div>
+            
+            <!-- Shared List Container -->
             <div id="shared-watchlist" style="display:flex; gap:16px; overflow-x:auto; padding-bottom:12px;">
                 <p style="font-size:12px; color:var(--ink-soft);">Loading movies...</p>
             </div>
@@ -277,7 +277,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, collection, onSnapshot, query, orderBy, setDoc, updateDoc, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, collection, onSnapshot, query, orderBy, setDoc, deleteDoc, addDoc, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
   const TUNNEL_URL = "https://vault.ibadhasan.com"; 
@@ -320,9 +320,19 @@
       }
   }, {passive: true});
 
+  // Fail-safed Clock Function
+  function syncEnvironment() {
+      try {
+          const now = new Date();
+          document.getElementById('clock-dxb').textContent = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Dubai', hour:'2-digit', minute:'2-digit', hour12:false });
+          document.getElementById('clock-pkt').textContent = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Karachi', hour:'2-digit', minute:'2-digit', hour12:false });
+      } catch(e) {}
+  }
+  setInterval(syncEnvironment, 1000); syncEnvironment();
+
   async function fetchWithAuth(url, options = {}) {
       if (!auth.currentUser) return fetch(url, options);
-      if (url.includes('?token=')) return fetch(url, options); // Skip headers if using query auth
+      if (url.includes('?token=')) return fetch(url, options); 
       const token = await auth.currentUser.getIdToken();
       const headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
       return fetch(url, { ...options, headers });
@@ -459,7 +469,7 @@
     initVault();
   }
 
-  // --- HYBRID WATCH PARTY ENGINE (Artplayer + YouTube) ---
+  // --- HYBRID WATCH PARTY ENGINE ---
   function initWatchParty() {
       let currentSessionUrl = null;
       let isYt = false;
@@ -470,7 +480,9 @@
 
       const requestWakeLock = async () => { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
 
-      // Mount YouTube API
+      // Safe YouTube API Loader (Thread Isolated)
+      let ytApiReady = false;
+      window.onYouTubeIframeAPIReady = function() { ytApiReady = true; };
       const tag = document.createElement('script');
       tag.src = "https://www.youtube.com/iframe_api";
       const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -507,7 +519,10 @@
               if (ytPlayer && ytPlayer.loadVideoById) {
                   ytPlayer.loadVideoById(videoId);
               } else {
-                  if (typeof YT === 'undefined' || !YT.Player) { alert("YouTube mounting... Try again in 1s."); return; }
+                  if (!ytApiReady || typeof YT === 'undefined' || !YT.Player) { 
+                      setTimeout(() => mountMedia(rawUrl), 1000); 
+                      return; 
+                  }
                   ytPlayer = new YT.Player('yt-player-slot', {
                       videoId: videoId, playerVars: { 'autoplay': 1, 'controls': 1 },
                       events: {
@@ -524,7 +539,6 @@
               if(ytPlayer && ytPlayer.stopVideo) { ytPlayer.stopVideo(); }
               if(art) art.destroy();
 
-              // Secure Node.js PC stream dynamically injects token on mount
               const token = await auth.currentUser.getIdToken(true);
               const secureUrl = rawUrl.includes('?') ? `${rawUrl}&token=${token}` : `${rawUrl}?token=${token}`;
 
@@ -556,7 +570,7 @@
           if(!snap.exists()) return;
           const data = snap.data();
           if(data.url && data.url !== currentSessionUrl) mountMedia(data.url);
-          if(data.updatedBy === currentUser.name) return; // Prevent infinite seek loop
+          if(data.updatedBy === currentUser.name) return; 
 
           const expectedTime = data.timestamp + (data.updatedAt ? ((Date.now() - data.updatedAt.toMillis()) / 1000) : 0);
           ignoreNextSync = true;
@@ -573,7 +587,56 @@
           setTimeout(() => { ignoreNextSync = false; }, 500);
       });
 
-      // Render the Watchlist
+      // RESTORED TMDB SEARCH LOGIC
+      document.getElementById('btn-tmdb-search').addEventListener('click', async () => {
+          const queryStr = document.getElementById('tmdb-search-input').value.trim();
+          if(!queryStr) return;
+          triggerHaptic();
+          
+          const resultsDiv = document.getElementById('tmdb-results');
+          resultsDiv.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Searching TMDB...</p>';
+          
+          try {
+              const res = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=4b52b76174a761002dc02aa11e0394c8&query=${encodeURIComponent(queryStr)}`);
+              const data = await res.json();
+              resultsDiv.innerHTML = '';
+              
+              const validResults = (data.results || []).filter(r => r.media_type === 'movie' || r.media_type === 'tv').slice(0, 10);
+              if(validResults.length === 0) {
+                  resultsDiv.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">No results found.</p>'; return;
+              }
+              
+              validResults.forEach(match => {
+                  const card = document.createElement('div');
+                  card.style.cssText = 'flex: 0 0 110px; display:flex; flex-direction:column; gap:8px;';
+                  const poster = match.poster_path ? `https://image.tmdb.org/t/p/w200${match.poster_path}` : '';
+                  const title = match.title || match.name;
+                  
+                  card.innerHTML = `
+                      <div style="aspect-ratio:2/3; background:url('${poster}') center/cover; border-radius:8px; border:var(--glass-border); background-color:#111;"></div>
+                      <div style="font-size:11px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${title}">${title}</div>
+                      <button class="btn-secondary haptic-btn add-wishlist-btn" style="padding:6px 0; font-size:10px;">Add +</button>
+                  `;
+                  
+                  card.querySelector('.add-wishlist-btn').addEventListener('click', async (e) => {
+                      triggerHaptic(); e.currentTarget.textContent = 'Adding...';
+                      await addDoc(collection(db, 'watchlist'), {
+                          title: title,
+                          poster: match.poster_path ? `https://image.tmdb.org/t/p/w500${match.poster_path}` : '',
+                          type: match.media_type === 'movie' ? 'Movie' : 'TV Show',
+                          status: 'Want to Watch',
+                          streamUrl: '', 
+                          addedBy: currentUser.name,
+                          timestamp: serverTimestamp()
+                      });
+                      e.currentTarget.textContent = 'Added'; e.currentTarget.style.color = 'var(--con)'; e.currentTarget.disabled = true;
+                  });
+                  resultsDiv.appendChild(card);
+              });
+          } catch(e) { resultsDiv.innerHTML = '<p style="font-size:12px; color:var(--err);">Search failed. Check network.</p>'; }
+      });
+
+      // WATCHLIST RENDERER (Handles Local vs. Wishlist files)
       onSnapshot(query(collection(db, 'watchlist'), orderBy('timestamp', 'desc')), (snap) => {
           const list = document.getElementById('shared-watchlist');
           list.innerHTML = '';
@@ -581,36 +644,57 @@
 
           snap.forEach(d => {
               const data = d.data();
+              const docId = d.id;
               const card = document.createElement('div');
               card.className = 'card';
               card.style.cssText = 'flex: 0 0 140px; padding:12px; display:flex; flex-direction:column; gap:10px; background:var(--glass-bg);';
+              
+              let actionButtons = '';
+              if (data.streamUrl) {
+                  actionButtons = `
+                      <div style="display:flex; gap:6px;">
+                          <button class="btn-primary play-btn haptic-btn" data-rawurl="${data.streamUrl}" style="flex:1; padding:8px 0; font-size:11px;">Play</button>
+                          <button class="btn-secondary save-btn haptic-btn" data-rawurl="${data.streamUrl}" style="flex:1; padding:8px 0; font-size:11px; text-align:center;">Save</button>
+                      </div>
+                  `;
+              } else {
+                  actionButtons = `
+                      <div style="display:flex; gap:6px; flex-direction:column;">
+                          <span style="font-size:9px; color:var(--con); text-transform:uppercase;">Added by ${data.addedBy}</span>
+                          <button class="btn-secondary delete-btn haptic-btn" data-id="${docId}" style="width:100%; padding:8px 0; font-size:11px; color:var(--err);">Remove</button>
+                      </div>
+                  `;
+              }
+
               card.innerHTML = `
                   <div style="aspect-ratio:2/3; background:url('${data.poster || ''}') center/cover; border-radius:8px; border:var(--glass-border); background-color:#111;"></div>
                   <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${data.title}">${data.title}</div>
-                  <div style="display:flex; gap:6px;">
-                      <button class="btn-primary play-btn haptic-btn" data-rawurl="${data.streamUrl}" style="flex:1; padding:8px 0; font-size:11px;">Play</button>
-                      <button class="btn-secondary save-btn haptic-btn" data-rawurl="${data.streamUrl}" style="flex:1; padding:8px 0; font-size:11px; text-align:center;">Save</button>
-                  </div>
+                  ${actionButtons}
               `;
               
-              card.querySelector('.play-btn').addEventListener('click', (e) => {
-                  triggerHaptic();
-                  const rawUrl = e.currentTarget.getAttribute('data-rawurl');
-                  pushState(true, 0); // Triggers network sync immediately
-                  setDoc(doc(db, 'system', 'watch_party'), { url: rawUrl, isPlaying: true, timestamp: 0, updatedAt: serverTimestamp(), updatedBy: currentUser.name });
-              });
+              if (data.streamUrl) {
+                  card.querySelector('.play-btn').addEventListener('click', (e) => {
+                      triggerHaptic();
+                      const rawUrl = e.currentTarget.getAttribute('data-rawurl');
+                      pushState(true, 0); 
+                      setDoc(doc(db, 'system', 'watch_party'), { url: rawUrl, isPlaying: true, timestamp: 0, updatedAt: serverTimestamp(), updatedBy: currentUser.name });
+                  });
 
-              // Fresh Token Generation On Click (Fixes 60-Minute Expiration Bug)
-              card.querySelector('.save-btn').addEventListener('click', async (e) => {
-                  e.preventDefault(); triggerHaptic();
-                  const btn = e.currentTarget; btn.textContent = "Saving...";
-                  const rawUrl = btn.getAttribute('data-rawurl');
-                  const token = await auth.currentUser.getIdToken(true); 
-                  const dlUrl = rawUrl.replace('/stream/movies/', '/api/download/movies/') + `?token=${token}`;
-                  const a = document.createElement('a'); a.href = dlUrl; a.download = ''; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                  setTimeout(() => btn.textContent = "Save", 2000);
-              });
-
+                  card.querySelector('.save-btn').addEventListener('click', async (e) => {
+                      e.preventDefault(); triggerHaptic();
+                      const btn = e.currentTarget; btn.textContent = "Saving...";
+                      const rawUrl = btn.getAttribute('data-rawurl');
+                      const token = await auth.currentUser.getIdToken(true); 
+                      const dlUrl = rawUrl.replace('/stream/movies/', '/api/download/movies/') + `?token=${token}`;
+                      const a = document.createElement('a'); a.href = dlUrl; a.download = ''; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                      setTimeout(() => btn.textContent = "Save", 2000);
+                  });
+              } else {
+                  card.querySelector('.delete-btn').addEventListener('click', (e) => {
+                      triggerHaptic();
+                      deleteDoc(doc(db, 'watchlist', e.currentTarget.getAttribute('data-id')));
+                  });
+              }
               list.appendChild(card);
           });
       });

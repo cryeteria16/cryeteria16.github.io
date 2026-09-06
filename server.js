@@ -17,10 +17,13 @@ const db = getFirestore();
 
 const app = express();
 
+// CORE FIX: ibadhasan.com added to the security whitelist
 const allowedOrigins = [
   'https://cryeterialoginpage.firebaseapp.com',
   'https://cryeterialoginpage.web.app',
-  'https://vault.ibadhasan.com'
+  'https://vault.ibadhasan.com',
+  'https://ibadhasan.com',
+  'https://www.ibadhasan.com'
 ];
 
 app.use(cors({
@@ -37,7 +40,6 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static(__dirname, { extensions: ['html'] }));
 
-// 1. UPGRADED TOKEN VERIFICATION (Accepts Bearer Headers OR URL Queries)
 async function verifyToken(req, res, next) {
     let token = '';
     const authHeader = req.headers.authorization;
@@ -45,7 +47,7 @@ async function verifyToken(req, res, next) {
     if (authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.split('Bearer ')[1];
     } else if (req.query.token) {
-        token = req.query.token; // Required for mobile offline <a download> saves
+        token = req.query.token; 
     }
 
     if (!token) return res.status(401).json({ error: 'Unauthorized: Missing token.' });
@@ -171,7 +173,7 @@ app.delete('/api/photos/delete/:filename', verifyToken, (req, res) => {
     } else { res.status(404).json({ error: 'File not found' }); }
 });
 
-// 2. OFFLINE DOWNLOAD ENDPOINT (Airplane Mode Saves)
+// FLIGHT DOWNLOAD ENDPOINT 
 app.get('/api/download/movies/:filename', verifyToken, (req, res) => {
     const safeFilename = path.basename(req.params.filename);
     const filePath = path.join(moviesDir, safeFilename);
@@ -182,7 +184,7 @@ app.get('/api/download/movies/:filename', verifyToken, (req, res) => {
     fs.createReadStream(filePath).pipe(res);
 });
 
-// 3. SECURED & MATHEMATICALLY SHIELDED STREAMING ENDPOINT
+// MATHEMATICALLY SHIELDED STREAMING
 app.get('/stream/movies/:filename', verifyToken, (req, res) => {
     const safeFilename = path.basename(req.params.filename);
     const filePath = path.join(moviesDir, safeFilename);
@@ -197,7 +199,6 @@ app.get('/stream/movies/:filename', verifyToken, (req, res) => {
         const start = parseInt(parts[0], 10); 
         const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
         
-        // HTTP 416 Shield: Prevents Apple Safari from crashing Node.js via erratic buffer requests
         if (start >= fileSize || end >= fileSize) {
             res.writeHead(416, { 'Content-Range': `bytes */${fileSize}` });
             return res.end();
@@ -217,10 +218,9 @@ app.get('/stream/movies/:filename', verifyToken, (req, res) => {
     }
 });
 
-// 4. CHOKIDAR DATABASE SYNC ENGINE
 const watcher = chokidar.watch(moviesDir, { 
     persistent: true, 
-    ignoreInitial: false, // PRE-EXISTING FILES FIX: Scans PC on boot
+    ignoreInitial: false, 
     usePolling: true, 
     interval: 2000, 
     awaitWriteFinish: { stabilityThreshold: 10000, pollInterval: 2000 } 
@@ -232,7 +232,6 @@ watcher.on('add', async (filePath) => {
     const streamUrl = `${TUNNEL_URL}/stream/movies/${encodeURIComponent(fileName)}`;
 
     try {
-        // Prevents database duplication upon server restarts
         const existing = await db.collection('watchlist').where('streamUrl', '==', streamUrl).get();
         if (!existing.empty) return; 
 
@@ -255,7 +254,6 @@ watcher.on('add', async (filePath) => {
     }
 });
 
-// THE GHOST-FILE KILLER
 watcher.on('unlink', async (filePath) => {
     if (!filePath.endsWith('.mp4')) return;
     const fileName = path.basename(filePath);
