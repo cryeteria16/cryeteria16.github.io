@@ -1,4 +1,3 @@
-// Fixed: Loading environment variables securely
 require('dotenv').config();
 
 const express = require('express');
@@ -11,6 +10,7 @@ const axios = require('axios');
 const multer = require('multer');
 const chokidar = require('chokidar');
 const jwt = require('jsonwebtoken');
+const sharp = require('sharp');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
@@ -21,13 +21,9 @@ const db = getFirestore();
 
 const app = express();
 
-// Fixed: Stream tokens are short-lived, filename-scoped JWTs used ONLY for
-// media <video>/<img> tags that can't send an Authorization header. They are
-// never a substitute for real Firebase auth on JSON API routes.
 const STREAM_SECRET = process.env.STREAM_TOKEN_SECRET;
 if (!STREAM_SECRET) {
-  console.warn('[Lair OS] WARNING: STREAM_TOKEN_SECRET is not set in .env. ' +
-    'Set a long random value there or media streaming will refuse to issue tokens.');
+  console.warn('[Lair OS] WARNING: STREAM_TOKEN_SECRET is not set in .env.');
 }
 
 function issueStreamToken(uid, filename, hours = 6) {
@@ -48,7 +44,6 @@ app.use(cors({
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      // Fixed: Gracefully rejecting CORS without throwing a 500 Node.js error
       callback(null, false);
     }
   },
@@ -58,13 +53,7 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static(__dirname, { extensions: ['html'] }));
 
-// Fixed: Removed the "expired token + Range header" bypass. That let anyone
-// with a stale/forged bearer token stream indefinitely once they'd gotten in
-// once, since a Range header is trivial for any client to send. Long-lived
-// media access now goes through the scoped stream_token below instead.
 async function verifyToken(req, res, next) {
-  // Path 1: scoped, single-file, short-lived stream token (for <video>/<img>
-  // tags and other requests that can't carry an Authorization header).
   const streamToken = req.query.stream_token;
   if (streamToken) {
     if (!STREAM_SECRET) return res.status(503).json({ error: 'Streaming temporarily unavailable.' });
@@ -81,7 +70,6 @@ async function verifyToken(req, res, next) {
     }
   }
 
-  // Path 2: standard Firebase ID token, verified fully every time.
   let token = '';
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
@@ -101,8 +89,6 @@ async function verifyToken(req, res, next) {
   }
 }
 
-// Issues a short-lived token scoped to exactly one filename. The caller must
-// already be a verified Firebase user (via verifyToken) to get one.
 app.post('/api/stream-token', verifyToken, (req, res) => {
   const filename = path.basename(req.body.filename || '');
   if (!filename) return res.status(400).json({ error: 'filename is required' });
@@ -119,8 +105,11 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 const moviesDir = path.join(__dirname, 'Movies');
 const photosDir = path.join(__dirname, 'Photography');
+const thumbsDir = path.join(photosDir, '.thumbs');
+
 if (!fs.existsSync(moviesDir)) fs.mkdirSync(moviesDir);
 if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir);
+if (!fs.existsSync(thumbsDir)) fs.mkdirSync(thumbsDir, { recursive: true });
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, photosDir),
@@ -130,6 +119,25 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
+
+async function generateThumbnail(filename) {
+  const ext = path.extname(filename).toLowerCase();
+  if (!['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) return null;
+  const sourcePath = path.join(photosDir, filename);
+  const thumbName = `${filename}.webp`;
+  const thumbPath = path.join(thumbsDir, thumbName);
+  
+  if (fs.existsSync(thumbPath)) return thumbName;
+  try {
+    await sharp(sourcePath)
+      .resize(320, 320, { fit: 'cover' })
+      .webp({ quality: 80 })
+      .toFile(thumbPath);
+    return thumbName;
+  } catch (e) {
+    return null;
+  }
+}
 
 let prevCpu = getCpuSnapshot();
 function getCpuSnapshot() {
@@ -159,15 +167,17 @@ app.get('/api/stats', verifyToken, (req, res) => {
     res.json({ cpu: calculateCpuLoad(), ram: ramPercent });
 });
 
+// Remote Mobile Commands added to Whitelist
 const COMMAND_WHITELIST = {
-    'help': 'echo Available commands: ping, ip, uptime, storage, tasks, ver',
+    'help': 'echo Available commands: ping, ip, uptime, storage, tasks, ver, git pull, git status',
     'ping': 'ping -n 3 8.8.8.8',
     'ip': 'ipconfig',
     'uptime': 'net statistics workstation',
-    // Fixed: Replaced deprecated wmic with PowerShell equivalent
     'storage': 'powershell -command "Get-Volume | Select-Object DriveLetter, FileSystemLabel, SizeRemaining, Size"',
     'tasks': 'tasklist /fi "STATUS eq running" /fo table /nh',
-    'ver': 'ver'
+    'ver': 'ver',
+    'git pull': 'git pull',
+    'git status': 'git status -s'
 };
 
 app.post('/api/terminal', verifyToken, (req, res) => {
@@ -176,7 +186,7 @@ app.post('/api/terminal', verifyToken, (req, res) => {
 
     if (!targetCmd) return res.json({ output: `Command '${rawCmd}' is not permitted. Type 'help'.` });
 
-    exec(targetCmd, { timeout: 8000, windowsHide: true }, (error, stdout, stderr) => {
+    exec(targetCmd, { timeout: 12000, windowsHide: true }, (error, stdout, stderr) => {
         res.json({ output: stdout || stderr || (error ? error.message : '') || 'Command executed.' });
     });
 });
@@ -185,7 +195,9 @@ app.get('/api/storage', verifyToken, (req, res) => {
     let totalBytes = 0;
     try {
         const pFiles = fs.readdirSync(photosDir);
-        pFiles.forEach(f => totalBytes += fs.statSync(path.join(photosDir, f)).size);
+        pFiles.forEach(f => {
+          if (f !== '.thumbs') totalBytes += fs.statSync(path.join(photosDir, f)).size;
+        });
         const mFiles = fs.readdirSync(moviesDir);
         mFiles.forEach(f => totalBytes += fs.statSync(path.join(moviesDir, f)).size);
         res.json({ totalBytes, maxBytes: 100 * 1024 * 1024 * 1024 });
@@ -194,30 +206,42 @@ app.get('/api/storage', verifyToken, (req, res) => {
 
 app.use('/stream/photography', verifyToken, express.static(photosDir));
 
-app.get('/api/photos', verifyToken, (req, res) => {
-    fs.readdir(photosDir, (err, files) => {
-        if (err) return res.status(500).json({ error: 'Unable to scan directory' });
+app.get('/stream/photography/thumb/:filename', verifyToken, async (req, res) => {
+    const safeFilename = path.basename(req.params.filename);
+    const thumbName = `${safeFilename}.webp`;
+    const thumbPath = path.join(thumbsDir, thumbName);
+    
+    if (fs.existsSync(thumbPath)) {
+      return res.sendFile(thumbPath);
+    }
+    const created = await generateThumbnail(safeFilename);
+    if (created && fs.existsSync(thumbPath)) {
+      return res.sendFile(thumbPath);
+    }
+    const originalPath = path.join(photosDir, safeFilename);
+    if (fs.existsSync(originalPath)) {
+      return res.sendFile(originalPath);
+    }
+    res.status(404).send('Not found');
+});
 
-        // Fixed: previously embedded `req.query.token` here, which is always
-        // empty because the client authenticates this GET with a Bearer
-        // header, not a query param — so every photo/video URL rendered by
-        // the client came back with `?token=` empty and 401'd when the
-        // browser tried to load it directly as an <img>/<video> src. Each
-        // file now gets its own short-lived, filename-scoped stream token
-        // that's valid on its own.
-        const photoList = files.filter(f => /\.(jpg|jpeg|png|webp|heic|gif|mp4|mov|m4v|pdf)$/i.test(f)).map(file => {
+app.get('/api/photos', verifyToken, async (req, res) => {
+    fs.readdir(photosDir, async (err, files) => {
+        if (err) return res.status(500).json({ error: 'Unable to scan directory' });
+        
+        const validFiles = files.filter(f => f !== '.thumbs' && /\.(jpg|jpeg|png|webp|heic|gif|mp4|mov|m4v|pdf)$/i.test(f));
+        const photoList = validFiles.map(file => {
             const stats = fs.statSync(path.join(photosDir, file));
             const timestamp = stats.birthtimeMs || stats.mtimeMs;
             let url = `${TUNNEL_URL}/stream/photography/${encodeURIComponent(file)}`;
+            let thumbUrl = `${TUNNEL_URL}/stream/photography/thumb/${encodeURIComponent(file)}`;
             try {
                 const streamToken = issueStreamToken(req.user.uid, file, 12);
                 url += `?stream_token=${streamToken}`;
-            } catch (e) { /* STREAM_SECRET missing; url will 503 on load */ }
+                thumbUrl += `?stream_token=${streamToken}`;
+            } catch (e) { }
             return {
-                filename: file,
-                url,
-                size: stats.size,
-                timestamp: timestamp,
+                filename: file, url, thumbUrl, size: stats.size, timestamp: timestamp,
                 dateFormatted: new Date(timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
             };
         }).sort((a, b) => b.timestamp - a.timestamp);
@@ -225,16 +249,19 @@ app.get('/api/photos', verifyToken, (req, res) => {
     });
 });
 
-app.post('/api/photos/upload', verifyToken, upload.single('photo'), (req, res) => {
+app.post('/api/photos/upload', verifyToken, upload.single('photo'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    await generateThumbnail(req.file.filename);
     res.json({ success: true });
 });
 
 app.delete('/api/photos/delete/:filename', verifyToken, (req, res) => {
     const safeFilename = path.basename(req.params.filename);
     const filePath = path.join(photosDir, safeFilename);
+    const thumbPath = path.join(thumbsDir, `${safeFilename}.webp`);
     if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
+        if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
         res.json({ success: true });
     } else { res.status(404).json({ error: 'File not found' }); }
 });
@@ -261,8 +288,6 @@ app.get('/stream/movies/:filename', verifyToken, (req, res) => {
     if (range) {
         const parts = range.replace(/bytes=/, "").split("-");
         const start = parseInt(parts[0], 10);
-
-        // Fixed: Implemented strict 5MB chunk sizes to prevent Memory Exhaustion Vulnerability
         const CHUNK_SIZE = 5 * 1024 * 1024;
         const end = parts[1] ? parseInt(parts[1], 10) : Math.min(start + CHUNK_SIZE - 1, fileSize - 1);
 
@@ -285,8 +310,6 @@ app.get('/stream/movies/:filename', verifyToken, (req, res) => {
     }
 });
 
-// Server-side TMDB proxy so the browser never needs the TMDB API key.
-// This is what makes the Theater tab's "Search TMDB" box actually work.
 app.get('/api/tmdb/search', verifyToken, async (req, res) => {
     const query = (req.query.q || '').trim();
     if (!query) return res.json({ results: [] });
@@ -299,8 +322,7 @@ app.get('/api/tmdb/search', verifyToken, async (req, res) => {
             .filter(r => r.media_type === 'movie' || r.media_type === 'tv')
             .slice(0, 12)
             .map(r => ({
-                id: r.id,
-                title: r.title || r.name,
+                id: r.id, title: r.title || r.name,
                 year: (r.release_date || r.first_air_date || '').slice(0, 4),
                 poster: r.poster_path ? `https://image.tmdb.org/t/p/w300${r.poster_path}` : '',
                 type: r.media_type === 'movie' ? 'Movie' : 'TV Show'
@@ -312,11 +334,8 @@ app.get('/api/tmdb/search', verifyToken, async (req, res) => {
 });
 
 const watcher = chokidar.watch(moviesDir, {
-    persistent: true,
-    ignoreInitial: false,
-    usePolling: true,
-    interval: 2000,
-    awaitWriteFinish: { stabilityThreshold: 10000, pollInterval: 2000 }
+    persistent: true, ignoreInitial: false, usePolling: true,
+    interval: 2000, awaitWriteFinish: { stabilityThreshold: 10000, pollInterval: 2000 }
 });
 
 watcher.on('add', async (filePath) => {
@@ -335,16 +354,11 @@ watcher.on('add', async (filePath) => {
         await db.collection('watchlist').add({
             title: match ? (match.title || match.name) : cleanTitle,
             poster: (match && match.poster_path) ? `https://image.tmdb.org/t/p/w500${match.poster_path}` : '',
-            type: 'Movie (Local Vault)',
-            status: 'Want to Watch',
-            streamUrl: streamUrl,
-            addedBy: 'Lair Server',
-            timestamp: FieldValue.serverTimestamp()
+            type: 'Movie (Local Vault)', status: 'Want to Watch',
+            streamUrl: streamUrl, addedBy: 'Lair Server', timestamp: FieldValue.serverTimestamp()
         });
         console.log(`[Lair OS] Indexed new file: ${fileName}`);
-    } catch (e) {
-        console.error(`[Lair OS] Error indexing ${fileName}:`, e.message);
-    }
+    } catch (e) { }
 });
 
 watcher.on('unlink', async (filePath) => {
@@ -354,9 +368,9 @@ watcher.on('unlink', async (filePath) => {
         const streamUrl = `${TUNNEL_URL}/stream/movies/${encodeURIComponent(fileName)}`;
         const snapshot = await db.collection('watchlist').where('streamUrl', '==', streamUrl).get();
         snapshot.forEach(doc => doc.ref.delete());
-        console.log(`[Lair OS] Removed deleted file from database: ${fileName}`);
     } catch (e) { }
 });
 watcher.on('error', err => { if(err.code !== 'EBUSY') console.error(err); });
 
-app.listen(3000, () => console.log('[Lair OS] Engine running securely on port 3000'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`[Lair OS] Engine running securely on port ${PORT}`));

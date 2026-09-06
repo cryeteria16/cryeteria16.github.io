@@ -11,11 +11,10 @@
 
 <style>
   :root { 
-    --con: #70947A; --accent: var(--con); --err: #D9534F;
+    --con: #70947A; --accent: var(--con); --err: #D9534F; --warn: #E5A93C;
     --font-display: 'Fraunces', serif; --font-body: 'Inter', sans-serif; --font-mono: 'IBM Plex Mono', monospace; 
     --radius: 28px; --radius-sm: 18px; 
     
-    /* Dark Mode Defaults */
     --bg: #070709; --ink: #FFFFFF; --ink-soft: rgba(255,255,255,0.65); 
     --glass-bg: rgba(255, 255, 255, 0.04); --glass-nav: rgba(12, 12, 16, 0.55);
     --glass-border: 1px solid rgba(255, 255, 255, 0.12);
@@ -23,6 +22,9 @@
     --glass-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.35), 0 20px 45px -10px rgba(0, 0, 0, 0.7);
     --input-bg: rgba(0, 0, 0, 0.35);
     --btn-primary-bg: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(225,225,225,0.9)); --btn-primary-text: #000;
+
+    --aurora-1: #1a2920;
+    --aurora-2: #0e1a24;
   }
 
   [data-theme="light"] {
@@ -32,40 +34,69 @@
     --glass-glow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.8), 0 15px 35px -10px rgba(0, 0, 0, 0.15);
     --input-bg: rgba(0, 0, 0, 0.04);
     --btn-primary-bg: linear-gradient(180deg, #1C1C1E, #000); --btn-primary-text: #FFF;
+    --aurora-1: #d8e2dc;
+    --aurora-2: #cde1ea;
   }
 
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
-  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding-top: env(safe-area-inset-top, 0px); padding-bottom: 140px; transition: background 1.5s ease, color 0.4s ease; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--font-body); padding-top: env(safe-area-inset-top, 0px); padding-bottom: 140px; transition: background 2s ease, color 0.4s ease; overflow-x: hidden; }
   a { color:inherit; text-decoration:none; cursor:pointer; } 
   button { font-family:inherit; border:none; background:none; cursor:pointer; outline:none; }
   
-  .os-wallpaper { position: fixed; inset: -5%; z-index: -2; background: radial-gradient(circle at 50% 50%, var(--bg) 0%, var(--bg) 100%); pointer-events: none; transition: transform 0.1s ease-out, background 1.5s ease;}
+  .os-wallpaper { position: fixed; inset: -15%; z-index: -2; background: radial-gradient(circle at 30% 30%, var(--aurora-1) 0%, transparent 60%), radial-gradient(circle at 70% 70%, var(--aurora-2) 0%, var(--bg) 80%); pointer-events: none; transition: background 3s ease, transform 0.2s ease-out; }
   
   .os-menubar { position: fixed; top: 0; left: 0; width: 100%; height: calc(64px + env(safe-area-inset-top, 0px)); padding-top: calc(16px + env(safe-area-inset-top, 0px)); padding-bottom: 12px; background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border-bottom: var(--glass-border); display: flex; align-items: flex-end; justify-content: space-between; padding-left: 28px; padding-right: 28px; font-size: 13px; font-weight: 500; z-index: 900; transition: background 0.4s ease; }
-  .sys-dot { width: 7px; height: 7px; border-radius: 50%; box-shadow: 0 0 10px currentColor; display:inline-block; transition: 0.3s; }
+  
+  @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(112, 148, 122, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(112, 148, 122, 0); } 100% { box-shadow: 0 0 0 0 rgba(112, 148, 122, 0); } }
+  .sys-dot { width: 7px; height: 7px; border-radius: 50%; display:inline-block; transition: 0.3s; }
+  .sys-dot.pulse { animation: pulse-dot 2.5s infinite cubic-bezier(0.45, 0, 0.55, 1); }
+  
   #broadcast-banner { display:none; width:100%; background:var(--accent); color:#000; font-family:var(--font-mono); font-size:12px; font-weight:600; text-align:center; padding:10px; z-index:1000; position:fixed; top:0; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);}
 
   .os-dock-wrapper { position: fixed; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); left: 0; width: 100%; display: flex; justify-content: center; z-index: 900; pointer-events: none; }
-  .os-dock { background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 36px; padding: 8px 10px; display: flex; gap: 8px; box-shadow: var(--glass-glow); pointer-events: auto; transition: background 0.4s ease; }
-  .dock-app { padding: 10px 22px; border-radius: 26px; color: var(--ink-soft); font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
+  .os-dock { background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 36px; padding: 8px 10px; display: flex; gap: 8px; box-shadow: var(--glass-glow); pointer-events: auto; transition: background 0.4s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .dock-app { padding: 10px 22px; border-radius: 26px; color: var(--ink-soft); font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
   .dock-app.active { background: var(--ink); color: var(--bg); font-weight: 600; box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.2); }
+  .dock-app:active { transform: scale(0.92); }
 
   main { padding: 100px 32px 100px; max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px; min-height: 100vh; }
-  .card { background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: var(--radius); padding: 32px; box-shadow: var(--glass-glow); overflow: hidden; transition: 0.4s ease; }
+  
+  /* Staggered Card Physics */
+  @keyframes cardSlideUp {
+    from { opacity: 0; transform: translateY(22px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  
+  .card { 
+    background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); 
+    border: var(--glass-border); border-radius: var(--radius); padding: 32px; box-shadow: var(--glass-glow); 
+    overflow: hidden; transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+    animation: cardSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .card:hover { transform: translateY(-4px); box-shadow: 0 30px 60px -10px rgba(0,0,0,0.8), var(--glass-glow); border-color: rgba(255,255,255,0.22); }
+  
+  .stagger-1 { animation-delay: 0.05s; }
+  .stagger-2 { animation-delay: 0.12s; }
+  .stagger-3 { animation-delay: 0.19s; }
+  .stagger-4 { animation-delay: 0.26s; }
+
   .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
   .card-head h2 { font-family:var(--font-display); font-size:20px; font-weight:500; }
 
   input[type="text"], textarea { appearance: none; font-family: var(--font-body); font-size: 14px; color: var(--ink); background: var(--input-bg); border: var(--glass-border); border-radius: var(--radius-sm); padding: 15px 20px; width: 100%; outline: none; transition: 0.3s; }
   
-  .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); padding: 12px 24px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; transition: 0.2s cubic-bezier(0.32, 0.72, 0, 1); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); border:none; cursor:pointer;}
-  .btn-primary:active { transform: scale(0.96); }
-  .btn-secondary { background: var(--glass-bg); border: var(--glass-border); color: var(--ink); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight:500; backdrop-filter: var(--glass-blur); transition:0.2s; cursor:pointer;}
-  .btn-secondary:active { transform: scale(0.96); }
+  .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); padding: 12px 24px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.3); border:none; cursor:pointer;}
+  .btn-primary:hover { transform: scale(1.02); }
+  .btn-primary:active { transform: scale(0.95); }
+  
+  .btn-secondary { background: var(--glass-bg); border: var(--glass-border); color: var(--ink); padding: 12px 20px; border-radius: var(--radius-sm); font-size: 13px; font-weight:500; backdrop-filter: var(--glass-blur); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s; cursor:pointer;}
+  .btn-secondary:hover { transform: scale(1.02); background: rgba(255,255,255,0.08); }
+  .btn-secondary:active { transform: scale(0.95); }
 
   .segment-pill { display: inline-flex; background: var(--input-bg); border: var(--glass-border); border-radius: 30px; padding: 4px; margin-bottom: 24px; }
   .seg-btn { padding: 8px 24px; border-radius: 26px; font-size: 13px; font-weight: 500; color: var(--ink-soft); transition: 0.3s; cursor:pointer;}
   .seg-btn.active { background: var(--ink); color: var(--bg); box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-weight: 600;}
-  .vault-timeline { display: none; flex-direction: column; gap: 24px; animation: smoothFadeIn 0.3s forwards; }
+  .vault-timeline { display: none; flex-direction: column; gap: 24px; animation: cardSlideUp 0.35s forwards; }
   .vault-timeline.active { display: flex; }
 
   .radar-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: var(--glass-border); font-size: 13px; }
@@ -75,22 +106,17 @@
   @media (max-width: 1024px) { .theater-grid { grid-template-columns: 1fr; } }
   
   .theater-container { width: 100%; max-height: 70vh; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); border: var(--glass-border); box-shadow: 0 35px 70px -15px rgba(0,0,0,0.6); position: relative; overflow: hidden; display: block; }
-  .artplayer-app { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
   
-  .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
-  .vault-thumb-card:hover { transform: scale(1.04); }
-  
-  @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
-  .skeleton-box { animation: shimmer 2s infinite linear; background: linear-gradient(to right, var(--input-bg) 4%, rgba(255,255,255,0.08) 25%, var(--input-bg) 36%); background-size: 800px 100%; aspect-ratio: 1; border-radius: var(--radius-sm); border: var(--glass-border); }
+  .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .vault-thumb-card:hover { transform: scale(1.05); }
 
   .storage-gauge-wrapper { position: relative; width: 160px; height: 160px; display: flex; align-items: center; justify-content: center; margin: 0 auto 32px; border-radius: 50%; background: conic-gradient(var(--con) calc(var(--pct) * 1%), var(--glass-bg) 0); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
   .storage-gauge-inner { width: 136px; height: 136px; background: var(--bg); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
   .view-container { display: none; opacity: 0; } 
-  .view-container.active { display: block; animation: smoothFadeIn 0.45s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
-  @keyframes smoothFadeIn { from { opacity: 0; transform: translateY(15px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .view-container.active { display: block; animation: cardSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px; animation: smoothFadeIn 0.3s forwards; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px; animation: cardSlideUp 0.3s forwards; }
   .modal-overlay.active { display:flex; }
 
   .voice-orb { width: 180px; height: 180px; border-radius: 50%; margin: 0 auto 28px; background: radial-gradient(circle at 35% 30%, rgba(112,148,122,0.9), rgba(112,148,122,0.15) 70%); display:flex; align-items:center; justify-content:center; box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 20px 60px -10px rgba(112,148,122,0.5); transition: box-shadow 0.15s ease, transform 0.15s ease; }
@@ -102,16 +128,24 @@
   .voice-btn:active { transform: scale(0.92); }
   .voice-btn.danger { background: var(--err); color:#fff; }
   .voice-btn.muted { background: var(--warn); color:#000; }
+
+  /* In-App Toast Container */
+  #toast-container { position: fixed; bottom: calc(90px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 1100; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .lair-toast { background: rgba(16, 16, 22, 0.85); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); color: var(--ink); padding: 12px 24px; border-radius: 40px; font-size: 13px; font-weight: 500; box-shadow: var(--glass-glow); animation: toastUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; display: flex; align-items: center; gap: 10px; pointer-events: auto; }
+  @keyframes toastUp { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .lair-toast.success { border-color: rgba(112, 148, 122, 0.4); }
+  .lair-toast.error { border-color: rgba(217, 83, 79, 0.4); }
 </style>
 </head>
 <body data-theme="dark">
   
-  <div class="os-wallpaper"></div>
+  <div class="os-wallpaper" id="diurnal-wallpaper"></div>
   <div id="broadcast-banner"></div>
+  <div id="toast-container"></div>
 
   <nav class="os-menubar" id="top-nav">
     <div style="display:flex; gap:16px; align-items:center;">
-      <span style="font-weight:600; display:flex; align-items:center; gap:8px;"><span class="sys-dot" style="color:var(--con);"></span>The Lair</span>
+      <span style="font-weight:600; display:flex; align-items:center; gap:8px;"><span class="sys-dot pulse" style="color:var(--con);"></span>The Lair</span>
     </div>
     <div style="display:flex; gap:16px; align-items:center;">
         <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); display:flex; align-items:center;">
@@ -134,7 +168,7 @@
 
   <main id="swipe-zone">
     <section id="view-dashboard" class="view-container active">
-      <div class="card" style="padding:24px; display:flex; justify-content:space-around; align-items:center; margin-bottom:24px;">
+      <div class="card stagger-1" style="padding:24px; display:flex; justify-content:space-around; align-items:center; margin-bottom:24px;">
           <div style="text-align:center;">
               <h3 style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:4px;">Dubai HQ</h3>
               <div id="clock-dxb" style="font-family:var(--font-display); font-size:28px; font-weight:500;">--:--</div>
@@ -146,7 +180,7 @@
           </div>
       </div>
 
-      <div class="card" style="padding:24px; margin-bottom:24px;">
+      <div class="card stagger-2" style="padding:24px; margin-bottom:24px;">
           <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Command Bay</h2>
           <div style="display:flex; gap:16px; overflow-x:auto; padding-bottom:8px;" id="command-bay-grid">
               <a href="https://github.com/Cryeteria" target="_blank" class="btn-secondary haptic-btn" style="flex: 0 0 auto; display:flex; align-items:center; gap:8px;"><span>🐙</span> GitHub</a>
@@ -157,10 +191,10 @@
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; margin-bottom: 24px;">
-        <div class="card" style="padding:24px; background:#000; border:1px solid rgba(255,255,255,0.1);">
+        <div class="card stagger-3" style="padding:24px; background:#000; border:1px solid rgba(255,255,255,0.1);">
             <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
                 <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); display:flex; align-items:center;">
-                    <span id="health-dot" class="sys-dot" style="color:var(--err); margin-right:6px;"></span><span id="health-text">TUNNEL OFFLINE</span>
+                    <span id="health-dot" class="sys-dot pulse" style="color:var(--err); margin-right:6px;"></span><span id="health-text">TUNNEL OFFLINE</span>
                 </span>
                 <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">CPU: <span id="sys-cpu">--%</span> | RAM: <span id="sys-ram">--%</span></span>
             </div>
@@ -171,7 +205,7 @@
             </div>
         </div>
 
-        <div class="card" style="padding:24px; display:flex; flex-direction:column;">
+        <div class="card stagger-3" style="padding:24px; display:flex; flex-direction:column;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
               <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft);">The Fridge Door</h2>
               <span id="fridge-status" style="font-size:11px; font-family:var(--font-mono); color:var(--ink-soft);">Synced</span>
@@ -179,7 +213,7 @@
           <textarea id="fridge-door-text" placeholder="Write a shared note here..." spellcheck="false" style="flex:1; min-height:140px; resize:none; font-family:var(--font-body); font-size:14px; line-height:1.6; background:transparent; padding:0; border:none;"></textarea>
         </div>
 
-        <div class="card" style="padding:24px; display:flex; flex-direction:column;">
+        <div class="card stagger-4" style="padding:24px; display:flex; flex-direction:column;">
           <h2 style="font-size:14px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Live Radar</h2>
           <div id="radar-feed" style="flex:1; overflow-y:auto; max-height:140px;">
              <p style="font-size:12px; color:var(--ink-soft);">Waiting for telemetry...</p>
@@ -189,7 +223,7 @@
     </section>
 
     <section id="view-drop" class="view-container">
-      <section class="card" style="margin-bottom:28px; text-align:center;">
+      <section class="card stagger-1" style="margin-bottom:28px; text-align:center;">
         <div class="card-head" style="justify-content:center; margin-bottom:16px;"><h2>Lair Cloud Drive</h2></div>
         <div class="storage-gauge-wrapper" id="drop-gauge" style="--pct: 0;">
           <div class="storage-gauge-inner">
@@ -204,7 +238,7 @@
         </div>
       </section>
 
-      <section class="card">
+      <section class="card stagger-2">
         <div style="display:flex; justify-content:center;">
             <div class="segment-pill">
                 <button class="seg-btn active haptic-btn" data-seg="photos">Photography</button>
@@ -227,7 +261,7 @@
     <section id="view-theater" class="view-container">
       <div class="theater-grid">
         <div style="display:flex; flex-direction:column; gap:28px;">
-          <section class="card" style="padding:24px;">
+          <section class="card stagger-1" style="padding:24px;">
             <div class="theater-container" id="theater-frame-box" style="margin-bottom:20px;">
                 <div id="theater-join-overlay" style="position:absolute; inset:0; z-index:50; background:rgba(0,0,0,0.8); display:flex; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:var(--glass-blur);">
                     <h3 style="font-family:var(--font-display); font-size:24px; margin-bottom:16px;">The Lair Theater</h3>
@@ -249,7 +283,7 @@
             </div>
           </section>
 
-          <section class="card" style="padding:24px;">
+          <section class="card stagger-2" style="padding:24px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <h2 style="font-family:var(--font-display); font-size:20px;">Vault Watchlist</h2>
             </div>
@@ -266,7 +300,7 @@
           </section>
         </div>
 
-        <section class="card" style="display:flex; flex-direction:column; min-height:420px; padding:24px;">
+        <section class="card stagger-3" style="display:flex; flex-direction:column; min-height:420px; padding:24px;">
           <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:20px;">Live Chat</h2>
           <div id="chat-window" style="flex:1; overflow-y:auto; margin-bottom:16px; font-size:14px; display:flex; flex-direction:column; gap:8px;"></div>
           <div style="display:flex; gap:10px;">
@@ -278,7 +312,7 @@
     </section>
 
     <section id="view-voice" class="view-container">
-      <div class="card" style="max-width:480px; margin:0 auto; padding:40px 32px; text-align:center;">
+      <div class="card stagger-1" style="max-width:480px; margin:0 auto; padding:40px 32px; text-align:center;">
         <h2 style="font-family:var(--font-display); font-size:22px; margin-bottom:8px;">Voice Room</h2>
         <p style="font-size:12px; color:var(--ink-soft); margin-bottom:32px;">Private 1:1 voice call over WebRTC. No recordings, no server relay — audio goes peer-to-peer.</p>
 
@@ -305,6 +339,18 @@
     </div>
   </div>
 
+  <!-- Custom In-App Confirmation Modal -->
+  <div id="confirm-modal" class="modal-overlay">
+    <div class="card" style="max-width:380px; text-align:center; padding:28px;">
+      <h3 id="confirm-title" style="font-family:var(--font-display); font-size:18px; margin-bottom:8px;">Are you sure?</h3>
+      <p id="confirm-msg" style="font-size:13px; color:var(--ink-soft); margin-bottom:24px;">This action cannot be undone.</p>
+      <div style="display:flex; gap:12px;">
+        <button id="btn-confirm-cancel" class="btn-secondary haptic-btn" style="flex:1;">Cancel</button>
+        <button id="btn-confirm-ok" class="btn-primary haptic-btn" style="flex:1; background:var(--err); color:#fff;">Confirm</button>
+      </div>
+    </div>
+  </div>
+
 <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -319,6 +365,64 @@
   const db = getFirestore(app);
   let currentUser = null;
   let activeLightboxFile = null;
+
+  // In-App Toast Engine
+  window.showToast = (msg, type = 'info') => {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `lair-toast ${type}`;
+    const icon = type === 'success' ? '✔' : type === 'error' ? '✖' : '●';
+    toast.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
+    container.appendChild(toast);
+    setTimeout(() => {
+      toast.style.transition = 'all 0.3s ease';
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px) scale(0.9)';
+      setTimeout(() => toast.remove(), 300);
+    }, 3200);
+  };
+
+  // Custom Glass Confirm Prompts
+  window.showConfirm = (title, msg) => {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('confirm-modal');
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-msg').textContent = msg;
+      modal.classList.add('active');
+
+      const onOk = () => { cleanup(); resolve(true); };
+      const onCancel = () => { cleanup(); resolve(false); };
+      const cleanup = () => {
+        document.getElementById('btn-confirm-ok').removeEventListener('click', onOk);
+        document.getElementById('btn-confirm-cancel').removeEventListener('click', onCancel);
+        modal.classList.remove('active');
+      };
+
+      document.getElementById('btn-confirm-ok').addEventListener('click', onOk);
+      document.getElementById('btn-confirm-cancel').addEventListener('click', onCancel);
+    });
+  };
+
+  // Diurnal Mesh (Day / Twilight / Night cycle based on Dubai & PK)
+  function updateDiurnalCycle() {
+    const dxbHour = parseInt(new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Dubai', hour: '2-digit', hour12: false }), 10);
+    const root = document.documentElement;
+    if (document.body.getAttribute('data-theme') === 'light') return;
+
+    if (dxbHour >= 6 && dxbHour < 17) {
+      // Daytime Slate
+      root.style.setProperty('--aurora-1', '#192822');
+      root.style.setProperty('--aurora-2', '#142533');
+    } else if (dxbHour >= 17 && dxbHour < 19) {
+      // Sunset / Golden Hour
+      root.style.setProperty('--aurora-1', '#33231a');
+      root.style.setProperty('--aurora-2', '#211829');
+    } else {
+      // Nighttime Obsidian
+      root.style.setProperty('--aurora-1', '#0e1814');
+      root.style.setProperty('--aurora-2', '#0a1018');
+    }
+  }
 
   const triggerHaptic = () => { 
       if(navigator.vibrate) navigator.vibrate(15);
@@ -357,6 +461,7 @@
           const now = new Date();
           document.getElementById('clock-dxb').textContent = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Dubai', hour:'2-digit', minute:'2-digit', hour12:false });
           document.getElementById('clock-pkt').textContent = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Karachi', hour:'2-digit', minute:'2-digit', hour12:false });
+          updateDiurnalCycle();
       } catch(e) {}
   }
   setInterval(syncEnvironment, 1000); syncEnvironment();
@@ -391,6 +496,8 @@
       }
   });
 
+  // Dynamic Battery-Saving Stat Polling
+  let statsTimer = null;
   async function pollSystemStats() {
       try {
           const res = await fetchWithAuth(`${TUNNEL_URL}/api/stats`);
@@ -406,6 +513,14 @@
           document.getElementById('health-text').textContent = "TUNNEL OFFLINE";
       }
   }
+
+  function setupAdaptivePolling() {
+    if (statsTimer) clearInterval(statsTimer);
+    const interval = document.visibilityState === 'visible' ? 4000 : 30000;
+    pollSystemStats();
+    statsTimer = setInterval(pollSystemStats, interval);
+  }
+  document.addEventListener('visibilitychange', setupAdaptivePolling);
 
   onAuthStateChanged(auth, (user) => {
     if (!user) window.location.replace("index.html");
@@ -439,8 +554,7 @@
   });
 
   function initOS() {
-    pollSystemStats();
-    setInterval(pollSystemStats, 4000);
+    setupAdaptivePolling();
 
     const presenceRef = doc(db, 'users', currentUser.id);
     const setOnline = () => setDoc(presenceRef, { state: 'online', name: currentUser.name, lastActive: serverTimestamp() }, {merge: true});
@@ -477,7 +591,7 @@
             const data = snap.data();
             if(data.updatedBy !== currentUser.id && !isTyping) {
                 fridgeText.value = data.content || '';
-                fridgeStatus.textContent = `Last update: ${data.updatedByName}`;
+                fridgeStatus.textContent = `Last edit: ${data.updatedByName || 'Partner'}`;
             }
         }
     });
@@ -594,6 +708,7 @@
                           title: r.title, poster: r.poster, type: r.type, status: 'Want to Watch',
                           streamUrl: '', addedBy: currentUser.name, timestamp: serverTimestamp()
                       });
+                      window.showToast(`Added ${r.title} to Watchlist`, 'success');
                   });
                   resultsEl.appendChild(card);
               });
@@ -665,6 +780,7 @@
       let role = null; 
       let unsubRoom = null, unsubCandidates = null;
       let analyser = null, analyserRaf = null;
+      let heartbeatTimer = null;
 
       const orb = document.getElementById('voice-orb');
       const orbLabel = document.getElementById('voice-orb-label');
@@ -688,6 +804,18 @@
           }
       };
 
+      const startHeartbeat = () => {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        heartbeatTimer = setInterval(async () => {
+          try { await updateDoc(roomRef, { heartbeat: serverTimestamp() }); } catch(e) {}
+        }, 15000);
+      };
+
+      const stopHeartbeat = () => {
+        if (heartbeatTimer) clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
+      };
+
       const watchRemoteVolume = (stream) => {
           try {
               const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -706,6 +834,7 @@
       };
 
       async function cleanupPeer() {
+          stopHeartbeat();
           if (analyserRaf) cancelAnimationFrame(analyserRaf);
           analyser = null;
           if (unsubRoom) { unsubRoom(); unsubRoom = null; }
@@ -732,6 +861,7 @@
               } catch (e) { }
           }
           setUiState('idle');
+          window.showToast('Call ended');
       }
 
       btnLeave.addEventListener('click', () => hangUp(true));
@@ -742,6 +872,7 @@
           track.enabled = !track.enabled;
           btnMute.textContent = track.enabled ? '🎤' : '🔇';
           triggerHaptic();
+          window.showToast(track.enabled ? 'Microphone unmuted' : 'Microphone muted');
       });
 
       btnJoin.addEventListener('click', async () => {
@@ -749,7 +880,7 @@
           try {
               localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
           } catch (e) {
-              alert('Microphone access is required for the Voice Room.');
+              window.showToast('Microphone access is required', 'error');
               return;
           }
 
@@ -764,7 +895,16 @@
           };
 
           const existingSnap = await getDoc(roomRef);
-          const existing = existingSnap.exists() ? existingSnap.data() : null;
+          let existing = existingSnap.exists() ? existingSnap.data() : null;
+
+          // Ghost Call / Stale Room Self-Cleaning (older than 35s without pulse)
+          if (existing && existing.heartbeat) {
+            const ageMs = Date.now() - existing.heartbeat.toMillis();
+            if (ageMs > 35000) {
+              await deleteDoc(roomRef);
+              existing = null;
+            }
+          }
 
           if (!existing || !existing.offer || (existing.status === 'ended')) {
               role = 'caller';
@@ -774,15 +914,18 @@
               await pc.setLocalDescription(offerDesc);
               await setDoc(roomRef, {
                   offer: { type: offerDesc.type, sdp: offerDesc.sdp },
-                  answer: null, callerId: currentUser.id, callerName: currentUser.name, status: 'waiting'
+                  answer: null, callerId: currentUser.id, callerName: currentUser.name, status: 'waiting',
+                  heartbeat: serverTimestamp()
               });
               setUiState('waiting');
+              startHeartbeat();
 
               unsubRoom = onSnapshot(roomRef, async (snap) => {
                   const data = snap.data();
                   if (data && data.answer && pc && !pc.currentRemoteDescription) {
                       await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
                       setUiState('connected');
+                      window.showToast('Voice connected', 'success');
                   }
                   if (!snap.exists()) { await cleanupPeer(); setUiState('idle'); }
               });
@@ -792,7 +935,7 @@
                   });
               });
           } else if (existing.callerId === currentUser.id) {
-              alert('You already have a call waiting — open this on the other device to answer it.');
+              window.showToast('You already have a call open on another tab', 'error');
               await cleanupPeer();
               return;
           } else if (!existing.answer) {
@@ -804,9 +947,12 @@
               await pc.setLocalDescription(answerDesc);
               await updateDoc(roomRef, {
                   answer: { type: answerDesc.type, sdp: answerDesc.sdp },
-                  calleeId: currentUser.id, calleeName: currentUser.name, status: 'connected'
+                  calleeId: currentUser.id, calleeName: currentUser.name, status: 'connected',
+                  heartbeat: serverTimestamp()
               });
               setUiState('connected');
+              startHeartbeat();
+              window.showToast('Voice connected', 'success');
 
               unsubCandidates = onSnapshot(callerCandidatesRef, (snap) => {
                   snap.docChanges().forEach(change => {
@@ -815,7 +961,7 @@
               });
               unsubRoom = onSnapshot(roomRef, (snap) => { if (!snap.exists()) { cleanupPeer(); setUiState('idle'); } });
           } else {
-              alert('The Voice Room already has two people in it.');
+              window.showToast('The Voice Room is currently full', 'error');
               await cleanupPeer();
               return;
           }
@@ -994,8 +1140,9 @@
                 
                 items.forEach(p => { 
                   const isPdf = p.filename.toLowerCase().endsWith('.pdf');
-                  const bgImage = isPdf ? 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg' : p.url;
-                  const bgStyle = isPdf ? `background:url('${bgImage}') center/contain no-repeat; background-color: var(--glass-bg);` : `background:url('${p.url}') center/cover;`;
+                  // Uses Fast Compressed Sharp WebP Thumbnails
+                  const bgImage = isPdf ? 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg' : (p.thumbUrl || p.url);
+                  const bgStyle = isPdf ? `background:url('${bgImage}') center/contain no-repeat; background-color: var(--glass-bg);` : `background:url('${bgImage}') center/cover;`;
                   
                   gridHtml += `<div class="vault-thumb-card media-card haptic-btn" data-url="${p.url}" data-filename="${p.filename}" style="${bgStyle}"></div>`; 
                 });
@@ -1024,12 +1171,19 @@
     } catch(err) { }
   }
 
+  // Replaced crude native confirm() with in-app glass confirm
   document.getElementById('btn-delete-vault-photo').addEventListener('click', async () => {
-      if (!activeLightboxFile || !confirm(`Permanently remove ${activeLightboxFile}?`)) return;
+      if (!activeLightboxFile) return;
+      const ok = await window.showConfirm('Delete Item', `Permanently remove ${activeLightboxFile} from local storage?`);
+      if (!ok) return;
       try {
           const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/delete/${encodeURIComponent(activeLightboxFile)}`, { method: 'DELETE' });
-          if(res.ok) { document.getElementById('photo-lightbox').classList.remove('active'); initVault(); }
-      } catch(e) { alert('Delete failed'); }
+          if(res.ok) { 
+            document.getElementById('photo-lightbox').classList.remove('active'); 
+            initVault(); 
+            window.showToast('Item deleted successfully', 'success');
+          }
+      } catch(e) { window.showToast('Delete failed', 'error'); }
   });
 
   document.getElementById('vault-photo-input').addEventListener('change', async (e) => {
@@ -1041,6 +1195,7 @@
         try { await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd }); } catch(err) {}
     }
     status.textContent = 'Upload Complete ✔'; setTimeout(() => status.style.display = 'none', 3000); 
+    window.showToast('Media uploaded to Vault', 'success');
     initVault(); e.target.value = '';
   });
 </script>
