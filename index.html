@@ -258,7 +258,20 @@
     try { 
         await signInWithEmailAndPassword(auth, authEmail, pwd); 
     } catch(e) { 
-        document.getElementById('login-error-msg').style.display = 'block'; 
+        // Logged so you can see the real reason in the browser console (F12)
+        // instead of every failure looking identical.
+        console.error('[Lair Gateway] Sign-in failed:', e.code, e.message);
+        const msg = document.getElementById('login-error-msg');
+        if (e.code === 'auth/too-many-requests') {
+            msg.textContent = 'Too many attempts. Wait a few minutes and try again.';
+        } else if (e.code === 'auth/network-request-failed') {
+            msg.textContent = 'Network error — check your connection.';
+        } else if (e.code === 'auth/user-disabled') {
+            msg.textContent = 'This account has been disabled.';
+        } else {
+            msg.textContent = 'Access Denied: Invalid Credentials';
+        }
+        msg.style.display = 'block'; 
         btn.textContent = "Authenticate"; 
         fireSilentRadar('Failed Auth');
     }
