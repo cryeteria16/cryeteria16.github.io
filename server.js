@@ -17,7 +17,6 @@ const db = getFirestore();
 
 const app = express();
 
-// Whitelist only your Firebase frontend and custom domains
 const allowedOrigins = [
   'https://cryeterialoginpage.firebaseapp.com',
   'https://cryeterialoginpage.web.app',
@@ -38,14 +37,19 @@ app.use(cors({
 app.use(express.json());
 app.use(express.static(__dirname, { extensions: ['html'] }));
 
-// TOKEN VERIFICATION MIDDLEWARE
+// 1. UPGRADED TOKEN VERIFICATION (Accepts Bearer Headers OR URL Queries)
 async function verifyToken(req, res, next) {
+    let token = '';
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(401).json({ error: 'Unauthorized: Missing or invalid token format.' });
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        token = authHeader.split('Bearer ')[1];
+    } else if (req.query.token) {
+        token = req.query.token; // Required for mobile offline <a download> saves
     }
 
-    const token = authHeader.split('Bearer ')[1];
+    if (!token) return res.status(401).json({ error: 'Unauthorized: Missing token.' });
+
     try {
         const decodedToken = await getAuth().verifyIdToken(token);
         req.user = decodedToken;
@@ -72,12 +76,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// NATIVE CPU LOAD TRACKER (Zero Dependencies)
 let prevCpu = getCpuSnapshot();
 function getCpuSnapshot() {
     const cpus = os.cpus();
-    let idle = 0;
-    let total = 0;
+    let idle = 0; let total = 0;
     cpus.forEach(cpu => {
         for (const type in cpu.times) total += cpu.times[type];
         idle += cpu.times.idle;
@@ -95,19 +97,13 @@ function calculateCpuLoad() {
     return Math.max(0, Math.min(100, usage)).toFixed(1);
 }
 
-// 1. HOST TELEMETRY ENDPOINT
 app.get('/api/stats', verifyToken, (req, res) => {
     const totalMem = os.totalmem();
     const freeMem = os.freemem();
     const ramPercent = (((totalMem - freeMem) / totalMem) * 100).toFixed(1);
-    
-    res.json({
-        cpu: calculateCpuLoad(),
-        ram: ramPercent
-    });
+    res.json({ cpu: calculateCpuLoad(), ram: ramPercent });
 });
 
-// 2. WHITELISTED REMOTE TERMINAL (RCE Protected)
 const COMMAND_WHITELIST = {
     'help': 'echo Available commands: ping, ip, uptime, storage, tasks, ver',
     'ping': 'ping -n 3 8.8.8.8',
@@ -122,21 +118,13 @@ app.post('/api/terminal', verifyToken, (req, res) => {
     const rawCmd = (req.body.command || '').trim().toLowerCase();
     const targetCmd = COMMAND_WHITELIST[rawCmd];
 
-    if (!targetCmd) {
-        return res.json({ 
-            output: `Command '${rawCmd}' is not permitted. Type 'help' for safe command index.` 
-        });
-    }
+    if (!targetCmd) return res.json({ output: `Command '${rawCmd}' is not permitted. Type 'help'.` });
 
     exec(targetCmd, { timeout: 8000, windowsHide: true }, (error, stdout, stderr) => {
-        if (error) {
-            return res.json({ output: stderr || error.message });
-        }
-        res.json({ output: stdout || 'Command executed with no standard output.' });
+        res.json({ output: stdout || stderr || error.message || 'Command executed.' });
     });
 });
 
-// 3. STORAGE CAPACITY CALCULATION
 app.get('/api/storage', verifyToken, (req, res) => {
     let totalBytes = 0;
     try {
@@ -145,24 +133,21 @@ app.get('/api/storage', verifyToken, (req, res) => {
         const mFiles = fs.readdirSync(moviesDir);
         mFiles.forEach(f => totalBytes += fs.statSync(path.join(moviesDir, f)).size);
         res.json({ totalBytes, maxBytes: 100 * 1024 * 1024 * 1024 }); 
-    } catch(e) { 
-        res.status(500).json({ error: 'Storage calculation failed' }); 
-    }
+    } catch(e) { res.status(500).json({ error: 'Storage calculation failed' }); }
 });
 
-// 4. VAULT ASSETS & MEDIA LISTING
-app.use('/stream/photography', express.static(photosDir));
+app.use('/stream/photography', verifyToken, express.static(photosDir));
 
 app.get('/api/photos', verifyToken, (req, res) => {
     fs.readdir(photosDir, (err, files) => {
         if (err) return res.status(500).json({ error: 'Unable to scan directory' });
         
-        const photoList = files.filter(f => /\.(jpg|jpeg|png|webp|heic|gif|mp4|mov|m4v)$/i.test(f)).map(file => {
+        const photoList = files.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f)).map(file => {
             const stats = fs.statSync(path.join(photosDir, file));
             const timestamp = stats.birthtimeMs || stats.mtimeMs;
             return {
                 filename: file,
-                url: `${TUNNEL_URL}/stream/photography/${file}`,
+                url: `${TUNNEL_URL}/stream/photography/${file}?token=${req.query.token || ''}`,
                 size: stats.size,
                 timestamp: timestamp,
                 dateFormatted: new Date(timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
@@ -174,7 +159,7 @@ app.get('/api/photos', verifyToken, (req, res) => {
 
 app.post('/api/photos/upload', verifyToken, upload.single('photo'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    res.json({ success: true, url: `${TUNNEL_URL}/stream/photography/${req.file.filename}` });
+    res.json({ success: true });
 });
 
 app.delete('/api/photos/delete/:filename', verifyToken, (req, res) => {
@@ -183,13 +168,22 @@ app.delete('/api/photos/delete/:filename', verifyToken, (req, res) => {
     if (fs.existsSync(filePath)) { 
         fs.unlinkSync(filePath); 
         res.json({ success: true }); 
-    } else { 
-        res.status(404).json({ error: 'File not found' }); 
-    }
+    } else { res.status(404).json({ error: 'File not found' }); }
 });
 
-// 5. HTTP 206 PARTIAL CONTENT MOVIE STREAMING
-app.get('/stream/movies/:filename', (req, res) => {
+// 2. OFFLINE DOWNLOAD ENDPOINT (Airplane Mode Saves)
+app.get('/api/download/movies/:filename', verifyToken, (req, res) => {
+    const safeFilename = path.basename(req.params.filename);
+    const filePath = path.join(moviesDir, safeFilename);
+    if (!fs.existsSync(filePath)) return res.status(404).send('Not found');
+
+    res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
+    res.setHeader('Content-Type', 'application/octet-stream');
+    fs.createReadStream(filePath).pipe(res);
+});
+
+// 3. SECURED & MATHEMATICALLY SHIELDED STREAMING ENDPOINT
+app.get('/stream/movies/:filename', verifyToken, (req, res) => {
     const safeFilename = path.basename(req.params.filename);
     const filePath = path.join(moviesDir, safeFilename);
     if (!fs.existsSync(filePath)) return res.status(404).send('Not found');
@@ -202,6 +196,13 @@ app.get('/stream/movies/:filename', (req, res) => {
         const parts = range.replace(/bytes=/, "").split("-");
         const start = parseInt(parts[0], 10); 
         const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        
+        // HTTP 416 Shield: Prevents Apple Safari from crashing Node.js via erratic buffer requests
+        if (start >= fileSize || end >= fileSize) {
+            res.writeHead(416, { 'Content-Range': `bytes */${fileSize}` });
+            return res.end();
+        }
+
         const file = fs.createReadStream(filePath, {start, end});
         res.writeHead(206, { 
             'Content-Range': `bytes ${start}-${end}/${fileSize}`, 
@@ -216,10 +217,10 @@ app.get('/stream/movies/:filename', (req, res) => {
     }
 });
 
-// 6. CHOKIDAR AUTODETECT & TMDB INDEXER
+// 4. CHOKIDAR DATABASE SYNC ENGINE
 const watcher = chokidar.watch(moviesDir, { 
     persistent: true, 
-    ignoreInitial: true, 
+    ignoreInitial: false, // PRE-EXISTING FILES FIX: Scans PC on boot
     usePolling: true, 
     interval: 2000, 
     awaitWriteFinish: { stabilityThreshold: 10000, pollInterval: 2000 } 
@@ -228,22 +229,42 @@ const watcher = chokidar.watch(moviesDir, {
 watcher.on('add', async (filePath) => {
     if (!filePath.endsWith('.mp4')) return;
     const fileName = path.basename(filePath);
-    let cleanTitle = fileName.replace(/\.mp4$/, '').replace(/\./g, ' ').replace(/(1080p|720p|2160p|4k|blu-ray|bluray|x264|hevc|web-dl|HDR)/gi, '').replace(/\(\d{4}\)|\[.*?\]/g, '').trim();
+    const streamUrl = `${TUNNEL_URL}/stream/movies/${encodeURIComponent(fileName)}`;
+
     try {
+        // Prevents database duplication upon server restarts
+        const existing = await db.collection('watchlist').where('streamUrl', '==', streamUrl).get();
+        if (!existing.empty) return; 
+
+        let cleanTitle = fileName.replace(/\.mp4$/, '').replace(/\./g, ' ').replace(/(1080p|720p|2160p|4k|blu-ray|bluray|x264|hevc|web-dl|HDR)/gi, '').replace(/\(\d{4}\)|\[.*?\]/g, '').trim();
         const res = await axios.get(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}`);
         const match = res.data.results?.find(r => r.media_type === 'movie' || r.media_type === 'tv');
+        
         await db.collection('watchlist').add({
             title: match ? (match.title || match.name) : cleanTitle,
             poster: (match && match.poster_path) ? `https://image.tmdb.org/t/p/w500${match.poster_path}` : '',
             type: 'Movie (Local Vault)', 
             status: 'Want to Watch',
-            streamUrl: `${TUNNEL_URL}/stream/movies/${encodeURIComponent(fileName)}`,
+            streamUrl: streamUrl,
             addedBy: 'Lair Server', 
             timestamp: FieldValue.serverTimestamp()
         });
+        console.log(`[Lair OS] Indexed new file: ${fileName}`);
     } catch (e) { 
         console.error(`[Lair OS] Error indexing ${fileName}:`, e.message); 
     }
+});
+
+// THE GHOST-FILE KILLER
+watcher.on('unlink', async (filePath) => {
+    if (!filePath.endsWith('.mp4')) return;
+    const fileName = path.basename(filePath);
+    try {
+        const streamUrl = `${TUNNEL_URL}/stream/movies/${encodeURIComponent(fileName)}`;
+        const snapshot = await db.collection('watchlist').where('streamUrl', '==', streamUrl).get();
+        snapshot.forEach(doc => doc.ref.delete());
+        console.log(`[Lair OS] Removed deleted file from database: ${fileName}`);
+    } catch (e) { }
 });
 watcher.on('error', err => { if(err.code !== 'EBUSY') console.error(err); });
 
