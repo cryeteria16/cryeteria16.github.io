@@ -76,6 +76,9 @@
   
   .theater-container { width: 100%; max-height: 70vh; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); border: var(--glass-border); box-shadow: 0 35px 70px -15px rgba(0,0,0,0.6); position: relative; overflow: hidden; display: block; }
   
+  /* Hardware Notch Avoidance */
+  .artplayer-app { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  
   .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1); }
   .vault-thumb-card:hover { transform: scale(1.04); }
   
@@ -202,9 +205,7 @@
         </div>
         
         <div id="timeline-photos" class="vault-timeline active">
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;">
-                <div class="skeleton-box"></div><div class="skeleton-box"></div><div class="skeleton-box"></div>
-            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
         </div>
         <div id="timeline-videos" class="vault-timeline"></div>
         <div id="timeline-docs" class="vault-timeline"></div>
@@ -215,14 +216,28 @@
       <div class="theater-grid">
         <div style="display:flex; flex-direction:column; gap:28px;">
           <section class="card" style="padding:24px;">
+            
             <div class="theater-container" id="theater-frame-box" style="margin-bottom:20px;">
-              <div id="theater-player-slot" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px;">
-                  <span id="theater-placeholder-text">Select media from watchlist</span>
-              </div>
+                <div id="theater-join-overlay" style="position:absolute; inset:0; z-index:50; background:rgba(0,0,0,0.8); display:flex; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:var(--glass-blur);">
+                    <h3 style="font-family:var(--font-display); font-size:24px; margin-bottom:16px;">The Lair Theater</h3>
+                    <button id="btn-join-party" class="btn-primary haptic-btn" style="font-size:14px; padding:12px 24px;">Initialize Watch Party</button>
+                    <p style="font-size:11px; color:var(--ink-soft); margin-top:12px; text-align:center;">Required to bypass mobile autoplay blocks</p>
+                </div>
+                
+                <!-- Artplayer Container -->
+                <div id="theater-player-slot" style="width:100%; height:100%; display:none; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px;">
+                    <span id="theater-placeholder-text">Waiting for media link...</span>
+                </div>
+                
+                <!-- YouTube Container -->
+                <div id="yt-container" style="width:100%; height:100%; display:none; pointer-events:auto;">
+                    <div id="yt-player-slot"></div>
+                </div>
             </div>
+            
             <div style="display:flex; gap:14px;">
-              <input type="text" id="cowatch-url-input" placeholder="Direct Video URL (.mp4)..." style="display:none;">
-              <button class="btn-primary haptic-btn" id="btn-load-cowatch" style="display:none;">Stream</button>
+              <input type="text" id="cowatch-url-input" placeholder="Direct Video URL (.mp4 or YouTube)...">
+              <button class="btn-primary haptic-btn" id="btn-load-cowatch">Stream</button>
             </div>
           </section>
 
@@ -272,19 +287,13 @@
   const db = getFirestore(app);
   let currentUser = null;
   let activeLightboxFile = null;
-  let art = null; 
 
   const triggerHaptic = () => { 
       if(navigator.vibrate) navigator.vibrate(15);
       try {
           const iosHack = document.createElement('input');
-          iosHack.type = 'checkbox';
-          iosHack.setAttribute('switch', '');
-          iosHack.style.position = 'absolute';
-          iosHack.style.left = '-9999px';
-          document.body.appendChild(iosHack);
-          iosHack.click();
-          iosHack.remove();
+          iosHack.type = 'checkbox'; iosHack.setAttribute('switch', ''); iosHack.style.position = 'absolute'; iosHack.style.left = '-9999px';
+          document.body.appendChild(iosHack); iosHack.click(); iosHack.remove();
       } catch(e) {}
   };
   document.querySelectorAll('.haptic-btn').forEach(b => b.addEventListener('click', triggerHaptic));
@@ -293,16 +302,12 @@
   const swipeZone = document.getElementById('swipe-zone');
   
   swipeZone.addEventListener('touchstart', e => { 
-      touchStartX = e.changedTouches[0].screenX; 
-      touchStartY = e.changedTouches[0].screenY;
+      touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY;
   }, {passive: true});
   
   swipeZone.addEventListener('touchend', e => {
       if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, input, textarea, .artplayer-app')) return;
-
-      const diffX = touchStartX - e.changedTouches[0].screenX;
-      const diffY = touchStartY - e.changedTouches[0].screenY;
-      
+      const diffX = touchStartX - e.changedTouches[0].screenX; const diffY = touchStartY - e.changedTouches[0].screenY;
       if (Math.abs(diffY) > Math.abs(diffX)) return;
 
       const views = ['dashboard', 'drop', 'theater'];
@@ -315,25 +320,10 @@
       }
   }, {passive: true});
 
-  window.addEventListener('deviceorientation', (e) => {
-      if(!e.gamma || !e.beta) return;
-      document.querySelector('.os-wallpaper').style.transform = `translate(${(e.gamma / 4).toFixed(2)}px, ${(e.beta / 4).toFixed(2)}px)`;
-  });
-
-  function syncEnvironment() {
-      const now = new Date();
-      document.getElementById('clock-dxb').textContent = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Dubai', hour:'2-digit', minute:'2-digit', hour12:false });
-      document.getElementById('clock-pkt').textContent = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Karachi', hour:'2-digit', minute:'2-digit', hour12:false });
-  }
-  setInterval(syncEnvironment, 1000); syncEnvironment();
-
   async function fetchWithAuth(url, options = {}) {
       if (!auth.currentUser) return fetch(url, options);
+      if (url.includes('?token=')) return fetch(url, options); // Skip headers if using query auth
       const token = await auth.currentUser.getIdToken();
-      
-      // If we are passing the token via query string (for streams/downloads), skip the header
-      if (url.includes('?token=')) return fetch(url, options);
-
       const headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
       return fetch(url, { ...options, headers });
   }
@@ -375,7 +365,6 @@
           document.getElementById('health-text').textContent = "TUNNEL OFFLINE";
       }
   }
-  setInterval(pollSystemStats, 4000);
 
   onAuthStateChanged(auth, (user) => {
     if (!user) window.location.replace("index.html");
@@ -397,6 +386,7 @@
 
   function initOS() {
     pollSystemStats();
+    setInterval(pollSystemStats, 4000);
 
     const presenceRef = doc(db, 'users', currentUser.id);
     const setOnline = () => setDoc(presenceRef, { state: 'online', name: currentUser.name, lastActive: serverTimestamp() }, {merge: true});
@@ -429,25 +419,6 @@
         }
     });
 
-    onSnapshot(query(collection(db, 'radar_logs'), orderBy('timestamp', 'desc'), limit(12)), (snap) => {
-        const feed = document.getElementById('radar-feed');
-        feed.innerHTML = '';
-        snap.forEach(d => {
-            const data = d.data();
-            const time = data.timestamp ? data.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Just now';
-            feed.innerHTML += `<div class="radar-row" style="flex-direction:column; align-items:flex-start; padding: 12px 0;">
-                <div style="width:100%; display:flex; justify-content:space-between; margin-bottom:4px;">
-                    <span style="font-weight:600; color:var(--ink);">${data.city}, ${data.country}</span>
-                    <span style="font-family:var(--font-mono); color:var(--ink-soft);">${time}</span>
-                </div>
-                <div style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft);">
-                    ${data.ip || 'Hidden IP'} • ${data.device || 'Unknown Device'}<br>
-                    <span style="color:var(--con);">${data.type}</span>
-                </div>
-            </div>`;
-        });
-    });
-
     let currentClips = [];
     const relayIn = document.getElementById('relay-input');
     
@@ -468,8 +439,7 @@
                 `;
                 row.querySelector('.clip-copy-btn').addEventListener('click', (e) => {
                     navigator.clipboard.writeText(clip.text);
-                    e.currentTarget.textContent = 'Copied';
-                    setTimeout(() => e.currentTarget.textContent = 'Copy', 1000);
+                    e.currentTarget.textContent = 'Copied'; setTimeout(() => e.currentTarget.textContent = 'Copy', 1000);
                 });
                 list.appendChild(row);
             });
@@ -479,81 +449,183 @@
     relayIn.addEventListener('keydown', (e) => {
         if(e.key === 'Enter' && relayIn.value.trim() !== '') {
             e.preventDefault();
-            const newClip = { text: relayIn.value.trim(), by: currentUser.name, time: Date.now() };
-            const updated = [newClip, ...currentClips].slice(0, 20); 
+            const updated = [{ text: relayIn.value.trim(), by: currentUser.name, time: Date.now() }, ...currentClips].slice(0, 20); 
             setDoc(doc(db, 'system', 'relay'), { items: updated }, {merge: true});
             relayIn.value = '';
         }
     });
 
-    // WATCHLIST & THEATER DOWNLOAD ENGINE
-    onSnapshot(query(collection(db, 'watchlist'), orderBy('timestamp', 'desc')), async (snap) => {
-        const list = document.getElementById('shared-watchlist');
-        list.innerHTML = '';
-        
-        if(snap.empty) {
-            list.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Watchlist is empty. Add movies to your Vault.</p>';
-            return;
-        }
-
-        const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
-
-        snap.forEach(d => {
-            const data = d.data();
-            const rawUrl = data.streamUrl; 
-            
-            // Append token to bypass PC security lock
-            const streamUrlWithToken = `${rawUrl}?token=${token}`;
-            const dlUrl = rawUrl.replace('/stream/movies/', '/api/download/movies/') + `?token=${token}`;
-
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.style.cssText = 'flex: 0 0 140px; padding:12px; display:flex; flex-direction:column; gap:10px; background:var(--glass-bg);';
-            card.innerHTML = `
-                <div style="aspect-ratio:2/3; background:url('${data.poster || ''}') center/cover; border-radius:8px; border:var(--glass-border); background-color:#111;"></div>
-                <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${data.title}">${data.title}</div>
-                <div style="display:flex; gap:6px;">
-                    <button class="btn-primary play-btn haptic-btn" data-url="${streamUrlWithToken}" style="flex:1; padding:8px 0; font-size:11px;">Play</button>
-                    <a href="${dlUrl}" download class="btn-secondary haptic-btn" style="flex:1; padding:8px 0; font-size:11px; text-align:center;">Save</a>
-                </div>
-            `;
-            
-            card.querySelector('.play-btn').addEventListener('click', (e) => {
-                triggerHaptic();
-                document.getElementById('cowatch-url-input').value = e.currentTarget.getAttribute('data-url');
-                document.getElementById('btn-load-cowatch').click();
-            });
-            list.appendChild(card);
-        });
-    });
-
-    document.getElementById('btn-load-cowatch').addEventListener('click', () => {
-        const url = document.getElementById('cowatch-url-input').value;
-        if(!url) return;
-        
-        document.getElementById('theater-player-slot').innerHTML = ''; 
-        if(art) art.destroy();
-        
-        art = new Artplayer({
-            container: '#theater-player-slot',
-            url: url,
-            theme: '#70947A',
-            fullscreen: true,
-            setting: true,
-            playbackRate: true,
-            aspectRatio: true,
-            fastForward: true,
-            miniProgressBar: true,
-        });
-    });
-    
+    initWatchParty();
     initVault();
+  }
+
+  // --- HYBRID WATCH PARTY ENGINE (Artplayer + YouTube) ---
+  function initWatchParty() {
+      let currentSessionUrl = null;
+      let isYt = false;
+      let ytPlayer = null;
+      let art = null; 
+      let ignoreNextSync = false;
+      let wakeLock = null;
+
+      const requestWakeLock = async () => { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
+
+      // Mount YouTube API
+      const tag = document.createElement('script');
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+      const joinOverlay = document.getElementById('theater-join-overlay');
+      document.getElementById('btn-join-party').addEventListener('click', () => {
+          triggerHaptic();
+          joinOverlay.style.display = 'none';
+          document.getElementById('theater-player-slot').style.display = 'flex';
+      });
+
+      const pushState = (isPlaying, time) => {
+          if(ignoreNextSync) return;
+          setDoc(doc(db, 'system', 'watch_party'), { url: currentSessionUrl, isPlaying: isPlaying, timestamp: time, updatedAt: serverTimestamp(), updatedBy: currentUser.name });
+      };
+
+      const mountMedia = async (rawUrl) => {
+          currentSessionUrl = rawUrl;
+          document.getElementById('theater-player-slot').style.display = 'none';
+          document.getElementById('yt-container').style.display = 'none';
+
+          if (/(youtube\.com|youtu\.be)/.test(rawUrl)) {
+              isYt = true;
+              document.getElementById('yt-container').style.display = 'block';
+              
+              let videoId = '';
+              const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+              const match = rawUrl.match(ytRegex);
+              if(match) videoId = match[1];
+
+              if(art) { art.destroy(); art = null; }
+
+              if (ytPlayer && ytPlayer.loadVideoById) {
+                  ytPlayer.loadVideoById(videoId);
+              } else {
+                  if (typeof YT === 'undefined' || !YT.Player) { alert("YouTube mounting... Try again in 1s."); return; }
+                  ytPlayer = new YT.Player('yt-player-slot', {
+                      videoId: videoId, playerVars: { 'autoplay': 1, 'controls': 1 },
+                      events: {
+                          'onStateChange': (e) => {
+                              if (e.data === YT.PlayerState.PLAYING) pushState(true, ytPlayer.getCurrentTime());
+                              if (e.data === YT.PlayerState.PAUSED) pushState(false, ytPlayer.getCurrentTime());
+                          }
+                      }
+                  });
+              }
+          } else {
+              isYt = false;
+              document.getElementById('theater-player-slot').style.display = 'block';
+              if(ytPlayer && ytPlayer.stopVideo) { ytPlayer.stopVideo(); }
+              if(art) art.destroy();
+
+              // Secure Node.js PC stream dynamically injects token on mount
+              const token = await auth.currentUser.getIdToken(true);
+              const secureUrl = rawUrl.includes('?') ? `${rawUrl}&token=${token}` : `${rawUrl}?token=${token}`;
+
+              art = new Artplayer({
+                  container: '#theater-player-slot', url: secureUrl, theme: '#70947A',
+                  fullscreen: true, setting: true, playbackRate: true, aspectRatio: true, fastForward: true, miniProgressBar: true,
+                  pip: true, playsInline: true, autoOrientation: true
+              });
+
+              art.on('play', () => { requestWakeLock(); pushState(true, art.currentTime); });
+              art.on('pause', () => { if(wakeLock) { wakeLock.release(); wakeLock = null; } pushState(false, art.currentTime); });
+              art.on('seek', () => { pushState(art.playing, art.currentTime); });
+              art.on('fullscreen', (state) => {
+                  if (/iPhone/.test(navigator.userAgent) && state && art.video.webkitEnterFullscreen) {
+                      art.video.webkitEnterFullscreen(); art.fullscreen = false;
+                  }
+              });
+
+              document.addEventListener('visibilitychange', () => {
+                  if (document.visibilityState === 'visible' && art.playing) requestWakeLock();
+                  if (document.visibilityState === 'hidden' && art.playing && document.pictureInPictureEnabled && !document.pictureInPictureElement) {
+                      art.video.requestPictureInPicture().catch(() => {});
+                  }
+              });
+          }
+      };
+
+      onSnapshot(doc(db, 'system', 'watch_party'), (snap) => {
+          if(!snap.exists()) return;
+          const data = snap.data();
+          if(data.url && data.url !== currentSessionUrl) mountMedia(data.url);
+          if(data.updatedBy === currentUser.name) return; // Prevent infinite seek loop
+
+          const expectedTime = data.timestamp + (data.updatedAt ? ((Date.now() - data.updatedAt.toMillis()) / 1000) : 0);
+          ignoreNextSync = true;
+          
+          if (isYt && ytPlayer && ytPlayer.getPlayerState) {
+              if (Math.abs(ytPlayer.getCurrentTime() - expectedTime) > 2.0) ytPlayer.seekTo(expectedTime, true);
+              if (data.isPlaying && ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) ytPlayer.playVideo();
+              if (!data.isPlaying && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+          } else if (!isYt && art) {
+              if (Math.abs(art.currentTime - expectedTime) > 2.0) art.currentTime = expectedTime;
+              if (data.isPlaying && !art.playing) art.play();
+              if (!data.isPlaying && art.playing) art.pause();
+          }
+          setTimeout(() => { ignoreNextSync = false; }, 500);
+      });
+
+      // Render the Watchlist
+      onSnapshot(query(collection(db, 'watchlist'), orderBy('timestamp', 'desc')), (snap) => {
+          const list = document.getElementById('shared-watchlist');
+          list.innerHTML = '';
+          if(snap.empty) { list.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Watchlist is empty.</p>'; return; }
+
+          snap.forEach(d => {
+              const data = d.data();
+              const card = document.createElement('div');
+              card.className = 'card';
+              card.style.cssText = 'flex: 0 0 140px; padding:12px; display:flex; flex-direction:column; gap:10px; background:var(--glass-bg);';
+              card.innerHTML = `
+                  <div style="aspect-ratio:2/3; background:url('${data.poster || ''}') center/cover; border-radius:8px; border:var(--glass-border); background-color:#111;"></div>
+                  <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${data.title}">${data.title}</div>
+                  <div style="display:flex; gap:6px;">
+                      <button class="btn-primary play-btn haptic-btn" data-rawurl="${data.streamUrl}" style="flex:1; padding:8px 0; font-size:11px;">Play</button>
+                      <button class="btn-secondary save-btn haptic-btn" data-rawurl="${data.streamUrl}" style="flex:1; padding:8px 0; font-size:11px; text-align:center;">Save</button>
+                  </div>
+              `;
+              
+              card.querySelector('.play-btn').addEventListener('click', (e) => {
+                  triggerHaptic();
+                  const rawUrl = e.currentTarget.getAttribute('data-rawurl');
+                  pushState(true, 0); // Triggers network sync immediately
+                  setDoc(doc(db, 'system', 'watch_party'), { url: rawUrl, isPlaying: true, timestamp: 0, updatedAt: serverTimestamp(), updatedBy: currentUser.name });
+              });
+
+              // Fresh Token Generation On Click (Fixes 60-Minute Expiration Bug)
+              card.querySelector('.save-btn').addEventListener('click', async (e) => {
+                  e.preventDefault(); triggerHaptic();
+                  const btn = e.currentTarget; btn.textContent = "Saving...";
+                  const rawUrl = btn.getAttribute('data-rawurl');
+                  const token = await auth.currentUser.getIdToken(true); 
+                  const dlUrl = rawUrl.replace('/stream/movies/', '/api/download/movies/') + `?token=${token}`;
+                  const a = document.createElement('a'); a.href = dlUrl; a.download = ''; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                  setTimeout(() => btn.textContent = "Save", 2000);
+              });
+
+              list.appendChild(card);
+          });
+      });
+
+      document.getElementById('btn-load-cowatch').addEventListener('click', () => {
+          const url = document.getElementById('cowatch-url-input').value;
+          if(!url) return; triggerHaptic(); document.getElementById('cowatch-url-input').value = '';
+          pushState(true, 0);
+          setDoc(doc(db, 'system', 'watch_party'), { url: url, isPlaying: true, timestamp: 0, updatedAt: serverTimestamp(), updatedBy: currentUser.name });
+      });
   }
 
   document.querySelectorAll('.seg-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-          document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-          e.currentTarget.classList.add('active');
+          document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active');
           document.querySelectorAll('.vault-timeline').forEach(t => t.classList.remove('active'));
           document.getElementById(`timeline-${e.currentTarget.getAttribute('data-seg')}`).classList.add('active');
       });
@@ -561,49 +633,32 @@
 
   async function initVault() {
     try {
-      const [storageRes, filesRes] = await Promise.all([
-          fetchWithAuth(`${TUNNEL_URL}/api/storage`),
-          fetchWithAuth(`${TUNNEL_URL}/api/photos`)
-      ]);
-
+      const [storageRes, filesRes] = await Promise.all([ fetchWithAuth(`${TUNNEL_URL}/api/storage`), fetchWithAuth(`${TUNNEL_URL}/api/photos`) ]);
       if(storageRes.ok) {
           const s = await storageRes.json();
-          const gb = (s.totalBytes / (1024*1024*1024)).toFixed(1);
-          const pct = Math.min(100, Math.round((s.totalBytes / s.maxBytes) * 100));
-          document.getElementById('drop-usage-text').textContent = `${gb}GB`;
-          document.getElementById('drop-gauge').style.setProperty('--pct', pct);
+          document.getElementById('drop-usage-text').textContent = `${(s.totalBytes / (1024*1024*1024)).toFixed(1)}GB`;
+          document.getElementById('drop-gauge').style.setProperty('--pct', Math.min(100, Math.round((s.totalBytes / s.maxBytes) * 100)));
       }
-
       if(filesRes.ok) {
           const allFiles = await filesRes.json();
-          const photos = allFiles.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f.filename));
-          const videos = allFiles.filter(f => /\.(mp4|mov|m4v)$/i.test(f.filename));
-
           const renderGrid = (list, containerId) => {
               const container = document.getElementById(containerId);
               if(!list.length) { container.innerHTML = '<p style="color:var(--ink-soft); font-size:13px; text-align:center;">Empty directory.</p>'; return; }
-              
               const grouped = {}; 
               list.forEach(p => { if(!grouped[p.dateFormatted]) grouped[p.dateFormatted] = []; grouped[p.dateFormatted].push(p); });
               container.innerHTML = '';
               for(const [dateStr, items] of Object.entries(grouped)) {
                 let gridHtml = `<div><h3 style="font-family:var(--font-mono); font-size:12px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px;">${dateStr}</h3><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;">`;
-                items.forEach(p => { 
-                    gridHtml += `<div class="vault-thumb-card media-card haptic-btn" data-url="${p.url}" data-filename="${p.filename}" style="background:url('${p.url}') center/cover;"></div>`; 
-                });
+                items.forEach(p => { gridHtml += `<div class="vault-thumb-card media-card haptic-btn" data-url="${p.url}" data-filename="${p.filename}" style="background:url('${p.url}') center/cover;"></div>`; });
                 container.innerHTML += gridHtml + `</div></div>`;
               }
           };
-          
-          renderGrid(photos, 'timeline-photos');
-          renderGrid(videos, 'timeline-videos');
-
+          renderGrid(allFiles.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f.filename)), 'timeline-photos');
+          renderGrid(allFiles.filter(f => /\.(mp4|mov|m4v)$/i.test(f.filename)), 'timeline-videos');
           document.querySelectorAll('.media-card').forEach(card => {
             card.addEventListener('click', () => {
-              triggerHaptic();
-              activeLightboxFile = card.getAttribute('data-filename');
-              document.getElementById('lightbox-img').src = card.getAttribute('data-url');
-              document.getElementById('photo-lightbox').classList.add('active');
+              triggerHaptic(); activeLightboxFile = card.getAttribute('data-filename');
+              document.getElementById('lightbox-img').src = card.getAttribute('data-url'); document.getElementById('photo-lightbox').classList.add('active');
             });
           });
       }
@@ -611,34 +666,23 @@
   }
 
   document.getElementById('btn-delete-vault-photo').addEventListener('click', async () => {
-      if (!activeLightboxFile) return;
-      if (!confirm(`Permanently remove ${activeLightboxFile}?`)) return;
+      if (!activeLightboxFile || !confirm(`Permanently remove ${activeLightboxFile}?`)) return;
       try {
           const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/delete/${encodeURIComponent(activeLightboxFile)}`, { method: 'DELETE' });
-          if(res.ok) {
-              document.getElementById('photo-lightbox').classList.remove('active');
-              initVault();
-          }
+          if(res.ok) { document.getElementById('photo-lightbox').classList.remove('active'); initVault(); }
       } catch(e) { alert('Delete failed'); }
   });
 
   document.getElementById('vault-photo-input').addEventListener('change', async (e) => {
-    const files = e.target.files;
-    if(!files.length) return;
-    const status = document.getElementById('vault-status'); 
-    status.style.display = 'block';
-    
+    const files = e.target.files; if(!files.length) return;
+    const status = document.getElementById('vault-status'); status.style.display = 'block';
     for(let i=0; i<files.length; i++) {
         status.textContent = `Uploading ${i+1}/${files.length}: ${files[i].name}...`;
-        const fd = new FormData();
-        fd.append('photo', files[i]);
+        const fd = new FormData(); fd.append('photo', files[i]);
         try { await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd }); } catch(err) {}
     }
-    
-    status.textContent = 'Upload Complete ✔'; 
-    setTimeout(() => status.style.display = 'none', 3000); 
-    initVault(); 
-    e.target.value = '';
+    status.textContent = 'Upload Complete ✔'; setTimeout(() => status.style.display = 'none', 3000); 
+    initVault(); e.target.value = '';
   });
 </script>
 </body>
