@@ -10,10 +10,17 @@ const axios = require('axios');
 const multer = require('multer');
 const chokidar = require('chokidar');
 const jwt = require('jsonwebtoken');
-const sharp = require('sharp');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
+
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { google } = require('googleapis');
+
+// Safe Sharp Loader (Prevents Windows compilation crashes from killing the server)
+let sharp;
+try { sharp = require('sharp'); } 
+catch (e) { console.warn('[Lair OS] Sharp module unavailable. WebP compression bypassed.'); }
 
 const serviceAccount = require('./serviceAccountKey.json');
 initializeApp({ credential: cert(serviceAccount) });
@@ -22,9 +29,7 @@ const db = getFirestore();
 const app = express();
 
 const STREAM_SECRET = process.env.STREAM_TOKEN_SECRET;
-if (!STREAM_SECRET) {
-  console.warn('[Lair OS] WARNING: STREAM_TOKEN_SECRET is not set in .env.');
-}
+if (!STREAM_SECRET) console.warn('[Lair OS] WARNING: STREAM_TOKEN_SECRET is not set in .env.');
 
 function issueStreamToken(uid, filename, hours = 6) {
   if (!STREAM_SECRET) throw new Error('STREAM_TOKEN_SECRET not configured');
@@ -41,11 +46,8 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(null, false);
-    }
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) callback(null, true);
+    else callback(null, false);
   },
   credentials: true
 }));
@@ -60,23 +62,16 @@ async function verifyToken(req, res, next) {
     try {
       const payload = jwt.verify(streamToken, STREAM_SECRET);
       const requestedFile = req.params.filename ? path.basename(req.params.filename) : null;
-      if (requestedFile && payload.filename !== requestedFile) {
-        return res.status(403).json({ error: 'Forbidden: token does not match this file.' });
-      }
+      if (requestedFile && payload.filename !== requestedFile) return res.status(403).json({ error: 'Forbidden' });
       req.user = { uid: payload.uid };
       return next();
-    } catch (e) {
-      return res.status(403).json({ error: 'Forbidden: invalid or expired stream token.' });
-    }
+    } catch (e) { return res.status(403).json({ error: 'Forbidden' }); }
   }
 
   let token = '';
   const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.split('Bearer ')[1];
-  } else if (req.query.token) {
-    token = req.query.token;
-  }
+  if (authHeader && authHeader.startsWith('Bearer ')) token = authHeader.split('Bearer ')[1];
+  else if (req.query.token) token = req.query.token;
 
   if (!token) return res.status(401).json({ error: 'Unauthorized: Missing token.' });
 
@@ -84,20 +79,14 @@ async function verifyToken(req, res, next) {
     const decodedToken = await getAuth().verifyIdToken(token);
     req.user = decodedToken;
     next();
-  } catch (error) {
-    return res.status(403).json({ error: 'Forbidden: Expired or forged token.' });
-  }
+  } catch (error) { return res.status(403).json({ error: 'Forbidden: Expired token.' }); }
 }
 
 app.post('/api/stream-token', verifyToken, (req, res) => {
   const filename = path.basename(req.body.filename || '');
-  if (!filename) return res.status(400).json({ error: 'filename is required' });
-  try {
-    const token = issueStreamToken(req.user.uid, filename, 6);
-    res.json({ token });
-  } catch (e) {
-    res.status(503).json({ error: 'Streaming temporarily unavailable.' });
-  }
+  if (!filename) return res.status(400).json({ error: 'filename required' });
+  try { res.json({ token: issueStreamToken(req.user.uid, filename, 6) }); } 
+  catch (e) { res.status(503).json({ error: 'Streaming unavailable.' }); }
 });
 
 const TUNNEL_URL = 'https://vault.ibadhasan.com';
@@ -106,10 +95,12 @@ const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const moviesDir = path.join(__dirname, 'Movies');
 const photosDir = path.join(__dirname, 'Photography');
 const thumbsDir = path.join(photosDir, '.thumbs');
+const invoicesDir = path.join(__dirname, 'Invoices');
 
 if (!fs.existsSync(moviesDir)) fs.mkdirSync(moviesDir);
 if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir);
 if (!fs.existsSync(thumbsDir)) fs.mkdirSync(thumbsDir, { recursive: true });
+if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir);
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, photosDir),
@@ -119,8 +110,46 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage: storage });
+const uploadInvoice = multer({ dest: invoicesDir });
+
+app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    try {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        
+        const fileBytes = fs.readFileSync(req.file.path);
+        const base64Data = fileBytes.toString("base64");
+        
+        const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
+        
+        const result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: "application/pdf" } } ]);
+        let rawText = result.response.text().trim();
+        if (rawText.startsWith('```json')) rawText = rawText.replace(/^```json/, '').replace(/```$/, '').trim();
+        
+        const data = JSON.parse(rawText);
+        fs.unlinkSync(req.file.path); 
+        res.json(data);
+    } catch(e) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.status(500).json({ error: 'Extraction failed or invalid PDF format' });
+    }
+});
+
+app.post('/api/work/sync', verifyToken, async (req, res) => {
+    try {
+        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['[https://www.googleapis.com/auth/spreadsheets](https://www.googleapis.com/auth/spreadsheets)'] });
+        const sheets = google.sheets({ version: 'v4', auth: authClient });
+        await sheets.spreadsheets.values.append({
+            spreadsheetId: '1NaObt-gwnmsn8Ouv1onbF4UUuFiiaPZPZj-pLU3G6SM',
+            range: 'Sheet1!A:H', valueInputOption: 'USER_ENTERED', requestBody: { values: req.body.rows }
+        });
+        res.json({ success: true });
+    } catch(e) { res.status(500).json({ error: 'Failed to sync with Sheets Matrix' }); }
+});
 
 async function generateThumbnail(filename) {
+  if (!sharp) return null;
   const ext = path.extname(filename).toLowerCase();
   if (!['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) return null;
   const sourcePath = path.join(photosDir, filename);
@@ -129,45 +158,32 @@ async function generateThumbnail(filename) {
   
   if (fs.existsSync(thumbPath)) return thumbName;
   try {
-    await sharp(sourcePath)
-      .resize(320, 320, { fit: 'cover' })
-      .webp({ quality: 80 })
-      .toFile(thumbPath);
+    await sharp(sourcePath).resize(320, 320, { fit: 'cover' }).webp({ quality: 80 }).toFile(thumbPath);
     return thumbName;
-  } catch (e) {
-    return null;
-  }
+  } catch (e) { return null; }
 }
 
-let prevCpu = getCpuSnapshot();
+let prevCpu = { idle: 0, total: 0 };
 function getCpuSnapshot() {
     const cpus = os.cpus();
     let idle = 0; let total = 0;
-    cpus.forEach(cpu => {
-        for (const type in cpu.times) total += cpu.times[type];
-        idle += cpu.times.idle;
-    });
+    cpus.forEach(cpu => { for (const type in cpu.times) total += cpu.times[type]; idle += cpu.times.idle; });
     return { idle: idle / cpus.length, total: total / cpus.length };
 }
 
-function calculateCpuLoad() {
-    const current = getCpuSnapshot();
-    const idleDiff = current.idle - prevCpu.idle;
-    const totalDiff = current.total - prevCpu.total;
-    prevCpu = current;
-    if (totalDiff === 0) return "0.0";
-    const usage = 100 - (100 * idleDiff / totalDiff);
-    return Math.max(0, Math.min(100, usage)).toFixed(1);
-}
-
 app.get('/api/stats', verifyToken, (req, res) => {
-    const totalMem = os.totalmem();
-    const freeMem = os.freemem();
-    const ramPercent = (((totalMem - freeMem) / totalMem) * 100).toFixed(1);
-    res.json({ cpu: calculateCpuLoad(), ram: ramPercent });
+    try {
+        const current = getCpuSnapshot();
+        const idleDiff = current.idle - prevCpu.idle;
+        const totalDiff = current.total - prevCpu.total;
+        prevCpu = current;
+        const usage = totalDiff === 0 ? "0.0" : Math.max(0, Math.min(100, 100 - (100 * idleDiff / totalDiff))).toFixed(1);
+        const totalMem = os.totalmem(); const freeMem = os.freemem();
+        const ramPercent = (((totalMem - freeMem) / totalMem) * 100).toFixed(1);
+        res.json({ cpu: usage, ram: ramPercent });
+    } catch(e) { res.json({ cpu: "0.0", ram: "0.0" }); }
 });
 
-// Remote Mobile Commands added to Whitelist
 const COMMAND_WHITELIST = {
     'help': 'echo Available commands: ping, ip, uptime, storage, tasks, ver, git pull, git status',
     'ping': 'ping -n 3 8.8.8.8',
@@ -175,17 +191,13 @@ const COMMAND_WHITELIST = {
     'uptime': 'net statistics workstation',
     'storage': 'powershell -command "Get-Volume | Select-Object DriveLetter, FileSystemLabel, SizeRemaining, Size"',
     'tasks': 'tasklist /fi "STATUS eq running" /fo table /nh',
-    'ver': 'ver',
-    'git pull': 'git pull',
-    'git status': 'git status -s'
+    'ver': 'ver', 'git pull': 'git pull', 'git status': 'git status -s'
 };
 
 app.post('/api/terminal', verifyToken, (req, res) => {
     const rawCmd = (req.body.command || '').trim().toLowerCase();
     const targetCmd = COMMAND_WHITELIST[rawCmd];
-
     if (!targetCmd) return res.json({ output: `Command '${rawCmd}' is not permitted. Type 'help'.` });
-
     exec(targetCmd, { timeout: 12000, windowsHide: true }, (error, stdout, stderr) => {
         res.json({ output: stdout || stderr || (error ? error.message : '') || 'Command executed.' });
     });
@@ -194,14 +206,10 @@ app.post('/api/terminal', verifyToken, (req, res) => {
 app.get('/api/storage', verifyToken, (req, res) => {
     let totalBytes = 0;
     try {
-        const pFiles = fs.readdirSync(photosDir);
-        pFiles.forEach(f => {
-          if (f !== '.thumbs') totalBytes += fs.statSync(path.join(photosDir, f)).size;
-        });
-        const mFiles = fs.readdirSync(moviesDir);
-        mFiles.forEach(f => totalBytes += fs.statSync(path.join(moviesDir, f)).size);
+        if (fs.existsSync(photosDir)) fs.readdirSync(photosDir).forEach(f => { if (f !== '.thumbs') { try { totalBytes += fs.statSync(path.join(photosDir, f)).size; } catch(err) {} } });
+        if (fs.existsSync(moviesDir)) fs.readdirSync(moviesDir).forEach(f => { try { totalBytes += fs.statSync(path.join(moviesDir, f)).size; } catch(err) {} });
         res.json({ totalBytes, maxBytes: 100 * 1024 * 1024 * 1024 });
-    } catch(e) { res.status(500).json({ error: 'Storage calculation failed' }); }
+    } catch(e) { res.json({ totalBytes: 0, maxBytes: 100 * 1024 * 1024 * 1024 }); }
 });
 
 app.use('/stream/photography', verifyToken, express.static(photosDir));
@@ -210,43 +218,37 @@ app.get('/stream/photography/thumb/:filename', verifyToken, async (req, res) => 
     const safeFilename = path.basename(req.params.filename);
     const thumbName = `${safeFilename}.webp`;
     const thumbPath = path.join(thumbsDir, thumbName);
-    
-    if (fs.existsSync(thumbPath)) {
-      return res.sendFile(thumbPath);
-    }
+    if (fs.existsSync(thumbPath)) return res.sendFile(thumbPath);
     const created = await generateThumbnail(safeFilename);
-    if (created && fs.existsSync(thumbPath)) {
-      return res.sendFile(thumbPath);
-    }
+    if (created && fs.existsSync(thumbPath)) return res.sendFile(thumbPath);
     const originalPath = path.join(photosDir, safeFilename);
-    if (fs.existsSync(originalPath)) {
-      return res.sendFile(originalPath);
-    }
+    if (fs.existsSync(originalPath)) return res.sendFile(originalPath);
     res.status(404).send('Not found');
 });
 
-app.get('/api/photos', verifyToken, async (req, res) => {
-    fs.readdir(photosDir, async (err, files) => {
-        if (err) return res.status(500).json({ error: 'Unable to scan directory' });
-        
-        const validFiles = files.filter(f => f !== '.thumbs' && /\.(jpg|jpeg|png|webp|heic|gif|mp4|mov|m4v|pdf)$/i.test(f));
-        const photoList = validFiles.map(file => {
-            const stats = fs.statSync(path.join(photosDir, file));
-            const timestamp = stats.birthtimeMs || stats.mtimeMs;
-            let url = `${TUNNEL_URL}/stream/photography/${encodeURIComponent(file)}`;
-            let thumbUrl = `${TUNNEL_URL}/stream/photography/thumb/${encodeURIComponent(file)}`;
+app.get('/api/photos', verifyToken, (req, res) => {
+    try {
+        if (!fs.existsSync(photosDir)) return res.json([]);
+        const files = fs.readdirSync(photosDir).filter(f => f !== '.thumbs' && /\.(jpg|jpeg|png|webp|heic|gif|mp4|mov|m4v|pdf)$/i.test(f));
+        const photoList = [];
+        files.forEach(file => {
             try {
-                const streamToken = issueStreamToken(req.user.uid, file, 12);
-                url += `?stream_token=${streamToken}`;
-                thumbUrl += `?stream_token=${streamToken}`;
-            } catch (e) { }
-            return {
-                filename: file, url, thumbUrl, size: stats.size, timestamp: timestamp,
-                dateFormatted: new Date(timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-            };
-        }).sort((a, b) => b.timestamp - a.timestamp);
-        res.json(photoList);
-    });
+                const stats = fs.statSync(path.join(photosDir, file));
+                const timestamp = stats.birthtimeMs || stats.mtimeMs || Date.now();
+                let url = `${TUNNEL_URL}/stream/photography/${encodeURIComponent(file)}`;
+                let thumbUrl = `${TUNNEL_URL}/stream/photography/thumb/${encodeURIComponent(file)}`;
+                try {
+                    const streamToken = issueStreamToken(req.user.uid, file, 12);
+                    url += `?stream_token=${streamToken}`; thumbUrl += `?stream_token=${streamToken}`;
+                } catch (e) {}
+                photoList.push({
+                    filename: file, url, thumbUrl, size: stats.size, timestamp: timestamp,
+                    dateFormatted: new Date(timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+                });
+            } catch(err) {}
+        });
+        res.json(photoList.sort((a, b) => b.timestamp - a.timestamp));
+    } catch(err) { res.json([]); }
 });
 
 app.post('/api/photos/upload', verifyToken, upload.single('photo'), async (req, res) => {
@@ -259,18 +261,17 @@ app.delete('/api/photos/delete/:filename', verifyToken, (req, res) => {
     const safeFilename = path.basename(req.params.filename);
     const filePath = path.join(photosDir, safeFilename);
     const thumbPath = path.join(thumbsDir, `${safeFilename}.webp`);
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
+    try {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
         if (fs.existsSync(thumbPath)) fs.unlinkSync(thumbPath);
         res.json({ success: true });
-    } else { res.status(404).json({ error: 'File not found' }); }
+    } catch(e) { res.status(500).json({ error: 'Deletion failed' }); }
 });
 
 app.get('/api/download/movies/:filename', verifyToken, (req, res) => {
     const safeFilename = path.basename(req.params.filename);
     const filePath = path.join(moviesDir, safeFilename);
     if (!fs.existsSync(filePath)) return res.status(404).send('Not found');
-
     res.setHeader('Content-Disposition', `attachment; filename="${safeFilename}"`);
     res.setHeader('Content-Type', 'application/octet-stream');
     fs.createReadStream(filePath).pipe(res);
@@ -280,30 +281,13 @@ app.get('/stream/movies/:filename', verifyToken, (req, res) => {
     const safeFilename = path.basename(req.params.filename);
     const filePath = path.join(moviesDir, safeFilename);
     if (!fs.existsSync(filePath)) return res.status(404).send('Not found');
-
-    const stat = fs.statSync(filePath);
-    const fileSize = stat.size;
-    const range = req.headers.range;
-
+    const stat = fs.statSync(filePath); const fileSize = stat.size; const range = req.headers.range;
     if (range) {
-        const parts = range.replace(/bytes=/, "").split("-");
-        const start = parseInt(parts[0], 10);
-        const CHUNK_SIZE = 5 * 1024 * 1024;
-        const end = parts[1] ? parseInt(parts[1], 10) : Math.min(start + CHUNK_SIZE - 1, fileSize - 1);
-
-        if (start >= fileSize || end >= fileSize) {
-            res.writeHead(416, { 'Content-Range': `bytes */${fileSize}` });
-            return res.end();
-        }
-
-        const file = fs.createReadStream(filePath, {start, end});
-        res.writeHead(206, {
-            'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-            'Accept-Ranges': 'bytes',
-            'Content-Length': (end - start) + 1,
-            'Content-Type': 'video/mp4'
-        });
-        file.pipe(res);
+        const parts = range.replace(/bytes=/, "").split("-"); const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : Math.min(start + (5 * 1024 * 1024) - 1, fileSize - 1);
+        if (start >= fileSize || end >= fileSize) { res.writeHead(416, { 'Content-Range': `bytes */${fileSize}` }); return res.end(); }
+        res.writeHead(206, { 'Content-Range': `bytes ${start}-${end}/${fileSize}`, 'Accept-Ranges': 'bytes', 'Content-Length': (end - start) + 1, 'Content-Type': 'video/mp4' });
+        fs.createReadStream(filePath, {start, end}).pipe(res);
     } else {
         res.writeHead(200, { 'Content-Length': fileSize, 'Content-Type': 'video/mp4' });
         fs.createReadStream(filePath).pipe(res);
@@ -313,64 +297,16 @@ app.get('/stream/movies/:filename', verifyToken, (req, res) => {
 app.get('/api/tmdb/search', verifyToken, async (req, res) => {
     const query = (req.query.q || '').trim();
     if (!query) return res.json({ results: [] });
-    if (!TMDB_API_KEY) return res.status(503).json({ error: 'TMDB_API_KEY not configured on server.' });
+    if (!TMDB_API_KEY) return res.status(503).json({ error: 'TMDB_API_KEY not configured.' });
     try {
-        const tmdbRes = await axios.get('https://api.themoviedb.org/3/search/multi', {
-            params: { api_key: TMDB_API_KEY, query, include_adult: false }
-        });
-        const results = (tmdbRes.data.results || [])
-            .filter(r => r.media_type === 'movie' || r.media_type === 'tv')
-            .slice(0, 12)
-            .map(r => ({
-                id: r.id, title: r.title || r.name,
-                year: (r.release_date || r.first_air_date || '').slice(0, 4),
-                poster: r.poster_path ? `https://image.tmdb.org/t/p/w300${r.poster_path}` : '',
-                type: r.media_type === 'movie' ? 'Movie' : 'TV Show'
-            }));
+        const tmdbRes = await axios.get('[https://api.themoviedb.org/3/search/multi](https://api.themoviedb.org/3/search/multi)', { params: { api_key: TMDB_API_KEY, query, include_adult: false } });
+        const results = (tmdbRes.data.results || []).filter(r => r.media_type === 'movie' || r.media_type === 'tv').slice(0, 12).map(r => ({
+            id: r.id, title: r.title || r.name, year: (r.release_date || r.first_air_date || '').slice(0, 4),
+            poster: r.poster_path ? `[https://image.tmdb.org/t/p/w300$](https://image.tmdb.org/t/p/w300$){r.poster_path}` : '', type: r.media_type === 'movie' ? 'Movie' : 'TV Show'
+        }));
         res.json({ results });
-    } catch (e) {
-        res.status(502).json({ error: 'TMDB lookup failed.' });
-    }
+    } catch (e) { res.status(502).json({ error: 'TMDB lookup failed.' }); }
 });
 
-const watcher = chokidar.watch(moviesDir, {
-    persistent: true, ignoreInitial: false, usePolling: true,
-    interval: 2000, awaitWriteFinish: { stabilityThreshold: 10000, pollInterval: 2000 }
-});
-
-watcher.on('add', async (filePath) => {
-    if (!filePath.endsWith('.mp4')) return;
-    const fileName = path.basename(filePath);
-    const streamUrl = `${TUNNEL_URL}/stream/movies/${encodeURIComponent(fileName)}`;
-
-    try {
-        const existing = await db.collection('watchlist').where('streamUrl', '==', streamUrl).get();
-        if (!existing.empty) return;
-
-        let cleanTitle = fileName.replace(/\.mp4$/, '').replace(/\./g, ' ').replace(/(1080p|720p|2160p|4k|blu-ray|bluray|x264|hevc|web-dl|HDR)/gi, '').replace(/\(\d{4}\)|\[.*?\]/g, '').trim();
-        const tmdbRes = await axios.get(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(cleanTitle)}`);
-        const match = tmdbRes.data.results?.find(r => r.media_type === 'movie' || r.media_type === 'tv');
-
-        await db.collection('watchlist').add({
-            title: match ? (match.title || match.name) : cleanTitle,
-            poster: (match && match.poster_path) ? `https://image.tmdb.org/t/p/w500${match.poster_path}` : '',
-            type: 'Movie (Local Vault)', status: 'Want to Watch',
-            streamUrl: streamUrl, addedBy: 'Lair Server', timestamp: FieldValue.serverTimestamp()
-        });
-        console.log(`[Lair OS] Indexed new file: ${fileName}`);
-    } catch (e) { }
-});
-
-watcher.on('unlink', async (filePath) => {
-    if (!filePath.endsWith('.mp4')) return;
-    const fileName = path.basename(filePath);
-    try {
-        const streamUrl = `${TUNNEL_URL}/stream/movies/${encodeURIComponent(fileName)}`;
-        const snapshot = await db.collection('watchlist').where('streamUrl', '==', streamUrl).get();
-        snapshot.forEach(doc => doc.ref.delete());
-    } catch (e) { }
-});
-watcher.on('error', err => { if(err.code !== 'EBUSY') console.error(err); });
-
-const PORT = process.env.PORT || 3000;
+const PORT = 3005;
 app.listen(PORT, () => console.log(`[Lair OS] Engine running securely on port ${PORT}`));
