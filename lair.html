@@ -42,8 +42,6 @@
   }
 
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
-  
-  /* Clean Scrollbars Across the OS */
   ::-webkit-scrollbar { display: none; }
   * { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -58,21 +56,23 @@
   @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(112, 148, 122, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(112, 148, 122, 0); } 100% { box-shadow: 0 0 0 0 rgba(112, 148, 122, 0); } }
   .sys-dot { width: 7px; height: 7px; border-radius: 50%; display:inline-block; transition: 0.3s; }
   .sys-dot.pulse { animation: pulse-dot 2.5s infinite cubic-bezier(0.45, 0, 0.55, 1); }
-  
-  #broadcast-banner { display:none; width:100%; background:var(--accent); color:#000; font-family:var(--font-mono); font-size:12px; font-weight:600; text-align:center; padding:10px; z-index:1000; position:fixed; top:0; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);}
 
-  .os-dock-wrapper { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: 0; width: 100%; display: flex; justify-content: center; z-index: 900; pointer-events: none; }
+  #broadcast-banner { display:none; width:100%; background:var(--accent); color:#000; font-family:var(--font-mono); font-size:12px; font-weight:600; text-align:center; padding:10px; z-index:10000; position:fixed; top:0; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);}
+  #toast-container { position: fixed; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .lair-toast { background: rgba(14, 15, 20, 0.88); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); box-shadow: var(--liquid-edge), var(--glass-glow); color: var(--ink); padding: 11px 22px; border-radius: 40px; font-size: 13px; font-weight: 500; animation: toastUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; display: flex; align-items: center; gap: 10px; pointer-events: auto; }
+  @keyframes toastUp { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .lair-toast.success { border-color: rgba(112, 148, 122, 0.4); }
+  .lair-toast.error { border-color: rgba(217, 83, 79, 0.4); }
+
+  .os-dock-wrapper { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: 0; width: 100%; display: flex; justify-content: center; z-index: 9999; pointer-events: none; }
   .os-dock { background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); box-shadow: var(--liquid-edge), var(--glass-glow); border-radius: 36px; padding: 6px 8px; display: flex; gap: 6px; pointer-events: auto; transition: background 0.4s ease; }
   .dock-app { padding: 9px 20px; border-radius: 26px; color: var(--ink-soft); font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
   .dock-app.active { background: var(--ink); color: var(--bg); font-weight: 600; box-shadow: 0 6px 16px -3px rgba(0, 0, 0, 0.25); }
   .dock-app:active { transform: scale(0.92); }
 
-  main { padding: 90px 32px 100px; max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; min-height: 100vh; }
+  main { padding: 90px 32px 100px; max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; min-height: 100vh; position: relative; z-index: 10; }
   
-  @keyframes cardSlideUp {
-    from { opacity: 0; transform: translateY(20px) scale(0.985); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
-  }
+  @keyframes cardSlideUp { from { opacity: 0; transform: translateY(20px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
   
   .card { 
     background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); 
@@ -82,17 +82,13 @@
   }
   .card:hover { transform: translateY(-3px); box-shadow: var(--liquid-edge), 0 30px 60px -10px rgba(0,0,0,0.85); border-color: rgba(255,255,255,0.18); }
   
-  /* Ambient Contextual Glow for Active Remote Typing */
   @keyframes ambientBreath {
     0%, 100% { box-shadow: var(--liquid-edge), 0 0 25px -4px rgba(112, 148, 122, 0.35), var(--glass-glow); border-color: rgba(112, 148, 122, 0.5); }
     50% { box-shadow: var(--liquid-edge), 0 0 45px 4px rgba(112, 148, 122, 0.70), var(--glass-glow); border-color: rgba(112, 148, 122, 0.85); }
   }
   .ambient-typing { animation: ambientBreath 2s infinite ease-in-out !important; }
 
-  .stagger-1 { animation-delay: 0.04s; }
-  .stagger-2 { animation-delay: 0.09s; }
-  .stagger-3 { animation-delay: 0.14s; }
-  .stagger-4 { animation-delay: 0.19s; }
+  .stagger-1 { animation-delay: 0.04s; } .stagger-2 { animation-delay: 0.09s; } .stagger-3 { animation-delay: 0.14s; } .stagger-4 { animation-delay: 0.19s; }
 
   .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
   .card-head h2 { font-family:var(--font-display); font-size:19px; font-weight:500; }
@@ -107,7 +103,6 @@
   .btn-secondary:hover { transform: scale(1.02); background: rgba(255,255,255,0.08); }
   .btn-secondary:active { transform: scale(0.95); }
 
-  /* Elastic Carousel Snapping */
   .carousel-snap { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
   .carousel-snap > * { scroll-snap-align: start; flex-shrink: 0; }
 
@@ -124,7 +119,6 @@
   @media (max-width: 1024px) { .theater-grid { grid-template-columns: 1fr; } }
   
   .theater-container { width: 100%; max-height: 70vh; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); border: var(--glass-border); box-shadow: 0 35px 70px -15px rgba(0,0,0,0.6); position: relative; overflow: hidden; display: block; }
-  
   .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
   .vault-thumb-card:hover { transform: scale(1.05); }
 
@@ -134,7 +128,7 @@
   .view-container { display: none; opacity: 0; } 
   .view-container.active { display: block; animation: cardSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px; animation: cardSlideUp 0.3s forwards; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); display:none; align-items:center; justify-content:center; z-index:10000; padding:24px; animation: cardSlideUp 0.3s forwards; }
   .modal-overlay.active { display:flex; }
 
   .voice-orb { width: 170px; height: 170px; border-radius: 50%; margin: 0 auto 26px; background: radial-gradient(circle at 35% 30%, rgba(112,148,122,0.9), rgba(112,148,122,0.15) 70%); display:flex; align-items:center; justify-content:center; box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 20px 60px -10px rgba(112,148,122,0.5); transition: box-shadow 0.15s ease, transform 0.15s ease; }
@@ -146,12 +140,6 @@
   .voice-btn:active { transform: scale(0.92); }
   .voice-btn.danger { background: var(--err); color:#fff; }
   .voice-btn.muted { background: var(--warn); color:#000; }
-
-  #toast-container { position: fixed; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 1100; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-  .lair-toast { background: rgba(14, 15, 20, 0.88); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); box-shadow: var(--liquid-edge), var(--glass-glow); color: var(--ink); padding: 11px 22px; border-radius: 40px; font-size: 13px; font-weight: 500; animation: toastUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; display: flex; align-items: center; gap: 10px; pointer-events: auto; }
-  @keyframes toastUp { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-  .lair-toast.success { border-color: rgba(112, 148, 122, 0.4); }
-  .lair-toast.error { border-color: rgba(217, 83, 79, 0.4); }
 </style>
 </head>
 <body data-theme="dark">
@@ -176,6 +164,7 @@
   <div class="os-dock-wrapper">
     <div class="os-dock">
       <div class="dock-app app-link active haptic-btn" data-target="dashboard">Dashboard</div>
+      <div class="dock-app app-link haptic-btn" data-target="work" id="dock-work-link">Work</div>
       <div class="dock-app app-link haptic-btn" data-target="drop">Vault</div>
       <div class="dock-app app-link haptic-btn" data-target="theater" id="dock-theater-link">Theater</div>
       <div class="dock-app app-link haptic-btn" data-target="voice" id="dock-voice-link">Voice</div>
@@ -247,6 +236,27 @@
       </div>
     </section>
 
+    <!-- NEW WORK TAB: Auditor Pro Web App Integration -->
+    <section id="view-work" class="view-container">
+      <div class="card stagger-1" style="padding: 0; overflow: hidden; height: 80vh; min-height: 700px; display: flex; flex-direction: column;">
+        <div style="background: var(--glass-nav); padding: 12px 24px; border-bottom: var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
+          <h2 style="font-family: var(--font-display); font-size: 16px; font-weight: 500;">Financial Ledger</h2>
+          <div style="display: flex; gap: 8px;">
+            <span class="sys-dot pulse" style="color: var(--con);"></span>
+            <span style="font-family: var(--font-mono); font-size: 10px; color: var(--con); text-transform: uppercase;">Google Cloud Active</span>
+          </div>
+        </div>
+        
+        <!-- DROP YOUR DEPLOYED GOOGLE APPS SCRIPT URL HERE -->
+        <iframe 
+          src="YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE" 
+          style="width: 100%; height: 100%; border: none; flex: 1; background: transparent;"
+          allow="clipboard-write">
+        </iframe>
+        
+      </div>
+    </section>
+
     <section id="view-drop" class="view-container">
       <section class="card stagger-1" style="margin-bottom:24px; text-align:center;">
         <div class="card-head" style="justify-content:center; margin-bottom:14px;"><h2>Lair Cloud Drive</h2></div>
@@ -271,15 +281,9 @@
                 <button class="seg-btn haptic-btn" data-seg="docs">Documents</button>
             </div>
         </div>
-        <div id="timeline-photos" class="vault-timeline active">
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
-        </div>
-        <div id="timeline-videos" class="vault-timeline">
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
-        </div>
-        <div id="timeline-docs" class="vault-timeline">
-            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
-        </div>
+        <div id="timeline-photos" class="vault-timeline active"><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div></div>
+        <div id="timeline-videos" class="vault-timeline"><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div></div>
+        <div id="timeline-docs" class="vault-timeline"><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div></div>
       </section>
     </section>
 
@@ -383,6 +387,11 @@
 
 <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
 <script type="module">
+  window.addEventListener('error', (e) => {
+      if (window.showToast) window.showToast('System Error: ' + e.message, 'error');
+      console.error(e);
+  });
+
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, collection, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, addDoc, getDoc, getDocs, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -431,7 +440,6 @@
     });
   };
 
-  // Subtle Parallax (Tuned for iOS Gyroscope)
   function initParallax() {
     const wallpaper = document.getElementById('diurnal-wallpaper');
     if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -490,11 +498,11 @@
   }, {passive: true});
   
   swipeZone.addEventListener('touchend', e => {
-      if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, input, textarea, .artplayer-app')) return;
+      if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, input, textarea, .artplayer-app, table')) return;
       const diffX = touchStartX - e.changedTouches[0].screenX; const diffY = touchStartY - e.changedTouches[0].screenY;
       if (Math.abs(diffY) > Math.abs(diffX)) return;
 
-      const views = ['dashboard', 'drop', 'theater', 'voice'];
+      const views = ['dashboard', 'work', 'drop', 'theater', 'voice'];
       const activeIdx = views.findIndex(v => document.getElementById(`view-${v}`).classList.contains('active'));
       
       if (diffX > 80 && activeIdx < views.length - 1) { 
@@ -627,7 +635,6 @@
         setDoc(doc(db, 'users', currentUser.id), { theme: newTheme }, { merge: true });
     });
 
-    // Fridge Door with Ambient Contextual Glow
     const fridgeText = document.getElementById('fridge-door-text');
     const fridgeStatus = document.getElementById('fridge-status');
     const fridgeCard = document.getElementById('fridge-card');
@@ -642,7 +649,6 @@
                 fridgeText.value = data.content || '';
                 fridgeStatus.textContent = `Last edit: ${data.updatedByName || 'Partner'}`;
                 
-                // Activate breathing emerald glow on remote partner edit
                 fridgeCard.classList.add('ambient-typing');
                 clearTimeout(glowTimeout);
                 glowTimeout = setTimeout(() => fridgeCard.classList.remove('ambient-typing'), 3500);
