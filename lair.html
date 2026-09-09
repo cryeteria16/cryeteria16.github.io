@@ -6,8 +6,6 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>The Lair OS</title>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 
 <style>
   :root { 
@@ -59,7 +57,7 @@
 
   #broadcast-banner { display:none; width:100%; background:var(--accent); color:#000; font-family:var(--font-mono); font-size:12px; font-weight:600; text-align:center; padding:10px; z-index:10000; position:fixed; top:0; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);}
   #toast-container { position: fixed; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-  .lair-toast { background: rgba(14, 15, 20, 0.88); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); box-shadow: var(--liquid-edge), var(--glass-glow); color: var(--ink); padding: 11px 22px; border-radius: 40px; font-size: 13px; font-weight: 500; animation: toastUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; display: flex; align-items: center; gap: 10px; pointer-events: auto; }
+  .lair-toast { background: rgba(14, 15, 20, 0.88); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); box-shadow: var(--liquid-edge), var(--glass-glow); color: var(--ink); padding: 11px 22px; border-radius: 40px; font-size: 13px; font-weight: 500; animation: toastUp 0.3s forwards; display: flex; align-items: center; gap: 10px; pointer-events: auto; }
   @keyframes toastUp { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
   .lair-toast.success { border-color: rgba(112, 148, 122, 0.4); }
   .lair-toast.error { border-color: rgba(217, 83, 79, 0.4); }
@@ -77,69 +75,17 @@
   .card { 
     background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); 
     border: var(--glass-border); box-shadow: var(--liquid-edge), var(--glass-glow); border-radius: var(--radius); padding: 30px; 
-    overflow: hidden; transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, border-color 0.3s ease;
+    overflow: hidden; transition: transform 0.35s ease, box-shadow 0.35s ease, border-color 0.3s ease;
     animation: cardSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .card:hover { transform: translateY(-3px); box-shadow: var(--liquid-edge), 0 30px 60px -10px rgba(0,0,0,0.85); border-color: rgba(255,255,255,0.18); }
   
-  @keyframes ambientBreath {
-    0%, 100% { box-shadow: var(--liquid-edge), 0 0 25px -4px rgba(112, 148, 122, 0.35), var(--glass-glow); border-color: rgba(112, 148, 122, 0.5); }
-    50% { box-shadow: var(--liquid-edge), 0 0 45px 4px rgba(112, 148, 122, 0.70), var(--glass-glow); border-color: rgba(112, 148, 122, 0.85); }
-  }
-  .ambient-typing { animation: ambientBreath 2s infinite ease-in-out !important; }
-
-  .stagger-1 { animation-delay: 0.04s; } .stagger-2 { animation-delay: 0.09s; } .stagger-3 { animation-delay: 0.14s; } .stagger-4 { animation-delay: 0.19s; }
-
   .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
   .card-head h2 { font-family:var(--font-display); font-size:19px; font-weight:500; }
-
-  input[type="text"], textarea { appearance: none; font-family: var(--font-body); font-size: 14px; color: var(--ink); background: var(--input-bg); border: var(--glass-border); box-shadow: inset 0 1px 2px rgba(0,0,0,0.3); border-radius: var(--radius-sm); padding: 14px 18px; width: 100%; outline: none; transition: 0.3s; }
   
-  .btn-primary { background: var(--btn-primary-bg); color: var(--btn-primary-text); padding: 11px 22px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s; box-shadow: 0 8px 20px -4px rgba(0,0,0,0.3); border:none; cursor:pointer;}
-  .btn-primary:hover { transform: scale(1.02); }
-  .btn-primary:active { transform: scale(0.95); }
-  
-  .btn-secondary { background: var(--glass-bg); border: var(--glass-border); box-shadow: var(--liquid-edge); color: var(--ink); padding: 11px 18px; border-radius: var(--radius-sm); font-size: 13px; font-weight:500; backdrop-filter: var(--glass-blur); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s; cursor:pointer;}
-  .btn-secondary:hover { transform: scale(1.02); background: rgba(255,255,255,0.08); }
-  .btn-secondary:active { transform: scale(0.95); }
-
-  .carousel-snap { display: flex; gap: 14px; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
-  .carousel-snap > * { scroll-snap-align: start; flex-shrink: 0; }
-
-  .segment-pill { display: inline-flex; background: var(--input-bg); border: var(--glass-border); border-radius: 30px; padding: 4px; margin-bottom: 22px; }
-  .seg-btn { padding: 8px 22px; border-radius: 26px; font-size: 13px; font-weight: 500; color: var(--ink-soft); transition: 0.3s; cursor:pointer;}
-  .seg-btn.active { background: var(--ink); color: var(--bg); box-shadow: 0 4px 12px rgba(0,0,0,0.1); font-weight: 600;}
-  .vault-timeline { display: none; flex-direction: column; gap: 22px; animation: cardSlideUp 0.35s forwards; }
-  .vault-timeline.active { display: flex; }
-
-  .radar-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: var(--glass-border); font-size: 13px; }
-  .radar-row:last-child { border-bottom: none; }
-
-  .theater-grid { display: grid; grid-template-columns: minmax(0, 7.2fr) minmax(0, 2.8fr); gap: 24px; align-items: start; }
-  @media (max-width: 1024px) { .theater-grid { grid-template-columns: 1fr; } }
-  
-  .theater-container { width: 100%; max-height: 70vh; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); border: var(--glass-border); box-shadow: 0 35px 70px -15px rgba(0,0,0,0.6); position: relative; overflow: hidden; display: block; }
-  .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
-  .vault-thumb-card:hover { transform: scale(1.05); }
-
-  .storage-gauge-wrapper { position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; border-radius: 50%; background: conic-gradient(var(--con) calc(var(--pct) * 1%), var(--glass-bg) 0); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
-  .storage-gauge-inner { width: 126px; height: 126px; background: var(--bg); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
   .view-container { display: none; opacity: 0; } 
-  .view-container.active { display: block; animation: cardSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  .view-container.active { display: block; animation: cardSlideUp 0.4s forwards; }
 
-  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); display:none; align-items:center; justify-content:center; z-index:10000; padding:24px; animation: cardSlideUp 0.3s forwards; }
-  .modal-overlay.active { display:flex; }
-
-  .voice-orb { width: 170px; height: 170px; border-radius: 50%; margin: 0 auto 26px; background: radial-gradient(circle at 35% 30%, rgba(112,148,122,0.9), rgba(112,148,122,0.15) 70%); display:flex; align-items:center; justify-content:center; box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 20px 60px -10px rgba(112,148,122,0.5); transition: box-shadow 0.15s ease, transform 0.15s ease; }
-  .voice-orb.speaking { box-shadow: 0 0 0 1px rgba(255,255,255,0.15), 0 0 60px 10px rgba(112,148,122,0.65); transform: scale(1.03); }
-  .voice-orb-inner { font-family: var(--font-mono); font-size: 12px; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 0.05em; }
-  .voice-status-row { display:flex; align-items:center; justify-content:center; gap:8px; font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); margin-bottom:24px; }
-  .voice-controls { display:flex; gap:14px; justify-content:center; }
-  .voice-btn { width: 54px; height: 54px; border-radius: 50%; display:flex; align-items:center; justify-content:center; border: var(--glass-border); box-shadow: var(--liquid-edge); background: var(--glass-bg); color: var(--ink); cursor:pointer; transition: 0.2s; }
-  .voice-btn:active { transform: scale(0.92); }
-  .voice-btn.danger { background: var(--err); color:#fff; }
-  .voice-btn.muted { background: var(--warn); color:#000; }
 </style>
 </head>
 <body data-theme="dark">
@@ -154,10 +100,8 @@
     </div>
     <div style="display:flex; gap:14px; align-items:center;">
         <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); display:flex; align-items:center;">
-            <span id="partner-dot" class="sys-dot" style="color:var(--err); margin-right:6px;"></span><span id="partner-name">Offline</span>
+            <span id="partner-dot" class="sys-dot" style="color:var(--con); margin-right:6px;"></span><span id="partner-name">System Online</span>
         </span>
-        <button id="btn-theme-toggle" class="btn-secondary haptic-btn" style="padding:6px 12px; font-size:11px;">☀️ Light</button>
-        <button id="btn-signout" class="haptic-btn" style="color:var(--err); font-size:12px; font-weight:600;">Lock</button>
     </div>
   </nav>
 
@@ -165,16 +109,13 @@
     <div class="os-dock">
       <div class="dock-app app-link active haptic-btn" data-target="dashboard">Dashboard</div>
       <div class="dock-app app-link haptic-btn" data-target="work" id="dock-work-link">Work</div>
-      <div class="dock-app app-link haptic-btn" data-target="drop">Vault</div>
-      <div class="dock-app app-link haptic-btn" data-target="theater" id="dock-theater-link">Theater</div>
-      <div class="dock-app app-link haptic-btn" data-target="voice" id="dock-voice-link">Voice</div>
-      <a href="admin.html" id="dock-admin-link" class="dock-app haptic-btn" style="display:none;">Settings</a>
     </div>
   </div>
 
   <main id="swipe-zone">
+    <!-- DASHBOARD TAB -->
     <section id="view-dashboard" class="view-container active">
-      <div class="card stagger-1" style="padding:22px; display:flex; justify-content:space-around; align-items:center; margin-bottom:20px;">
+      <div class="card" style="padding:22px; display:flex; justify-content:space-around; align-items:center; margin-bottom:20px;">
           <div style="text-align:center;">
               <h3 style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:4px;">Dubai HQ</h3>
               <div id="clock-dxb" style="font-family:var(--font-display); font-size:28px; font-weight:500;">--:--</div>
@@ -185,60 +126,11 @@
               <div id="clock-pkt" style="font-family:var(--font-display); font-size:28px; font-weight:500;">--:--</div>
           </div>
       </div>
-
-      <div class="card stagger-2" style="padding:22px; margin-bottom:20px;">
-          <h2 style="font-size:13px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:16px;">Command Bay</h2>
-          <div class="carousel-snap" id="command-bay-grid">
-              <a href="https://github.com/Cryeteria" target="_blank" class="btn-secondary haptic-btn" style="display:flex; align-items:center; gap:8px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg> GitHub
-              </a>
-              <a href="https://dash.cloudflare.com/" target="_blank" class="btn-secondary haptic-btn" style="display:flex; align-items:center; gap:8px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg> Cloudflare
-              </a>
-              <a href="https://console.firebase.google.com/" target="_blank" class="btn-secondary haptic-btn" style="display:flex; align-items:center; gap:8px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> Firebase
-              </a>
-              <a href="https://docs.google.com/spreadsheets/u/0/" target="_blank" class="btn-secondary haptic-btn" style="display:flex; align-items:center; gap:8px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg> Sheets Matrix
-              </a>
-          </div>
-      </div>
-
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
-        <div class="card stagger-3" style="padding:22px; background:#000; border:1px solid rgba(255,255,255,0.08);">
-            <div style="display:flex; justify-content:space-between; margin-bottom:12px; align-items:center;">
-                <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); display:flex; align-items:center;">
-                    <span id="health-dot" class="sys-dot pulse" style="color:var(--err); margin-right:6px;"></span><span id="health-text">TUNNEL OFFLINE</span>
-                </span>
-                <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">CPU: <span id="sys-cpu">--%</span> | RAM: <span id="sys-ram">--%</span></span>
-            </div>
-            <div id="terminal-out" style="font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); height:120px; overflow-y:auto; margin-bottom:12px; line-height:1.6;">> System link verified.<br>> Type 'help' for executable commands.</div>
-            <div style="display:flex; gap:8px; align-items:center;">
-                <span style="font-family:var(--font-mono); font-size:12px; color:#0f0;">$</span>
-                <input type="text" id="terminal-in" style="background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.2); border-radius:0; padding:6px 0; color:#fff; font-family:var(--font-mono); font-size:13px; width:100%; outline:none;" placeholder="Execute command..." autocomplete="off">
-            </div>
-        </div>
-
-        <div class="card stagger-3" id="fridge-card" style="padding:22px; display:flex; flex-direction:column;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-              <h2 style="font-size:13px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft);">The Fridge Door</h2>
-              <span id="fridge-status" style="font-size:11px; font-family:var(--font-mono); color:var(--ink-soft);">Synced</span>
-          </div>
-          <textarea id="fridge-door-text" placeholder="Write a shared note here..." spellcheck="false" style="flex:1; min-height:140px; resize:none; font-family:var(--font-body); font-size:14px; line-height:1.6; background:transparent; padding:0; border:none;"></textarea>
-        </div>
-
-        <div class="card stagger-4" style="padding:22px; display:flex; flex-direction:column;">
-          <h2 style="font-size:13px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px;">Live Radar</h2>
-          <div id="radar-feed" style="flex:1; overflow-y:auto; max-height:140px;">
-             <p style="font-size:12px; color:var(--ink-soft);">Waiting for telemetry...</p>
-          </div>
-        </div>
-      </div>
     </section>
 
     <!-- NEW WORK TAB: Auditor Pro Web App Integration -->
     <section id="view-work" class="view-container">
-      <div class="card stagger-1" style="padding: 0; overflow: hidden; height: 80vh; min-height: 700px; display: flex; flex-direction: column;">
+      <div class="card" style="padding: 0; overflow: hidden; height: 85vh; min-height: 700px; display: flex; flex-direction: column;">
         <div style="background: var(--glass-nav); padding: 12px 24px; border-bottom: var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
           <h2 style="font-family: var(--font-display); font-size: 16px; font-weight: 500;">Financial Ledger</h2>
           <div style="display: flex; gap: 8px;">
@@ -249,7 +141,7 @@
         
         <!-- DROP YOUR DEPLOYED GOOGLE APPS SCRIPT URL HERE -->
         <iframe 
-          src="https://script.google.com/macros/s/AKfycby99d_s6ccUREAqNWLHnf1lRaFP1rSv72S5-4RjHx_yZR6Y_bl_QTxgzLVQCfWxurI_ig/exec" 
+          src="YOUR_GOOGLE_SCRIPT_WEB_APP_URL_HERE" 
           style="width: 100%; height: 100%; border: none; flex: 1; background: transparent;"
           allow="clipboard-write">
         </iframe>
@@ -257,153 +149,12 @@
       </div>
     </section>
 
-    <section id="view-drop" class="view-container">
-      <section class="card stagger-1" style="margin-bottom:24px; text-align:center;">
-        <div class="card-head" style="justify-content:center; margin-bottom:14px;"><h2>Lair Cloud Drive</h2></div>
-        <div class="storage-gauge-wrapper" id="drop-gauge" style="--pct: 0;">
-          <div class="storage-gauge-inner">
-            <span id="drop-usage-text" style="font-family:var(--font-mono); font-size:22px; font-weight:600;">0GB</span>
-            <span style="font-size:11px; color:var(--ink-soft);">of 100GB Limit</span>
-          </div>
-        </div>
-        <div style="background:var(--input-bg); border:1px dashed rgba(128,128,128,0.4); border-radius:var(--radius-sm); padding:20px;">
-          <input type="file" id="vault-photo-input" accept="image/*,video/*,application/pdf" style="display:none;" multiple>
-          <button class="btn-secondary haptic-btn" onclick="document.getElementById('vault-photo-input').click()">Upload Local Media</button>
-          <p id="vault-status" style="font-size:12px; color:var(--con); margin-top:10px; display:none;"></p>
-        </div>
-      </section>
-
-      <section class="card stagger-2">
-        <div style="display:flex; justify-content:center;">
-            <div class="segment-pill">
-                <button class="seg-btn active haptic-btn" data-seg="photos">Photography</button>
-                <button class="seg-btn haptic-btn" data-seg="videos">Videos</button>
-                <button class="seg-btn haptic-btn" data-seg="docs">Documents</button>
-            </div>
-        </div>
-        <div id="timeline-photos" class="vault-timeline active"><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div></div>
-        <div id="timeline-videos" class="vault-timeline"><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div></div>
-        <div id="timeline-docs" class="vault-timeline"><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div></div>
-      </section>
-    </section>
-
-    <section id="view-theater" class="view-container">
-      <div class="theater-grid">
-        <div style="display:flex; flex-direction:column; gap:24px;">
-          <section class="card stagger-1" style="padding:22px;">
-            <div class="theater-container" id="theater-frame-box" style="margin-bottom:18px;">
-                <div id="theater-join-overlay" style="position:absolute; inset:0; z-index:50; background:rgba(0,0,0,0.85); display:flex; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:var(--glass-blur);">
-                    <h3 style="font-family:var(--font-display); font-size:22px; margin-bottom:14px;">The Lair Theater</h3>
-                    <button id="btn-join-party" class="btn-primary haptic-btn" style="font-size:13px; padding:12px 24px;">Initialize Watch Party</button>
-                    <p style="font-size:11px; color:var(--ink-soft); margin-top:10px; text-align:center;">Required to bypass mobile autoplay restrictions</p>
-                </div>
-                
-                <div id="theater-player-slot" style="width:100%; height:100%; display:none; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px;">
-                    <span id="theater-placeholder-text">Waiting for media stream...</span>
-                </div>
-                <div id="yt-container" style="width:100%; height:100%; display:none; pointer-events:auto;">
-                    <div id="yt-player-slot"></div>
-                </div>
-            </div>
-            
-            <div style="display:flex; gap:12px;">
-              <input type="text" id="cowatch-url-input" placeholder="Direct Video URL (.mp4 or YouTube)...">
-              <button class="btn-primary haptic-btn" id="btn-load-cowatch">Stream</button>
-            </div>
-          </section>
-
-          <section class="card stagger-2" style="padding:22px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-                <h2 style="font-family:var(--font-display); font-size:19px;">Vault Watchlist</h2>
-            </div>
-            
-            <div style="display:flex; gap:10px; margin-bottom:18px;">
-              <input type="text" id="tmdb-search-input" placeholder="Search TMDB to add to Wishlist...">
-              <button class="btn-secondary haptic-btn" id="btn-tmdb-search" style="width:auto;">Search</button>
-            </div>
-            <div class="carousel-snap" id="tmdb-results" style="margin-bottom:18px;"></div>
-            
-            <div class="carousel-snap" id="shared-watchlist">
-                <p style="font-size:12px; color:var(--ink-soft);">Loading movies...</p>
-            </div>
-          </section>
-        </div>
-
-        <section class="card stagger-3" style="display:flex; flex-direction:column; min-height:420px; padding:22px;">
-          <h2 style="font-family:var(--font-display); font-size:19px; margin-bottom:18px;">Live Chat</h2>
-          <div id="chat-window" style="flex:1; overflow-y:auto; margin-bottom:14px; font-size:14px; display:flex; flex-direction:column; gap:8px;"></div>
-          <div style="display:flex; gap:8px;">
-            <input type="text" id="chat-input" placeholder="Write message...">
-            <button class="btn-primary haptic-btn" id="btn-send-chat">&rarr;</button>
-          </div>
-        </section>
-      </div>
-    </section>
-
-    <section id="view-voice" class="view-container">
-      <div class="card stagger-1" style="max-width:460px; margin:0 auto; padding:36px 28px; text-align:center;">
-        <h2 style="font-family:var(--font-display); font-size:22px; margin-bottom:8px;">Voice Room</h2>
-        <p style="font-size:12px; color:var(--ink-soft); margin-bottom:28px;">Private 1:1 voice link. Direct WebRTC audio streams without cloud relay.</p>
-
-        <div class="voice-orb" id="voice-orb"><div class="voice-orb-inner" id="voice-orb-label">Idle</div></div>
-        <div class="voice-status-row"><span class="sys-dot" id="voice-status-dot" style="color:var(--err);"></span><span id="voice-status-text">Not connected</span></div>
-
-        <div class="voice-controls">
-          <button class="voice-btn haptic-btn" id="btn-voice-join" title="Join Call">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          </button>
-          <button class="voice-btn haptic-btn muted" id="btn-voice-mute" title="Toggle Mute" style="display:none;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
-          </button>
-          <button class="voice-btn danger haptic-btn" id="btn-voice-leave" title="End Call" style="display:none;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
-          </button>
-        </div>
-        <audio id="voice-remote-audio" autoplay playsinline style="display:none;"></audio>
-      </div>
-    </section>
   </main>
-  
-  <div id="photo-lightbox" class="modal-overlay">
-    <div class="card" style="max-width:90%; text-align:center; padding:20px;">
-      <img id="lightbox-img" src="" style="max-width:100%; max-height:70vh; border-radius:var(--radius-sm); margin-bottom:18px;">
-      <div style="display:flex; justify-content:space-between; align-items:center; gap: 12px;">
-        <button id="btn-delete-vault-photo" class="haptic-btn" style="color:var(--err); font-size:13px; font-weight:600; flex:1; text-align:left;">Delete from Vault</button>
-        <button class="btn-secondary haptic-btn" onclick="document.getElementById('photo-lightbox').classList.remove('active')">Close</button>
-      </div>
-    </div>
-  </div>
 
-  <div id="confirm-modal" class="modal-overlay">
-    <div class="card" style="max-width:360px; text-align:center; padding:26px;">
-      <h3 id="confirm-title" style="font-family:var(--font-display); font-size:18px; margin-bottom:8px;">Are you sure?</h3>
-      <p id="confirm-msg" style="font-size:13px; color:var(--ink-soft); margin-bottom:20px;">This action cannot be undone.</p>
-      <div style="display:flex; gap:10px;">
-        <button id="btn-confirm-cancel" class="btn-secondary haptic-btn" style="flex:1;">Cancel</button>
-        <button id="btn-confirm-ok" class="btn-primary haptic-btn" style="flex:1; background:var(--err); color:#fff;">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-<script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
 <script type="module">
   window.addEventListener('error', (e) => {
       if (window.showToast) window.showToast('System Error: ' + e.message, 'error');
-      console.error(e);
   });
-
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, collection, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, addDoc, getDoc, getDocs, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-  const firebaseConfig = { apiKey: "AIzaSyBfRI1hugT-Wy5uJX47LNQU3wjM-VjnaC4", authDomain: "cryeterialoginpage.firebaseapp.com", projectId: "cryeterialoginpage" };
-  const TUNNEL_URL = "https://vault.ibadhasan.com"; 
-
-  const app = initializeApp(firebaseConfig); 
-  const auth = getAuth(app); 
-  const db = getFirestore(app);
-  let currentUser = null;
-  let activeLightboxFile = null;
 
   window.showToast = (msg, type = 'info') => {
     const container = document.getElementById('toast-container');
@@ -420,73 +171,8 @@
     }, 3000);
   };
 
-  window.showConfirm = (title, msg) => {
-    return new Promise((resolve) => {
-      const modal = document.getElementById('confirm-modal');
-      document.getElementById('confirm-title').textContent = title;
-      document.getElementById('confirm-msg').textContent = msg;
-      modal.classList.add('active');
-
-      const onOk = () => { cleanup(); resolve(true); };
-      const onCancel = () => { cleanup(); resolve(false); };
-      const cleanup = () => {
-        document.getElementById('btn-confirm-ok').removeEventListener('click', onOk);
-        document.getElementById('btn-confirm-cancel').removeEventListener('click', onCancel);
-        modal.classList.remove('active');
-      };
-
-      document.getElementById('btn-confirm-ok').addEventListener('click', onOk);
-      document.getElementById('btn-confirm-cancel').addEventListener('click', onCancel);
-    });
-  };
-
-  function initParallax() {
-    const wallpaper = document.getElementById('diurnal-wallpaper');
-    if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
-      window.addEventListener('click', () => {
-        DeviceOrientationEvent.requestPermission().then(res => {
-          if (res === 'granted') {
-            window.addEventListener('deviceorientation', handleOrientation);
-          }
-        }).catch(() => {});
-      }, { once: true });
-    } else if (window.DeviceOrientationEvent) {
-      window.addEventListener('deviceorientation', handleOrientation);
-    }
-
-    function handleOrientation(e) {
-      if (!e.gamma || !e.beta) return;
-      const xOffset = Math.max(-14, Math.min(14, e.gamma * 0.4));
-      const yOffset = Math.max(-14, Math.min(14, (e.beta - 40) * 0.4));
-      wallpaper.style.transform = `translate3d(${xOffset}px, ${yOffset}px, 0)`;
-    }
-  }
-  initParallax();
-
-  function updateDiurnalCycle() {
-    const dxbHour = parseInt(new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Dubai', hour: '2-digit', hour12: false }), 10);
-    const root = document.documentElement;
-    if (document.body.getAttribute('data-theme') === 'light') return;
-
-    if (dxbHour >= 6 && dxbHour < 17) {
-      root.style.setProperty('--aurora-1', '#16241c');
-      root.style.setProperty('--aurora-2', '#12202c');
-    } else if (dxbHour >= 17 && dxbHour < 19) {
-      root.style.setProperty('--aurora-1', '#2d1f18');
-      root.style.setProperty('--aurora-2', '#1b1424');
-    } else {
-      root.style.setProperty('--aurora-1', '#0b1410');
-      root.style.setProperty('--aurora-2', '#090f15');
-    }
-  }
-
   const triggerHaptic = () => { 
       if(navigator.vibrate) navigator.vibrate(15);
-      try {
-          const iosHack = document.createElement('input');
-          iosHack.type = 'checkbox'; iosHack.setAttribute('switch', ''); iosHack.style.position = 'absolute'; iosHack.style.left = '-9999px';
-          document.body.appendChild(iosHack); iosHack.click(); iosHack.remove();
-      } catch(e) {}
   };
   document.querySelectorAll('.haptic-btn').forEach(b => b.addEventListener('click', triggerHaptic));
 
@@ -498,11 +184,11 @@
   }, {passive: true});
   
   swipeZone.addEventListener('touchend', e => {
-      if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, input, textarea, .artplayer-app, table')) return;
+      if (e.target.closest('iframe')) return; // Ignore swipes over the iframe
       const diffX = touchStartX - e.changedTouches[0].screenX; const diffY = touchStartY - e.changedTouches[0].screenY;
       if (Math.abs(diffY) > Math.abs(diffX)) return;
 
-      const views = ['dashboard', 'work', 'drop', 'theater', 'voice'];
+      const views = ['dashboard', 'work'];
       const activeIdx = views.findIndex(v => document.getElementById(`view-${v}`).classList.contains('active'));
       
       if (diffX > 80 && activeIdx < views.length - 1) { 
@@ -517,86 +203,9 @@
           const now = new Date();
           document.getElementById('clock-dxb').textContent = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Dubai', hour:'2-digit', minute:'2-digit', hour12:false });
           document.getElementById('clock-pkt').textContent = now.toLocaleTimeString('en-US', { timeZone: 'Asia/Karachi', hour:'2-digit', minute:'2-digit', hour12:false });
-          updateDiurnalCycle();
       } catch(e) {}
   }
   setInterval(syncEnvironment, 1000); syncEnvironment();
-
-  async function fetchWithAuth(url, options = {}) {
-      if (!auth.currentUser) return fetch(url, options);
-      if (url.includes('?token=')) return fetch(url, options); 
-      const token = await auth.currentUser.getIdToken();
-      const headers = { ...options.headers, 'Authorization': `Bearer ${token}` };
-      return fetch(url, { ...options, headers });
-  }
-
-  const termIn = document.getElementById('terminal-in');
-  const termOut = document.getElementById('terminal-out');
-  termIn.addEventListener('keydown', async (e) => {
-      if(e.key === 'Enter' && termIn.value.trim() !== '') {
-          const cmd = termIn.value.trim();
-          termIn.value = ''; triggerHaptic();
-          termOut.innerHTML += `<div><span style="color:#0f0;">$</span> <span style="color:#fff;">${cmd}</span></div>`;
-          termOut.scrollTop = termOut.scrollHeight;
-          
-          try {
-              const res = await fetchWithAuth(`${TUNNEL_URL}/api/terminal`, {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: cmd })
-              });
-              const data = await res.json();
-              termOut.innerHTML += `<div style="color:var(--ink-soft); margin-bottom:8px;">${(data.output || 'Done.').replace(/\n/g, '<br>')}</div>`;
-          } catch(err) {
-              termOut.innerHTML += `<div style="color:var(--err); margin-bottom:8px;">> Connection failed.</div>`;
-          }
-          termOut.scrollTop = termOut.scrollHeight;
-      }
-  });
-
-  let statsTimer = null;
-  async function pollSystemStats() {
-      try {
-          const res = await fetchWithAuth(`${TUNNEL_URL}/api/stats`);
-          if (res.ok) {
-              const stats = await res.json();
-              document.getElementById('sys-cpu').textContent = `${stats.cpu}%`;
-              document.getElementById('sys-ram').textContent = `${stats.ram}%`;
-              document.getElementById('health-dot').style.color = "var(--con)";
-              document.getElementById('health-text').textContent = "LINK ACTIVE";
-          } else { throw new Error(); }
-      } catch(e) {
-          document.getElementById('health-dot').style.color = "var(--err)";
-          document.getElementById('health-text').textContent = "TUNNEL OFFLINE";
-      }
-  }
-
-  function setupAdaptivePolling() {
-    if (statsTimer) clearInterval(statsTimer);
-    const interval = document.visibilityState === 'visible' ? 4000 : 30000;
-    pollSystemStats();
-    statsTimer = setInterval(pollSystemStats, interval);
-  }
-  document.addEventListener('visibilitychange', setupAdaptivePolling);
-
-  onAuthStateChanged(auth, (user) => {
-    if (!user) window.location.replace("index.html");
-    currentUser = { name: user.email.split('@')[0], id: user.uid };
-    
-    onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
-        if(snap.exists()) {
-            if (snap.data().role === 'admin') {
-                document.getElementById('dock-admin-link').style.display = 'block';
-            }
-            if(snap.data().theme) {
-                document.body.setAttribute('data-theme', snap.data().theme);
-                document.getElementById('btn-theme-toggle').textContent = snap.data().theme === 'dark' ? '☀️ Light' : '🌙 Dark';
-            }
-        }
-    });
-    
-    initOS();
-  });
-
-  document.getElementById('btn-signout').addEventListener('click', () => { signOut(auth); window.location.replace("index.html"); });
 
   document.querySelectorAll('.app-link').forEach(link => {
     link.addEventListener('click', (e) => {
@@ -608,654 +217,6 @@
     });
   });
 
-  function initOS() {
-    setupAdaptivePolling();
-
-    const presenceRef = doc(db, 'users', currentUser.id);
-    const setOnline = () => setDoc(presenceRef, { state: 'online', name: currentUser.name, lastActive: serverTimestamp() }, {merge: true});
-    const setOffline = () => setDoc(presenceRef, { state: 'offline', lastActive: serverTimestamp() }, {merge: true});
-
-    window.addEventListener('visibilitychange', () => document.visibilityState === 'visible' ? setOnline() : setOffline());
-    window.addEventListener('beforeunload', setOffline);
-    setOnline();
-
-    onSnapshot(collection(db, 'users'), (snap) => {
-       snap.forEach(d => {
-          if(d.id !== currentUser.id && d.data().name) {
-             const isOnline = d.data().state === 'online';
-             document.getElementById('partner-dot').style.color = isOnline ? 'var(--con)' : 'var(--err)';
-             document.getElementById('partner-name').textContent = isOnline ? `${d.data().name} (Active)` : `${d.data().name} (Offline)`;
-          }
-       });
-    });
-
-    const themeBtn = document.getElementById('btn-theme-toggle');
-    themeBtn.addEventListener('click', () => {
-        const newTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-        setDoc(doc(db, 'users', currentUser.id), { theme: newTheme }, { merge: true });
-    });
-
-    const fridgeText = document.getElementById('fridge-door-text');
-    const fridgeStatus = document.getElementById('fridge-status');
-    const fridgeCard = document.getElementById('fridge-card');
-    let fridgeTimeout;
-    let isTyping = false;
-    let glowTimeout;
-
-    onSnapshot(doc(db, 'system', 'fridge_door'), (snap) => {
-        if(snap.exists()) {
-            const data = snap.data();
-            if(data.updatedBy !== currentUser.id && !isTyping) {
-                fridgeText.value = data.content || '';
-                fridgeStatus.textContent = `Last edit: ${data.updatedByName || 'Partner'}`;
-                
-                fridgeCard.classList.add('ambient-typing');
-                clearTimeout(glowTimeout);
-                glowTimeout = setTimeout(() => fridgeCard.classList.remove('ambient-typing'), 3500);
-            }
-        }
-    });
-
-    fridgeText.addEventListener('input', () => {
-        isTyping = true;
-        fridgeStatus.textContent = 'Typing...';
-        clearTimeout(fridgeTimeout);
-        fridgeTimeout = setTimeout(async () => {
-            await setDoc(doc(db, 'system', 'fridge_door'), { 
-                content: fridgeText.value, 
-                updatedBy: currentUser.id,
-                updatedByName: currentUser.name,
-                timestamp: serverTimestamp() 
-            }, {merge: true});
-            isTyping = false;
-            fridgeStatus.textContent = 'Saved to Cloud';
-        }, 500); 
-    });
-    
-    fridgeText.addEventListener('blur', () => { isTyping = false; });
-
-    initWatchParty();
-    initVault();
-    initTheaterChat();
-    initWatchlist();
-    initConfigAndFeatures();
-    initRadarFeed();
-    initVoiceRoom();
-  }
-
-  function initTheaterChat() {
-      const chatWindow = document.getElementById('chat-window');
-      const chatInput = document.getElementById('chat-input');
-
-      const renderMsg = (m) => {
-          const mine = m.uid === currentUser.id;
-          const row = document.createElement('div');
-          row.style.cssText = `align-self:${mine ? 'flex-end' : 'flex-start'}; max-width:80%; background:${mine ? 'var(--accent)' : 'var(--input-bg)'}; color:${mine ? '#000' : 'var(--ink)'}; padding:8px 14px; border-radius:16px; font-size:13px;`;
-          row.innerHTML = `${!mine ? `<div style="font-family:var(--font-mono); font-size:10px; opacity:0.7; margin-bottom:2px;">${m.name}</div>` : ''}${m.text}`;
-          return row;
-      };
-
-      const chatQuery = query(collection(db, 'chat'), orderBy('timestamp', 'asc'), limit(100));
-      onSnapshot(chatQuery, (snap) => {
-          chatWindow.innerHTML = '';
-          snap.forEach(d => chatWindow.appendChild(renderMsg(d.data())));
-          chatWindow.scrollTop = chatWindow.scrollHeight;
-      });
-
-      const sendChat = async () => {
-          const text = chatInput.value.trim();
-          if (!text) return;
-          chatInput.value = '';
-          triggerHaptic();
-          await addDoc(collection(db, 'chat'), { text, name: currentUser.name, uid: currentUser.id, timestamp: serverTimestamp() });
-      };
-      document.getElementById('btn-send-chat').addEventListener('click', sendChat);
-      chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });
-  }
-
-  function initWatchlist() {
-      const listEl = document.getElementById('shared-watchlist');
-      const watchQuery = query(collection(db, 'watchlist'), orderBy('timestamp', 'desc'), limit(40));
-      onSnapshot(watchQuery, (snap) => {
-          if (snap.empty) { listEl.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Watchlist is empty. Search TMDB above to add something.</p>'; return; }
-          listEl.innerHTML = '';
-          snap.forEach(docSnap => {
-              const m = docSnap.data();
-              const card = document.createElement('div');
-              card.style.cssText = 'width:110px; cursor:pointer;';
-              card.innerHTML = `
-                  <div style="width:110px; height:160px; border-radius:12px; background:${m.poster ? `url('${m.poster}') center/cover` : 'var(--input-bg)'}; border:var(--glass-border); margin-bottom:6px;"></div>
-                  <div style="font-size:11px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${m.title}</div>
-                  <div style="font-size:10px; color:var(--ink-soft);">${m.streamUrl ? '▶ Play' : m.status || ''}</div>
-              `;
-              if (m.streamUrl) {
-                  card.addEventListener('click', async () => {
-                      triggerHaptic();
-                      document.querySelector('.dock-app[data-target="theater"]').click();
-                      document.getElementById('theater-join-overlay').style.display = 'none';
-                      const { mountMediaFromWatchlist } = window.__lairTheater || {};
-                      if (mountMediaFromWatchlist) mountMediaFromWatchlist(m.streamUrl);
-                  });
-              }
-              listEl.appendChild(card);
-          });
-      });
-
-      const resultsEl = document.getElementById('tmdb-results');
-      const searchInput = document.getElementById('tmdb-search-input');
-
-      const runSearch = async () => {
-          const qStr = searchInput.value.trim();
-          if (!qStr) return;
-          resultsEl.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Searching...</p>';
-          try {
-              const res = await fetchWithAuth(`${TUNNEL_URL}/api/tmdb/search?q=${encodeURIComponent(qStr)}`);
-              const data = await res.json();
-              if (!res.ok) { resultsEl.innerHTML = `<p style="font-size:12px; color:var(--err);">${data.error || 'Search failed.'}</p>`; return; }
-              if (!data.results.length) { resultsEl.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">No results.</p>'; return; }
-              resultsEl.innerHTML = '';
-              data.results.forEach(r => {
-                  const card = document.createElement('div');
-                  card.style.cssText = 'width:110px;';
-                  card.innerHTML = `
-                      <div style="width:110px; height:160px; border-radius:12px; background:${r.poster ? `url('${r.poster}') center/cover` : 'var(--input-bg)'}; border:var(--glass-border); margin-bottom:6px;"></div>
-                      <div style="font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${r.title} ${r.year ? `(${r.year})` : ''}</div>
-                      <button class="btn-secondary haptic-btn" style="width:100%; margin-top:4px; padding:6px; font-size:10px;">+ Add</button>
-                  `;
-                  card.querySelector('button').addEventListener('click', async () => {
-                      triggerHaptic();
-                      await addDoc(collection(db, 'watchlist'), {
-                          title: r.title, poster: r.poster, type: r.type, status: 'Want to Watch',
-                          streamUrl: '', addedBy: currentUser.name, timestamp: serverTimestamp()
-                      });
-                      window.showToast(`Added ${r.title} to Watchlist`, 'success');
-                  });
-                  resultsEl.appendChild(card);
-              });
-          } catch (e) {
-              resultsEl.innerHTML = '<p style="font-size:12px; color:var(--err);">Search failed.</p>';
-          }
-      };
-      document.getElementById('btn-tmdb-search').addEventListener('click', runSearch);
-      searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') runSearch(); });
-  }
-
-  function initConfigAndFeatures() {
-      onSnapshot(doc(db, 'system', 'config'), (snap) => {
-          if (!snap.exists()) return;
-          const d = snap.data();
-
-          const banner = document.getElementById('broadcast-banner');
-          if (d.broadcast) { banner.textContent = d.broadcast; banner.style.display = 'block'; }
-          else { banner.style.display = 'none'; }
-
-          if (d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
-          if (d.fontDisplay || d.fontBody) {
-              const families = [d.fontDisplay, d.fontBody].filter(Boolean).map(f => f.trim().replace(/ /g, '+'));
-              document.getElementById('dynamic-fonts').href = `https://fonts.googleapis.com/css2?${families.map(f => `family=${f}:wght@400;500;600`).join('&')}&display=swap`;
-              if (d.fontDisplay) document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay}', serif`);
-              if (d.fontBody) document.documentElement.style.setProperty('--font-body', `'${d.fontBody}', sans-serif`);
-          }
-
-          const f = d.features || {};
-          document.getElementById('dock-theater-link').style.display = f.theater === false ? 'none' : 'block';
-          document.getElementById('dock-voice-link').style.display = f.voice === false ? 'none' : 'block';
-          const radarCard = document.getElementById('radar-feed')?.closest('.card');
-          if (radarCard) radarCard.style.display = f.radar === false ? 'none' : 'flex';
-
-          const activeTarget = document.querySelector('.dock-app.active')?.getAttribute('data-target');
-          if ((activeTarget === 'theater' && f.theater === false) || (activeTarget === 'voice' && f.voice === false)) {
-              document.querySelector('.dock-app[data-target="dashboard"]').click();
-          }
-      });
-  }
-
-  function initRadarFeed() {
-      const feed = document.getElementById('radar-feed');
-      const radarQuery = query(collection(db, 'radar_logs'), orderBy('timestamp', 'desc'), limit(20));
-      onSnapshot(radarQuery, (snap) => {
-          if (snap.empty) { feed.innerHTML = '<p style="font-size:12px; color:var(--ink-soft);">Waiting for telemetry...</p>'; return; }
-          feed.innerHTML = '';
-          snap.forEach(d => {
-              const r = d.data();
-              const row = document.createElement('div');
-              row.className = 'radar-row';
-              const when = r.timestamp?.toDate ? r.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-              row.innerHTML = `<span>${r.type || 'Visit'} — ${r.city || 'Unknown'}, ${r.country || ''}</span><span style="color:var(--ink-soft); font-family:var(--font-mono); font-size:11px;">${when}</span>`;
-              feed.appendChild(row);
-          });
-      });
-  }
-
-  function initVoiceRoom() {
-      const ROOM_ID = 'main-room';
-      const roomRef = doc(db, 'voice_calls', ROOM_ID);
-      const callerCandidatesRef = collection(roomRef, 'callerCandidates');
-      const calleeCandidatesRef = collection(roomRef, 'calleeCandidates');
-      const rtcConfig = { iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }] };
-
-      let pc = null;
-      let localStream = null;
-      let remoteStream = null;
-      let role = null; 
-      let unsubRoom = null, unsubCandidates = null;
-      let analyser = null, analyserRaf = null;
-      let heartbeatTimer = null;
-
-      const orb = document.getElementById('voice-orb');
-      const orbLabel = document.getElementById('voice-orb-label');
-      const statusDot = document.getElementById('voice-status-dot');
-      const statusText = document.getElementById('voice-status-text');
-      const btnJoin = document.getElementById('btn-voice-join');
-      const btnMute = document.getElementById('btn-voice-mute');
-      const btnLeave = document.getElementById('btn-voice-leave');
-      const remoteAudioEl = document.getElementById('voice-remote-audio');
-
-      const setUiState = (state) => {
-          if (state === 'idle') {
-              orbLabel.textContent = 'Idle'; statusDot.style.color = 'var(--err)'; statusText.textContent = 'Not connected';
-              btnJoin.style.display = 'flex'; btnMute.style.display = 'none'; btnLeave.style.display = 'none';
-          } else if (state === 'waiting') {
-              orbLabel.textContent = 'Ringing…'; statusDot.style.color = 'var(--warn)'; statusText.textContent = 'Waiting for the other side to join';
-              btnJoin.style.display = 'none'; btnMute.style.display = 'flex'; btnLeave.style.display = 'flex';
-          } else if (state === 'connected') {
-              orbLabel.textContent = 'Live'; statusDot.style.color = 'var(--con)'; statusText.textContent = 'Connected';
-              btnJoin.style.display = 'none'; btnMute.style.display = 'flex'; btnLeave.style.display = 'flex';
-          }
-      };
-
-      const startHeartbeat = () => {
-        if (heartbeatTimer) clearInterval(heartbeatTimer);
-        heartbeatTimer = setInterval(async () => {
-          try { await updateDoc(roomRef, { heartbeat: serverTimestamp() }); } catch(e) {}
-        }, 15000);
-      };
-
-      const stopHeartbeat = () => {
-        if (heartbeatTimer) clearInterval(heartbeatTimer);
-        heartbeatTimer = null;
-      };
-
-      const watchRemoteVolume = (stream) => {
-          try {
-              const ctx = new (window.AudioContext || window.webkitAudioContext)();
-              const source = ctx.createMediaStreamSource(stream);
-              analyser = ctx.createAnalyser(); analyser.fftSize = 512;
-              source.connect(analyser);
-              const data = new Uint8Array(analyser.frequencyBinCount);
-              const tick = () => {
-                  analyser.getByteFrequencyData(data);
-                  const avg = data.reduce((a, b) => a + b, 0) / data.length;
-                  orb.classList.toggle('speaking', avg > 12);
-                  analyserRaf = requestAnimationFrame(tick);
-              };
-              tick();
-          } catch (e) {}
-      };
-
-      async function cleanupPeer() {
-          stopHeartbeat();
-          if (analyserRaf) cancelAnimationFrame(analyserRaf);
-          analyser = null;
-          if (unsubRoom) { unsubRoom(); unsubRoom = null; }
-          if (unsubCandidates) { unsubCandidates(); unsubCandidates = null; }
-          if (pc) { pc.close(); pc = null; }
-          if (localStream) { localStream.getTracks().forEach(t => t.stop()); localStream = null; }
-          remoteStream = null;
-          remoteAudioEl.srcObject = null;
-          role = null;
-          orb.classList.remove('speaking');
-      }
-
-      async function hangUp(deleteRoom) {
-          triggerHaptic();
-          await cleanupPeer();
-          if (deleteRoom) {
-              try {
-                  const [callerDocs, calleeDocs] = await Promise.all([getDocs(callerCandidatesRef), getDocs(calleeCandidatesRef)]);
-                  await Promise.all([
-                      ...callerDocs.docs.map(d => deleteDoc(d.ref)),
-                      ...calleeDocs.docs.map(d => deleteDoc(d.ref))
-                  ]);
-                  await deleteDoc(roomRef);
-              } catch (e) {}
-          }
-          setUiState('idle');
-          window.showToast('Call ended');
-      }
-
-      btnLeave.addEventListener('click', () => hangUp(true));
-
-      btnMute.addEventListener('click', () => {
-          if (!localStream) return;
-          const track = localStream.getAudioTracks()[0];
-          track.enabled = !track.enabled;
-          btnMute.classList.toggle('muted', !track.enabled);
-          triggerHaptic();
-          window.showToast(track.enabled ? 'Microphone unmuted' : 'Microphone muted');
-      });
-
-      btnJoin.addEventListener('click', async () => {
-          triggerHaptic();
-          try {
-              localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-          } catch (e) {
-              window.showToast('Microphone access is required', 'error');
-              return;
-          }
-
-          pc = new RTCPeerConnection(rtcConfig);
-          localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
-
-          remoteStream = new MediaStream();
-          remoteAudioEl.srcObject = remoteStream;
-          pc.ontrack = (event) => {
-              event.streams[0].getTracks().forEach(t => remoteStream.addTrack(t));
-              watchRemoteVolume(remoteStream);
-          };
-
-          const existingSnap = await getDoc(roomRef);
-          let existing = existingSnap.exists() ? existingSnap.data() : null;
-
-          if (existing && existing.heartbeat) {
-            const ageMs = Date.now() - existing.heartbeat.toMillis();
-            if (ageMs > 35000) {
-              await deleteDoc(roomRef);
-              existing = null;
-            }
-          }
-
-          if (!existing || !existing.offer || (existing.status === 'ended')) {
-              role = 'caller';
-              pc.onicecandidate = (e) => { if (e.candidate) addDoc(callerCandidatesRef, e.candidate.toJSON()); };
-
-              const offerDesc = await pc.createOffer();
-              await pc.setLocalDescription(offerDesc);
-              await setDoc(roomRef, {
-                  offer: { type: offerDesc.type, sdp: offerDesc.sdp },
-                  answer: null, callerId: currentUser.id, callerName: currentUser.name, status: 'waiting',
-                  heartbeat: serverTimestamp()
-              });
-              setUiState('waiting');
-              startHeartbeat();
-
-              unsubRoom = onSnapshot(roomRef, async (snap) => {
-                  const data = snap.data();
-                  if (data && data.answer && pc && !pc.currentRemoteDescription) {
-                      await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
-                      setUiState('connected');
-                      window.showToast('Voice connected', 'success');
-                  }
-                  if (!snap.exists()) { await cleanupPeer(); setUiState('idle'); }
-              });
-              unsubCandidates = onSnapshot(calleeCandidatesRef, (snap) => {
-                  snap.docChanges().forEach(change => {
-                      if (change.type === 'added' && pc) pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                  });
-              });
-          } else if (existing.callerId === currentUser.id) {
-              window.showToast('You already have a call open on another tab', 'error');
-              await cleanupPeer();
-              return;
-          } else if (!existing.answer) {
-              role = 'callee';
-              pc.onicecandidate = (e) => { if (e.candidate) addDoc(calleeCandidatesRef, e.candidate.toJSON()); };
-
-              await pc.setRemoteDescription(new RTCSessionDescription(existing.offer));
-              const answerDesc = await pc.createAnswer();
-              await pc.setLocalDescription(answerDesc);
-              await updateDoc(roomRef, {
-                  answer: { type: answerDesc.type, sdp: answerDesc.sdp },
-                  calleeId: currentUser.id, calleeName: currentUser.name, status: 'connected',
-                  heartbeat: serverTimestamp()
-              });
-              setUiState('connected');
-              startHeartbeat();
-              window.showToast('Voice connected', 'success');
-
-              unsubCandidates = onSnapshot(callerCandidatesRef, (snap) => {
-                  snap.docChanges().forEach(change => {
-                      if (change.type === 'added' && pc) pc.addIceCandidate(new RTCIceCandidate(change.doc.data()));
-                  });
-              });
-              unsubRoom = onSnapshot(roomRef, (snap) => { if (!snap.exists()) { cleanupPeer(); setUiState('idle'); } });
-          } else {
-              window.showToast('The Voice Room is currently full', 'error');
-              await cleanupPeer();
-              return;
-          }
-      });
-
-      setUiState('idle');
-  }
-
-  function initWatchParty() {
-      let currentSessionUrl = null;
-      let isYt = false;
-      let ytPlayer = null;
-      let art = null; 
-      let ignoreNextSync = false;
-      let wakeLock = null;
-
-      const requestWakeLock = async () => { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
-
-      let ytApiReady = false;
-      window.onYouTubeIframeAPIReady = function() { ytApiReady = true; };
-      const tag = document.createElement('script');
-      tag.src = "https://www.youtube.com/iframe_api";
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-      const joinOverlay = document.getElementById('theater-join-overlay');
-      document.getElementById('btn-join-party').addEventListener('click', () => {
-          triggerHaptic();
-          joinOverlay.style.display = 'none';
-          document.getElementById('theater-player-slot').style.display = 'flex';
-      });
-
-      document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
-          const urlInput = document.getElementById('cowatch-url-input');
-          const url = urlInput.value.trim();
-          if (!url) return;
-          triggerHaptic();
-          joinOverlay.style.display = 'none';
-          await mountMedia(url);
-          pushState(true, 0);
-          urlInput.value = '';
-      });
-
-      const pushState = (isPlaying, time) => {
-          if(ignoreNextSync) return;
-          setDoc(doc(db, 'system', 'watch_party'), { url: currentSessionUrl, isPlaying: isPlaying, timestamp: time, updatedAt: serverTimestamp(), updatedBy: currentUser.name });
-      };
-
-      const mountMedia = async (rawUrl) => {
-          currentSessionUrl = rawUrl;
-          document.getElementById('theater-player-slot').style.display = 'none';
-          document.getElementById('yt-container').style.display = 'none';
-
-          if (/(youtube\.com|youtu\.be)/.test(rawUrl)) {
-              isYt = true;
-              document.getElementById('yt-container').style.display = 'block';
-              
-              let videoId = '';
-              const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
-              const match = rawUrl.match(ytRegex);
-              if(match) videoId = match[1];
-
-              if(art) { art.destroy(); art = null; }
-
-              if (ytPlayer && ytPlayer.loadVideoById) {
-                  ytPlayer.loadVideoById(videoId);
-              } else {
-                  if (!ytApiReady || typeof YT === 'undefined' || !YT.Player) { 
-                      setTimeout(() => mountMedia(rawUrl), 1000); 
-                      return; 
-                  }
-                  ytPlayer = new YT.Player('yt-player-slot', {
-                      videoId: videoId, playerVars: { 'autoplay': 1, 'controls': 1 },
-                      events: {
-                          'onStateChange': (e) => {
-                              if (e.data === YT.PlayerState.PLAYING) pushState(true, ytPlayer.getCurrentTime());
-                              if (e.data === YT.PlayerState.PAUSED) pushState(false, ytPlayer.getCurrentTime());
-                          }
-                      }
-                  });
-              }
-          } else {
-              isYt = false;
-              document.getElementById('theater-player-slot').style.display = 'block';
-              if(ytPlayer && ytPlayer.stopVideo) { ytPlayer.stopVideo(); }
-              if(art) art.destroy();
-
-              let secureUrl = rawUrl;
-              if (rawUrl.startsWith(`${TUNNEL_URL}/stream/`)) {
-                  try {
-                      const filename = decodeURIComponent(rawUrl.split('/').pop().split('?')[0]);
-                      const tokRes = await fetchWithAuth(`${TUNNEL_URL}/api/stream-token`, {
-                          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename })
-                      });
-                      if (tokRes.ok) {
-                          const { token } = await tokRes.json();
-                          secureUrl = rawUrl.includes('?') ? `${rawUrl}&stream_token=${token}` : `${rawUrl}?stream_token=${token}`;
-                      }
-                  } catch (e) {}
-              }
-
-              art = new Artplayer({
-                  container: '#theater-player-slot', url: secureUrl, theme: '#70947A',
-                  fullscreen: true, setting: true, playbackRate: true, aspectRatio: true, fastForward: true, miniProgressBar: true,
-                  pip: true, playsInline: true, autoOrientation: true
-              });
-
-              art.on('play', () => { requestWakeLock(); pushState(true, art.currentTime); });
-              art.on('pause', () => { if(wakeLock) { wakeLock.release(); wakeLock = null; } pushState(false, art.currentTime); });
-              art.on('seek', () => { pushState(art.playing, art.currentTime); });
-              art.on('fullscreen', (state) => {
-                  if (/iPhone/.test(navigator.userAgent) && state && art.video.webkitEnterFullscreen) {
-                      art.video.webkitEnterFullscreen(); art.fullscreen = false;
-                  }
-              });
-          }
-      };
-
-      window.__lairTheater = {
-          mountMediaFromWatchlist: async (url) => {
-              document.getElementById('theater-player-slot').style.display = 'flex';
-              await mountMedia(url);
-              pushState(true, 0);
-          }
-      };
-
-      onSnapshot(doc(db, 'system', 'watch_party'), (snap) => {
-          if(!snap.exists()) return;
-          const data = snap.data();
-          if(data.url && data.url !== currentSessionUrl) mountMedia(data.url);
-          if(data.updatedBy === currentUser.name) return; 
-
-          const expectedTime = data.timestamp + (data.updatedAt ? ((Date.now() - data.updatedAt.toMillis()) / 1000) : 0);
-          ignoreNextSync = true;
-          
-          if (isYt && ytPlayer && ytPlayer.getPlayerState) {
-              if (Math.abs(ytPlayer.getCurrentTime() - expectedTime) > 2.0) ytPlayer.seekTo(expectedTime, true);
-              if (data.isPlaying && ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) ytPlayer.playVideo();
-              if (!data.isPlaying && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
-          } else if (!isYt && art) {
-              if (Math.abs(art.currentTime - expectedTime) > 2.0) art.currentTime = expectedTime;
-              if (data.isPlaying && !art.playing) art.play();
-              if (!data.isPlaying && art.playing) art.pause();
-          }
-          setTimeout(() => { ignoreNextSync = false; }, 500);
-      });
-  }
-
-  document.querySelectorAll('.seg-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-          document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active');
-          document.querySelectorAll('.vault-timeline').forEach(t => t.classList.remove('active'));
-          document.getElementById(`timeline-${e.currentTarget.getAttribute('data-seg')}`).classList.add('active');
-      });
-  });
-
-  async function initVault() {
-    try {
-      const [storageRes, filesRes] = await Promise.all([ fetchWithAuth(`${TUNNEL_URL}/api/storage`), fetchWithAuth(`${TUNNEL_URL}/api/photos`) ]);
-      if(storageRes.ok) {
-          const s = await storageRes.json();
-          const gbUsage = (s.totalBytes / (1024*1024*1024)).toFixed(1);
-          document.getElementById('drop-usage-text').textContent = `${gbUsage}GB`;
-          document.getElementById('drop-gauge').style.setProperty('--pct', Math.min(100, Math.round((s.totalBytes / s.maxBytes) * 100)));
-      }
-      if(filesRes.ok) {
-          const allFiles = await filesRes.json();
-          const renderGrid = (list, containerId) => {
-              const container = document.querySelector(`#${containerId} > div`);
-              if(!list.length) { container.innerHTML = '<p style="color:var(--ink-soft); font-size:13px; text-align:center;">Empty directory.</p>'; return; }
-              
-              const grouped = {}; 
-              list.forEach(p => { if(!grouped[p.dateFormatted]) grouped[p.dateFormatted] = []; grouped[p.dateFormatted].push(p); });
-              container.innerHTML = '';
-              for(const [dateStr, items] of Object.entries(grouped)) {
-                let gridHtml = `<div style="grid-column: 1 / -1;"><h3 style="font-family:var(--font-mono); font-size:12px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; margin-top:10px;">${dateStr}</h3></div>`;
-                
-                items.forEach(p => { 
-                  const isPdf = p.filename.toLowerCase().endsWith('.pdf');
-                  const bgImage = isPdf ? 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg' : (p.thumbUrl || p.url);
-                  const bgStyle = isPdf ? `background:url('${bgImage}') center/contain no-repeat; background-color: var(--glass-bg);` : `background:url('${bgImage}') center/cover;`;
-                  
-                  gridHtml += `<div class="vault-thumb-card media-card haptic-btn" data-url="${p.url}" data-filename="${p.filename}" style="${bgStyle}"></div>`; 
-                });
-                container.innerHTML += gridHtml;
-              }
-          };
-
-          renderGrid(allFiles.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f.filename)), 'timeline-photos');
-          renderGrid(allFiles.filter(f => /\.(mp4|mov|m4v)$/i.test(f.filename)), 'timeline-videos');
-          renderGrid(allFiles.filter(f => /\.(pdf)$/i.test(f.filename)), 'timeline-docs');
-
-          document.querySelectorAll('.media-card').forEach(card => {
-            card.addEventListener('click', () => {
-              triggerHaptic(); 
-              activeLightboxFile = card.getAttribute('data-filename');
-              
-              if (activeLightboxFile.toLowerCase().endsWith('.pdf')) {
-                  window.open(card.getAttribute('data-url'), '_blank');
-              } else {
-                  document.getElementById('lightbox-img').src = card.getAttribute('data-url'); 
-                  document.getElementById('photo-lightbox').classList.add('active');
-              }
-            });
-          });
-      }
-    } catch(err) {}
-  }
-
-  document.getElementById('btn-delete-vault-photo').addEventListener('click', async () => {
-      if (!activeLightboxFile) return;
-      const ok = await window.showConfirm('Delete Item', `Permanently remove ${activeLightboxFile} from local storage?`);
-      if (!ok) return;
-      try {
-          const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/delete/${encodeURIComponent(activeLightboxFile)}`, { method: 'DELETE' });
-          if(res.ok) { 
-            document.getElementById('photo-lightbox').classList.remove('active'); 
-            initVault(); 
-            window.showToast('Item deleted successfully', 'success');
-          }
-      } catch(e) { window.showToast('Delete failed', 'error'); }
-  });
-
-  document.getElementById('vault-photo-input').addEventListener('change', async (e) => {
-    const files = e.target.files; if(!files.length) return;
-    const status = document.getElementById('vault-status'); status.style.display = 'block';
-    for(let i=0; i<files.length; i++) {
-        status.textContent = `Uploading ${i+1}/${files.length}: ${files[i].name}...`;
-        const fd = new FormData(); fd.append('photo', files[i]);
-        try { await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd }); } catch(err) {}
-    }
-    status.textContent = 'Upload Complete ✔'; setTimeout(() => status.style.display = 'none', 3000); 
-    window.showToast('Media uploaded to Vault', 'success');
-    initVault(); e.target.value = '';
-  });
 </script>
 </body>
 </html>
