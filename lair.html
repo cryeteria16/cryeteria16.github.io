@@ -851,33 +851,40 @@
       };
 
       // Fetch live spreadsheet state on load
-      const loadLiveLedger = async () => {
-          try {
-              const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/ledger`);
-              if (!res.ok) return;
+// Fetch live spreadsheet state on load
+const loadLiveLedger = async () => {
+    try {
+        const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/ledger`);
+        
+        if (!res.ok) {
+            if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--err); font-size:13px;">Error connecting to Google Sheets. Check server terminal for details.</td>';
+            return;
+        }
 
-              const data = await res.json();
-              updateMetricsUI(data.count, data.net, data.vat, data.gross);
+        const data = await res.json();
+        updateMetricsUI(data.count, data.net, data.vat, data.gross);
 
-              if (data.rows && data.rows.length > 0) {
-                  tableBody.innerHTML = '';
-                  data.rows.forEach(item => {
-                      appendLedgerRow([
-                          item.taskId,
-                          item.subcontractor,
-                          item.invoiceNumber,
-                          item.date,
-                          item.trn,
-                          item.net,
-                          item.vat,
-                          item.total
-                      ], item.sheetRow, false);
-                  });
-              }
-          } catch (e) {
-              console.warn('[Lair OS] Unable to hydrate ledger from Sheets.');
-          }
-      };
+        if (data.rows && data.rows.length > 0) {
+            tableBody.innerHTML = '';
+            data.rows.forEach(item => {
+                appendLedgerRow([
+                    item.taskId,
+                    item.subcontractor,
+                    item.invoiceNumber,
+                    item.date,
+                    item.trn,
+                    item.net,
+                    item.vat,
+                    item.total
+                ], item.sheetRow, false);
+            });
+        } else {
+            if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Ledger is empty. Drop an invoice to begin.</td>';
+        }
+    } catch (e) {
+        if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--err); font-size:13px;">Server offline or tunnel disconnected.</td>';
+    }
+};
       loadLiveLedger();
 
       const processFiles = async (files) => {
