@@ -382,7 +382,19 @@
                   <button id="vw-refresh-btn" class="btn-secondary haptic-btn" style="padding:14px 20px;">Sync VW Tracker</button>
               </div>
           </div>
-
+        
+<!-- AI EXECUTIVE BRIEFING CARD -->
+                <div id="vw-briefing-card" class="card stagger-2" style="padding: 24px; margin-bottom: 20px;">
+                    <div class="card-head" style="margin-bottom:12px;">
+                        <h2 style="display:flex; align-items:center; gap:8px; font-size:16px;">AI Compliance & Billing Briefing <span style="font-family:var(--font-mono); font-size:9px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px; text-transform:uppercase;">Gemini Synthesis</span></h2>
+                        <button onclick="loadVWBriefing()" class="btn-secondary haptic-btn" style="padding:6px 12px; font-size:11px;">Refresh Analysis</button>
+                    </div>
+                    <p id="vw-briefing-text" class="text-sm" style="color:var(--ink-soft); font-style:italic; margin-bottom:16px; font-size:13px; line-height:1.5;">Synthesizing Variable Works portfolio compliance...</p>
+                    <div id="vw-metrics-row" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; padding-top:14px; border-top:var(--glass-border); font-size:12px;">
+                        <!-- Dynamic metrics load here -->
+                    </div>
+                </div>
+        
           <div class="card stagger-3" style="padding:0; overflow:hidden;">
               <div style="display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:var(--glass-border);">
                   <h2 style="font-family:var(--font-display); font-size:16px; font-weight:500; margin:0;">Variable Works Master Grid</h2>
