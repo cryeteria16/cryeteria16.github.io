@@ -112,12 +112,18 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 const uploadInvoice = multer({ dest: invoicesDir });
 
+// --- THE TRI-CORE LOAD BALANCER ---
+const API_KEYS = [
+    process.env.GEMINI_KEY_1 || 'AQ.Ab8RN6J0U-2QICflP43f8mpmOsu7kg9foapNJJ2Yk11bi7i3kA',
+    process.env.GEMINI_KEY_2 || 'AQ.Ab8RN6J-3Jp89HnejC1oQiRAfAj4PpDcspSKBwnmjdNXKGwrGA',
+    process.env.GEMINI_KEY_3 || 'AQ.Ab8RN6J-cZ-AecFRCi1pLz9bi-SQDi6M6I47886ACgKCfaZxAA'
+].filter(Boolean);
+
 app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     try {
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) return res.status(503).json({ error: 'GEMINI_API_KEY is not configured on the server.' });
-        const genAI = new GoogleGenerativeAI(apiKey);
+        const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
+        const genAI = new GoogleGenerativeAI(activeKey);
         
         const fileBytes = fs.readFileSync(req.file.path);
         const base64Data = fileBytes.toString("base64");
@@ -125,7 +131,7 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
         
         const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
         
-        const models = ["gemini-3.5-flash", "gemini-2.5-flash-lite"];
+        const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
         let result = null;
         let lastError = null;
 
@@ -140,27 +146,20 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
                         result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
                         break; 
                     } catch (error) {
-                        const isOverloaded = error.status === 503 || error.status === 429 ||
-                            (error.message && /high demand|quota|overloaded/i.test(error.message));
+                        const isOverloaded = error.status === 503 || error.status === 429 || (error.message && /high demand|quota|overloaded/i.test(error.message));
                         if (isOverloaded && i < maxRetries - 1) {
-                            const jitter = Math.floor(Math.random() * 1000); 
-                            const waitTime = delay + jitter;
-                            console.warn(`[Lair OS] ${modelName} overloaded. Retrying in ${waitTime/1000}s... (Attempt ${i + 1}/${maxRetries})`);
+                            const waitTime = delay + Math.floor(Math.random() * 1000); 
+                            console.warn(`[Lair OS] ${modelName} overloaded on Key ${activeKey.substring(0,6)}... Retrying in ${waitTime/1000}s`);
                             await new Promise(resolve => setTimeout(resolve, waitTime));
                             delay *= 2; 
-                        } else {
-                            throw error; 
-                        }
+                        } else { throw error; }
                     }
                 }
                 if (result) break; 
-            } catch (err) {
-                console.warn(`[Lair OS] ${modelName} failed or exhausted retries. Falling back to next model...`);
-                lastError = err;
-            }
+            } catch (err) { lastError = err; }
         }
         
-        if (!result) throw lastError || new Error('All fallback models failed.');
+        if (!result) throw lastError || new Error('All models failed.');
 
         let rawText = result.response.text().trim();
         if (rawText.startsWith('```json')) rawText = rawText.replace(/^```json/, '').replace(/```$/, '').trim();
@@ -171,8 +170,7 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
         res.json(data);
     } catch(e) {
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-        console.error('[Lair OS] Extraction Error:', e);
-        res.status(500).json({ error: 'Extraction failed or invalid file format' });
+        res.status(500).json({ error: 'Extraction failed' });
     }
 });
 
@@ -185,8 +183,6 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
         const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
-        // Column C is Invoice Number (Task ID, Subcontractor, Invoice Number, Date, TRN, Net, VAT, Total).
-        // Read what's already there so the same invoice never gets written twice.
         const existing = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Sheet1!C2:C' });
         const seenInvoiceNumbers = new Set((existing.data.values || []).flat().map(v => String(v).trim()).filter(Boolean));
 
@@ -194,21 +190,41 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
         const toWrite = rows.filter(row => {
             const invoiceNumber = String(row[2] || '').trim();
             if (invoiceNumber && seenInvoiceNumbers.has(invoiceNumber)) { skipped.push(invoiceNumber); return false; }
-            if (invoiceNumber) seenInvoiceNumbers.add(invoiceNumber); // also guards duplicates within the same batch
+            if (invoiceNumber) seenInvoiceNumbers.add(invoiceNumber); 
             return true;
         });
 
+        let rowIndex = null;
         if (toWrite.length) {
-            await sheets.spreadsheets.values.append({
+            const appendRes = await sheets.spreadsheets.values.append({
                 spreadsheetId, range: 'Sheet1!A:H', valueInputOption: 'USER_ENTERED', requestBody: { values: toWrite }
             });
+            const match = appendRes.data.updates.updatedRange.match(/\d+/);
+            if(match) rowIndex = parseInt(match[0], 10);
         }
 
-        res.json({ success: true, added: toWrite.length, skipped });
-    } catch(e) {
-        console.error('[Lair OS] Sync Error:', e);
-        res.status(500).json({ error: 'Failed to sync with Sheets Matrix' });
-    }
+        res.json({ success: true, added: toWrite.length, skipped, rowIndex });
+    } catch(e) { res.status(500).json({ error: 'Failed to sync' }); }
+});
+
+// --- NEW ROUTE: Inline Google Sheets Editing ---
+app.post('/api/work/update-cell', verifyToken, async (req, res) => {
+    try {
+        const { row, col, value } = req.body;
+        const sheetCol = String.fromCharCode(65 + col); 
+        const range = `Sheet1!${sheetCol}${row}`;
+        
+        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
+        const sheets = google.sheets({ version: 'v4', auth: authClient });
+        
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: '1NaObt-gwnmsn8Ouv1onbF4UUuFiiaPZPZj-pLU3G6SM',
+            range: range,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [[value]] }
+        });
+        res.json({ success: true });
+    } catch(e) { res.status(500).json({ error: 'Cell update failed' }); }
 });
 
 async function generateThumbnail(filename) {

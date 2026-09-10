@@ -316,6 +316,13 @@
                   <p id="auditor-drop-text" style="font-size:13px; font-weight:500;">Drop multiple PDFs or Images here</p>
                   <p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Auto-extracts VAT & Totals</p>
               </div>
+
+              <div id="auditor-queue-container" style="display:none; flex-direction:column; gap:8px; margin-top:16px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <h3 style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase;">Queue (<span id="auditor-queue-count">0</span>)</h3>
+                  </div>
+                  <div id="auditor-file-list" style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto;"></div>
+              </div>
           </div>
 
           <div class="card stagger-2" style="padding:0; overflow:hidden; margin-top:20px;">
@@ -703,7 +710,6 @@
                 themeBtnText.textContent = isLight ? '🌙 Dark' : '☀️ Light';
                 themeBtnIcon.textContent = isLight ? '🌙' : '☀️';
 
-                // Sync mobile status bar with the active theme color
                 document.getElementById('meta-theme-color').setAttribute('content', isLight ? '#F2F2F7' : '#060709');
             }
         }
@@ -714,7 +720,6 @@
 
   document.getElementById('btn-signout').addEventListener('click', () => { signOut(auth); window.location.replace("index.html"); });
 
-  // Segment Pill Navigation (For the Work Tab)
   document.querySelectorAll('[data-workseg]').forEach(btn => {
       btn.addEventListener('click', (e) => {
           triggerHaptic();
@@ -744,7 +749,8 @@
   function initAuditor() {
       const dropzone = document.getElementById('auditor-dropzone');
       const fileInput = document.getElementById('batch-upload-input');
-      const dropText = document.getElementById('auditor-drop-text');
+      const queueContainer = document.getElementById('auditor-queue-container');
+      const fileList = document.getElementById('auditor-file-list');
       const tableBody = document.getElementById('auditor-table-body');
       const emptyRow = document.getElementById('auditor-empty-row');
       const exportBtn = document.getElementById('auditor-export-btn');
@@ -752,7 +758,7 @@
       if(!dropzone || !fileInput) return;
 
       let totalNet = 0, totalVat = 0, grossTotal = 0, count = 0;
-      let csvRows = [["Task ID", "Subcontractor", "Invoice Number", "Date", "TRN", "Net", "VAT", "Total"]];
+      let csvRows = [["Task ID", "Subcontractor", "Invoice Number", "Date", "TRN", "Net", "VAT", "Total", "Validation"]];
 
       const updateUI = () => {
           document.getElementById('auditor-count').textContent = count;
@@ -761,93 +767,126 @@
           document.getElementById('auditor-gross').textContent = grossTotal.toFixed(2);
       };
 
-      const appendLedgerRow = (row) => {
+      // Expose to window so contenteditable onblur can trigger it
+      window.handleCellEdit = async function(element, rowIndex, colIndex, originalValue) {
+          const newValue = element.innerText.trim();
+          if (newValue === originalValue) return;
+          
+          element.style.color = "var(--warn)"; // Processing color
+          try {
+              const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/update-cell`, {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ row: rowIndex, col: colIndex, value: newValue })
+              });
+              if(res.ok) {
+                  element.style.color = "var(--con)"; // Success color
+                  setTimeout(() => element.style.color = "var(--ink)", 1500);
+                  element.setAttribute('onblur', `handleCellEdit(this, ${rowIndex}, ${colIndex}, '${newValue.replace(/'/g, "\\'")}')`);
+              } else { throw new Error(); }
+          } catch (err) {
+              window.showToast('Network error saving to Sheet', 'error');
+              element.innerText = originalValue;
+              element.style.color = "var(--ink)";
+          }
+      };
+
+      const appendLedgerRow = (row, sheetRowIndex) => {
           if (emptyRow) emptyRow.style.display = 'none';
           const net = Number(row[5]) || 0, vat = Number(row[6]) || 0, total = Number(row[7]) || 0;
           const isValid = Math.abs((net + vat) - total) < 0.05;
           const tr = document.createElement('tr');
+          
           tr.style.cssText = isValid ? '' : 'background:rgba(217,83,79,0.08); border-left:3px solid var(--err);';
-          const cell = (val, align = 'left') => `<td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:${align};">${val}</td>`;
+          
+          const editableCell = (val, colIdx, align = 'left') => {
+              return `<td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:${align};">
+                  <div contenteditable="true" style="outline:none; min-width:20px;" onblur="handleCellEdit(this, ${sheetRowIndex}, ${colIdx}, '${String(val).replace(/'/g, "\\'")}')">${val}</div>
+              </td>`;
+          };
+
           tr.innerHTML = `
-              <td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:center;">${isValid ? '✔' : '⚠'}</td>
-              ${cell(row[0])}${cell(row[1])}${cell(row[2])}${cell(row[3])}${cell(row[4])}
-              ${cell(net.toFixed(2), 'right')}${cell(vat.toFixed(2), 'right')}${cell(total.toFixed(2), 'right')}`;
+              <td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:center; color:${isValid ? 'var(--con)' : 'var(--err)'};">${isValid ? '✔' : '⚠'}</td>
+              ${editableCell(row[0], 0)}${editableCell(row[1], 1)}${editableCell(row[2], 2)}${editableCell(row[3], 3)}${editableCell(row[4], 4)}
+              ${editableCell(net.toFixed(2), 5, 'right')}${editableCell(vat.toFixed(2), 6, 'right')}${editableCell(total.toFixed(2), 7, 'right')}
+          `;
           tableBody.insertBefore(tr, tableBody.firstChild);
-          csvRows.push(row);
+          csvRows.push([...row, isValid ? "Valid" : "Mismatch"]);
       };
 
       const processFiles = async (files) => {
           if (!files.length) return;
           const taskIdInput = document.getElementById('work-task-id');
           const taskId = (taskIdInput && taskIdInput.value.trim()) || 'UNASSIGNED';
-          dropText.textContent = `Processing ${files.length} file(s)...`;
+          
+          queueContainer.style.display = 'flex';
+          document.getElementById('auditor-queue-count').textContent = files.length;
+          fileList.innerHTML = '';
 
-          for (let i = 0; i < files.length; i++) {
+          // Build the visual queue UI
+          Array.from(files).forEach((file, index) => {
+              fileList.innerHTML += `
+                  <div id="file-card-${index}" style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--glass-bg); border:var(--glass-border); border-radius:12px;">
+                      <span style="font-size:12px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">${file.name}</span>
+                      <span id="file-status-${index}" style="font-size:12px; color:var(--warn);">Processing...</span>
+                  </div>`;
+          });
+
+          // Concurrency Load Balancer (Runs 3 files at a time)
+          const CONCURRENCY_LIMIT = 3;
+          let active = 0;
+          let queueIndex = 0;
+
+          const runNext = async () => {
+              if (queueIndex >= files.length) return;
+              const i = queueIndex++;
+              active++;
+              
               const fd = new FormData();
               fd.append('invoice', files[i]);
+              const statusEl = document.getElementById(`file-status-${i}`);
+              const cardEl = document.getElementById(`file-card-${i}`);
 
               try {
                   const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/extract`, { method: 'POST', body: fd });
-                  if (!res.ok) { window.showToast(`Failed to parse file ${i+1}`, 'error'); continue; }
+                  if (!res.ok) throw new Error('Parse failed');
                   const data = await res.json();
 
-                  // Extraction only reads the invoice — this is what actually
-                  // writes it into the Sheet, with duplicate invoice numbers blocked server-side.
-                  const row = [
-                      taskId,
-                      data.subcontractor_name || '',
-                      data.invoice_number || '',
-                      data.invoice_date || '',
-                      data.trn || '',
-                      Number(data.net_amount) || 0,
-                      Number(data.vat_amount) || 0,
-                      Number(data.total_amount) || 0
-                  ];
+                  const row = [ taskId, data.subcontractor_name || '', data.invoice_number || '', data.invoice_date || '', data.trn || '', Number(data.net_amount) || 0, Number(data.vat_amount) || 0, Number(data.total_amount) || 0 ];
 
-                  const syncRes = await fetchWithAuth(`${TUNNEL_URL}/api/work/sync`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ rows: [row] })
-                  });
+                  const syncRes = await fetchWithAuth(`${TUNNEL_URL}/api/work/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows: [row] }) });
                   const syncData = await syncRes.json();
 
-                  if (!syncRes.ok || !syncData.success) {
-                      window.showToast(`${data.subcontractor_name || 'Invoice'}: not saved (${syncData.error || 'sync failed'})`, 'error');
-                      continue;
-                  }
-                  if (syncData.skipped && syncData.skipped.includes(data.invoice_number)) {
-                      window.showToast(`Duplicate blocked: Invoice #${data.invoice_number}`, 'error');
-                      continue;
-                  }
+                  if (!syncRes.ok || !syncData.success) throw new Error(syncData.error || 'Sync failed');
+                  if (syncData.skipped && syncData.skipped.includes(data.invoice_number)) throw new Error('Duplicate');
 
                   count++; totalNet += row[5]; totalVat += row[6]; grossTotal += row[7];
                   updateUI();
-                  appendLedgerRow(row);
-                  window.showToast(`Saved: ${data.subcontractor_name || 'Invoice'}`, 'success');
+                  appendLedgerRow(row, syncData.rowIndex); 
+                  
+                  statusEl.textContent = '✔ Done';
+                  statusEl.style.color = 'var(--con)';
+                  cardEl.style.borderColor = 'rgba(112,148,122,0.4)';
               } catch (e) {
-                  window.showToast(`Upload error on file ${i+1}`, 'error');
+                  statusEl.textContent = `✖ ${e.message}`;
+                  statusEl.style.color = 'var(--err)';
+                  cardEl.style.borderColor = 'rgba(217,83,79,0.4)';
+              } finally {
+                  active--;
+                  runNext();
+                  if (active === 0 && queueIndex >= files.length) {
+                      setTimeout(() => { queueContainer.style.display = 'none'; }, 5000);
+                  }
               }
-          }
-          dropText.textContent = 'Drop multiple PDFs or Images here';
+          };
+
+          for (let i = 0; i < CONCURRENCY_LIMIT; i++) runNext();
           fileInput.value = '';
       };
 
       fileInput.addEventListener('change', (e) => processFiles(e.target.files));
-
-      dropzone.addEventListener('dragover', (e) => {
-          e.preventDefault();
-          dropzone.style.borderColor = 'var(--con)';
-      });
-
-      dropzone.addEventListener('dragleave', () => {
-          dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
-      });
-
-      dropzone.addEventListener('drop', (e) => {
-          e.preventDefault();
-          dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
-          if (e.dataTransfer.files) processFiles(e.dataTransfer.files);
-      });
+      dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--con)'; });
+      dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; });
+      dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; if (e.dataTransfer.files) processFiles(e.dataTransfer.files); });
 
       if (exportBtn) {
           exportBtn.addEventListener('click', () => {
