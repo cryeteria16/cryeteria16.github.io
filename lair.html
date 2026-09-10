@@ -36,7 +36,7 @@
     --glass-bg: rgba(255, 255, 255, 0.70); --glass-nav: rgba(255, 255, 255, 0.80);
     --glass-border: 1px solid rgba(0, 0, 0, 0.06);
     --liquid-edge: inset 0 1px 0 0 rgba(255, 255, 255, 0.9);
-    --glass-glow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 15px 35px -10px rgba(0, 0, 0, 0.12);
+    --glass-glow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 15px 35px -10px rgba(0, 0, 0, 0.15);
     --input-bg: rgba(0, 0, 0, 0.04);
     --btn-primary-bg: linear-gradient(180deg, #1C1C1E, #000); --btn-primary-text: #FFF;
     --aurora-1: #e1eae4;
@@ -290,19 +290,19 @@
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:24px;">
                   <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
                       <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">SESSION INVOICES</p>
-                      <h4 style="font-size:20px; font-weight:600;">0</h4>
+                      <h4 id="auditor-count" style="font-size:20px; font-weight:600;">0</h4>
                   </div>
                   <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
                       <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">TOTAL NET</p>
-                      <h4 style="font-size:20px; font-weight:600;">0.00</h4>
+                      <h4 id="auditor-net" style="font-size:20px; font-weight:600;">0.00</h4>
                   </div>
                   <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
                       <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">TOTAL VAT</p>
-                      <h4 style="font-size:20px; font-weight:600;">0.00</h4>
+                      <h4 id="auditor-vat" style="font-size:20px; font-weight:600;">0.00</h4>
                   </div>
                   <div style="background:rgba(112,148,122,0.1); padding:16px; border-radius:var(--radius-sm); border:1px solid rgba(112,148,122,0.3);">
                       <p style="font-family:var(--font-mono); font-size:10px; color:var(--con); margin-bottom:6px;">GROSS TOTAL</p>
-                      <h4 style="font-size:20px; font-weight:600; color:var(--con);">0.00</h4>
+                      <h4 id="auditor-gross" style="font-size:20px; font-weight:600; color:var(--con);">0.00</h4>
                   </div>
               </div>
 
@@ -310,10 +310,10 @@
               <input type="text" id="work-task-id" placeholder="e.g., FM-2026-901" style="margin-bottom:24px;">
 
               <label class="field-label">BATCH UPLOAD</label>
-              <div style="background:var(--input-bg); border:1px dashed rgba(255,255,255,0.2); border-radius:var(--radius-sm); padding:32px; text-align:center; cursor:pointer;" onclick="document.getElementById('batch-upload-input').click()">
+              <div id="auditor-dropzone" style="background:var(--input-bg); border:1px dashed rgba(255,255,255,0.2); border-radius:var(--radius-sm); padding:32px; text-align:center; cursor:pointer;" onclick="document.getElementById('batch-upload-input').click()">
                   <input type="file" id="batch-upload-input" accept="application/pdf,image/*" style="display:none;" multiple>
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--con)" stroke-width="2" style="margin-bottom:12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                  <p style="font-size:13px; font-weight:500;">Drop multiple PDFs or Images here</p>
+                  <p id="auditor-drop-text" style="font-size:13px; font-weight:500;">Drop multiple PDFs or Images here</p>
                   <p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Auto-extracts VAT & Totals</p>
               </div>
           </div>
@@ -520,7 +520,6 @@
     });
   };
 
-  // Subtle Parallax (Tuned for iOS Gyroscope)
   function initParallax() {
     const wallpaper = document.getElementById('diurnal-wallpaper');
     if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -670,7 +669,6 @@
             if(snap.data().theme) {
                 document.body.setAttribute('data-theme', snap.data().theme);
                 
-                // Toggle text/icons in Nav for condensement
                 const themeBtnText = document.querySelector('#btn-theme-toggle .nav-btn-text');
                 const themeBtnIcon = document.getElementById('icon-theme');
                 const isLight = snap.data().theme === 'light';
@@ -678,8 +676,8 @@
                 themeBtnText.textContent = isLight ? '🌙 Dark' : '☀️ Light';
                 themeBtnIcon.textContent = isLight ? '🌙' : '☀️';
 
-+               // Sync mobile status bar with the active theme color
-+               document.getElementById('meta-theme-color').setAttribute('content', isLight ? '#F2F2F7' : '#060709');
+                // Sync mobile status bar with the active theme color
+                document.getElementById('meta-theme-color').setAttribute('content', isLight ? '#F2F2F7' : '#060709');
             }
         }
     });
@@ -709,13 +707,75 @@
       const target = e.currentTarget.getAttribute('data-target');
       document.getElementById(`view-${target}`).classList.add('active'); 
       
-      // Control FAB visibility
       const fab = document.getElementById('btn-quick-capture');
       if (fab) fab.style.display = target === 'work' ? 'flex' : 'none';
 
       window.scrollTo(0,0);
     });
   });
+
+  function initAuditor() {
+      const dropzone = document.getElementById('auditor-dropzone');
+      const fileInput = document.getElementById('batch-upload-input');
+      const dropText = document.getElementById('auditor-drop-text');
+      
+      if(!dropzone || !fileInput) return;
+
+      let totalNet = 0, totalVat = 0, grossTotal = 0, count = 0;
+
+      const updateUI = () => {
+          document.getElementById('auditor-count').textContent = count;
+          document.getElementById('auditor-net').textContent = totalNet.toFixed(2);
+          document.getElementById('auditor-vat').textContent = totalVat.toFixed(2);
+          document.getElementById('auditor-gross').textContent = grossTotal.toFixed(2);
+      };
+
+      const processFiles = async (files) => {
+          if (!files.length) return;
+          dropText.textContent = `Processing ${files.length} file(s)...`;
+          
+          for (let i = 0; i < files.length; i++) {
+              const fd = new FormData();
+              fd.append('invoice', files[i]);
+              
+              try {
+                  const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/extract`, { method: 'POST', body: fd });
+                  if (res.ok) {
+                      const data = await res.json();
+                      count++;
+                      totalNet += Number(data.net_amount) || 0;
+                      totalVat += Number(data.vat_amount) || 0;
+                      grossTotal += Number(data.total_amount) || 0;
+                      updateUI();
+                      window.showToast(`Extracted: ${data.subcontractor_name || 'Invoice'}`, 'success');
+                  } else {
+                      window.showToast(`Failed to parse file ${i+1}`, 'error');
+                  }
+              } catch (e) {
+                  window.showToast(`Upload error on file ${i+1}`, 'error');
+              }
+          }
+          dropText.textContent = 'Drop multiple PDFs or Images here';
+          fileInput.value = '';
+      };
+
+      fileInput.addEventListener('change', (e) => processFiles(e.target.files));
+
+      dropzone.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          dropzone.style.borderColor = 'var(--con)';
+      });
+
+      dropzone.addEventListener('dragleave', () => {
+          dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
+      });
+
+      dropzone.addEventListener('drop', (e) => {
+          e.preventDefault();
+          dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
+          if (e.dataTransfer.files) processFiles(e.dataTransfer.files);
+      });
+  }
 
   function initOS() {
     setupAdaptivePolling();
@@ -744,7 +804,6 @@
         setDoc(doc(db, 'users', currentUser.id), { theme: newTheme }, { merge: true });
     });
 
-    // Share Target URL Catch
     const urlParams = new URLSearchParams(window.location.search);
     if(urlParams.get('share') === 'true') {
         window.showToast('Work order media received from Share Sheet.', 'success');
@@ -752,7 +811,6 @@
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
-    // Fridge Door with Ambient Contextual Glow
     const fridgeText = document.getElementById('fridge-door-text');
     const fridgeStatus = document.getElementById('fridge-status');
     const fridgeCard = document.getElementById('fridge-card');
@@ -799,6 +857,7 @@
     initConfigAndFeatures();
     initRadarFeed();
     initVoiceRoom();
+    initAuditor();
   }
 
   function initTheaterChat() {

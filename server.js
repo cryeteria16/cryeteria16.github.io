@@ -115,30 +115,68 @@ const uploadInvoice = multer({ dest: invoicesDir });
 app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     try {
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const apiKey = process.env.GEMINI_API_KEY || "AQ.Ab8RN6J0U-2QICflP43f8mpmOsu7kg9foapNJJ2Yk11bi7i3kA";
+        const genAI = new GoogleGenerativeAI(apiKey);
         
         const fileBytes = fs.readFileSync(req.file.path);
         const base64Data = fileBytes.toString("base64");
+        const fileMimeType = req.file.mimetype; 
         
         const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
         
-        const result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: "application/pdf" } } ]);
+        const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
+        let result = null;
+        let lastError = null;
+
+        for (const modelName of models) {
+            try {
+                const model = genAI.getGenerativeModel({ model: modelName });
+                let delay = 2000;
+                const maxRetries = 5;
+                
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
+                        break; 
+                    } catch (error) {
+                        const isOverloaded = error.status === 503 || (error.message && error.message.toLowerCase().includes('high demand'));
+                        if (isOverloaded && i < maxRetries - 1) {
+                            const jitter = Math.floor(Math.random() * 1000); 
+                            const waitTime = delay + jitter;
+                            console.warn(`[Lair OS] ${modelName} overloaded. Retrying in ${waitTime/1000}s... (Attempt ${i + 1}/${maxRetries})`);
+                            await new Promise(resolve => setTimeout(resolve, waitTime));
+                            delay *= 2; 
+                        } else {
+                            throw error; 
+                        }
+                    }
+                }
+                if (result) break; 
+            } catch (err) {
+                console.warn(`[Lair OS] ${modelName} failed or exhausted retries. Falling back to next model...`);
+                lastError = err;
+            }
+        }
+        
+        if (!result) throw lastError || new Error('All fallback models failed.');
+
         let rawText = result.response.text().trim();
         if (rawText.startsWith('```json')) rawText = rawText.replace(/^```json/, '').replace(/```$/, '').trim();
+        else if (rawText.startsWith('```')) rawText = rawText.replace(/^```/, '').replace(/```$/, '').trim();
         
         const data = JSON.parse(rawText);
         fs.unlinkSync(req.file.path); 
         res.json(data);
     } catch(e) {
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-        res.status(500).json({ error: 'Extraction failed or invalid PDF format' });
+        console.error('[Lair OS] Extraction Error:', e);
+        res.status(500).json({ error: 'Extraction failed or invalid file format' });
     }
 });
 
 app.post('/api/work/sync', verifyToken, async (req, res) => {
     try {
-        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['[https://www.googleapis.com/auth/spreadsheets](https://www.googleapis.com/auth/spreadsheets)'] });
+        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
         await sheets.spreadsheets.values.append({
             spreadsheetId: '1NaObt-gwnmsn8Ouv1onbF4UUuFiiaPZPZj-pLU3G6SM',
@@ -299,10 +337,10 @@ app.get('/api/tmdb/search', verifyToken, async (req, res) => {
     if (!query) return res.json({ results: [] });
     if (!TMDB_API_KEY) return res.status(503).json({ error: 'TMDB_API_KEY not configured.' });
     try {
-        const tmdbRes = await axios.get('[https://api.themoviedb.org/3/search/multi](https://api.themoviedb.org/3/search/multi)', { params: { api_key: TMDB_API_KEY, query, include_adult: false } });
+        const tmdbRes = await axios.get('https://api.themoviedb.org/3/search/multi', { params: { api_key: TMDB_API_KEY, query, include_adult: false } });
         const results = (tmdbRes.data.results || []).filter(r => r.media_type === 'movie' || r.media_type === 'tv').slice(0, 12).map(r => ({
             id: r.id, title: r.title || r.name, year: (r.release_date || r.first_air_date || '').slice(0, 4),
-            poster: r.poster_path ? `[https://image.tmdb.org/t/p/w300$](https://image.tmdb.org/t/p/w300$){r.poster_path}` : '', type: r.media_type === 'movie' ? 'Movie' : 'TV Show'
+            poster: r.poster_path ? `https://image.tmdb.org/t/p/w300${r.poster_path}` : '', type: r.media_type === 'movie' ? 'Movie' : 'TV Show'
         }));
         res.json({ results });
     } catch (e) { res.status(502).json({ error: 'TMDB lookup failed.' }); }
