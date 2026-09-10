@@ -115,7 +115,8 @@ const uploadInvoice = multer({ dest: invoicesDir });
 app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     try {
-        const apiKey = process.env.GEMINI_API_KEY || "AQ.Ab8RN6J0U-2QICflP43f8mpmOsu7kg9foapNJJ2Yk11bi7i3kA";
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) return res.status(503).json({ error: 'GEMINI_API_KEY is not configured on the server.' });
         const genAI = new GoogleGenerativeAI(apiKey);
         
         const fileBytes = fs.readFileSync(req.file.path);
@@ -124,7 +125,7 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
         
         const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
         
-        const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
+        const models = ["gemini-3.5-flash", "gemini-2.5-flash-lite"];
         let result = null;
         let lastError = null;
 
@@ -139,7 +140,8 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
                         result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
                         break; 
                     } catch (error) {
-                        const isOverloaded = error.status === 503 || (error.message && error.message.toLowerCase().includes('high demand'));
+                        const isOverloaded = error.status === 503 || error.status === 429 ||
+                            (error.message && /high demand|quota|overloaded/i.test(error.message));
                         if (isOverloaded && i < maxRetries - 1) {
                             const jitter = Math.floor(Math.random() * 1000); 
                             const waitTime = delay + jitter;
@@ -176,14 +178,37 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
 
 app.post('/api/work/sync', verifyToken, async (req, res) => {
     try {
+        const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
+        if (!rows.length) return res.json({ success: true, added: 0, skipped: [] });
+
+        const spreadsheetId = '1NaObt-gwnmsn8Ouv1onbF4UUuFiiaPZPZj-pLU3G6SM';
         const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
-        await sheets.spreadsheets.values.append({
-            spreadsheetId: '1NaObt-gwnmsn8Ouv1onbF4UUuFiiaPZPZj-pLU3G6SM',
-            range: 'Sheet1!A:H', valueInputOption: 'USER_ENTERED', requestBody: { values: req.body.rows }
+
+        // Column C is Invoice Number (Task ID, Subcontractor, Invoice Number, Date, TRN, Net, VAT, Total).
+        // Read what's already there so the same invoice never gets written twice.
+        const existing = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Sheet1!C2:C' });
+        const seenInvoiceNumbers = new Set((existing.data.values || []).flat().map(v => String(v).trim()).filter(Boolean));
+
+        const skipped = [];
+        const toWrite = rows.filter(row => {
+            const invoiceNumber = String(row[2] || '').trim();
+            if (invoiceNumber && seenInvoiceNumbers.has(invoiceNumber)) { skipped.push(invoiceNumber); return false; }
+            if (invoiceNumber) seenInvoiceNumbers.add(invoiceNumber); // also guards duplicates within the same batch
+            return true;
         });
-        res.json({ success: true });
-    } catch(e) { res.status(500).json({ error: 'Failed to sync with Sheets Matrix' }); }
+
+        if (toWrite.length) {
+            await sheets.spreadsheets.values.append({
+                spreadsheetId, range: 'Sheet1!A:H', valueInputOption: 'USER_ENTERED', requestBody: { values: toWrite }
+            });
+        }
+
+        res.json({ success: true, added: toWrite.length, skipped });
+    } catch(e) {
+        console.error('[Lair OS] Sync Error:', e);
+        res.status(500).json({ error: 'Failed to sync with Sheets Matrix' });
+    }
 });
 
 async function generateThumbnail(filename) {

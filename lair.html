@@ -317,6 +317,33 @@
                   <p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Auto-extracts VAT & Totals</p>
               </div>
           </div>
+
+          <div class="card stagger-2" style="padding:0; overflow:hidden; margin-top:20px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:var(--glass-border);">
+                  <h2 style="font-family:var(--font-display); font-size:16px; font-weight:500; margin:0;">Ledger</h2>
+                  <button id="auditor-export-btn" class="btn-secondary haptic-btn" style="padding:8px 14px; font-size:11px;">Export CSV</button>
+              </div>
+              <div style="overflow-x:auto;">
+                  <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:760px;">
+                      <thead>
+                          <tr style="font-family:var(--font-mono); font-size:10px; text-transform:uppercase; color:var(--ink-soft); text-align:left;">
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border); width:36px; text-align:center;">·</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">Task ID</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">Subcontractor</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">Invoice #</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">Date</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">TRN</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right;">Net</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right;">VAT</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right;">Total</th>
+                          </tr>
+                      </thead>
+                      <tbody id="auditor-table-body">
+                          <tr id="auditor-empty-row"><td colspan="9" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Extracted invoices will stream here and sync to Sheets automatically.</td></tr>
+                      </tbody>
+                  </table>
+              </div>
+          </div>
       </div>
 
       <!-- Facility Ops Module -->
@@ -718,10 +745,14 @@
       const dropzone = document.getElementById('auditor-dropzone');
       const fileInput = document.getElementById('batch-upload-input');
       const dropText = document.getElementById('auditor-drop-text');
-      
+      const tableBody = document.getElementById('auditor-table-body');
+      const emptyRow = document.getElementById('auditor-empty-row');
+      const exportBtn = document.getElementById('auditor-export-btn');
+
       if(!dropzone || !fileInput) return;
 
       let totalNet = 0, totalVat = 0, grossTotal = 0, count = 0;
+      let csvRows = [["Task ID", "Subcontractor", "Invoice Number", "Date", "TRN", "Net", "VAT", "Total"]];
 
       const updateUI = () => {
           document.getElementById('auditor-count').textContent = count;
@@ -730,27 +761,69 @@
           document.getElementById('auditor-gross').textContent = grossTotal.toFixed(2);
       };
 
+      const appendLedgerRow = (row) => {
+          if (emptyRow) emptyRow.style.display = 'none';
+          const net = Number(row[5]) || 0, vat = Number(row[6]) || 0, total = Number(row[7]) || 0;
+          const isValid = Math.abs((net + vat) - total) < 0.05;
+          const tr = document.createElement('tr');
+          tr.style.cssText = isValid ? '' : 'background:rgba(217,83,79,0.08); border-left:3px solid var(--err);';
+          const cell = (val, align = 'left') => `<td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:${align};">${val}</td>`;
+          tr.innerHTML = `
+              <td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:center;">${isValid ? '✔' : '⚠'}</td>
+              ${cell(row[0])}${cell(row[1])}${cell(row[2])}${cell(row[3])}${cell(row[4])}
+              ${cell(net.toFixed(2), 'right')}${cell(vat.toFixed(2), 'right')}${cell(total.toFixed(2), 'right')}`;
+          tableBody.insertBefore(tr, tableBody.firstChild);
+          csvRows.push(row);
+      };
+
       const processFiles = async (files) => {
           if (!files.length) return;
+          const taskIdInput = document.getElementById('work-task-id');
+          const taskId = (taskIdInput && taskIdInput.value.trim()) || 'UNASSIGNED';
           dropText.textContent = `Processing ${files.length} file(s)...`;
-          
+
           for (let i = 0; i < files.length; i++) {
               const fd = new FormData();
               fd.append('invoice', files[i]);
-              
+
               try {
                   const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/extract`, { method: 'POST', body: fd });
-                  if (res.ok) {
-                      const data = await res.json();
-                      count++;
-                      totalNet += Number(data.net_amount) || 0;
-                      totalVat += Number(data.vat_amount) || 0;
-                      grossTotal += Number(data.total_amount) || 0;
-                      updateUI();
-                      window.showToast(`Extracted: ${data.subcontractor_name || 'Invoice'}`, 'success');
-                  } else {
-                      window.showToast(`Failed to parse file ${i+1}`, 'error');
+                  if (!res.ok) { window.showToast(`Failed to parse file ${i+1}`, 'error'); continue; }
+                  const data = await res.json();
+
+                  // Extraction only reads the invoice — this is what actually
+                  // writes it into the Sheet, with duplicate invoice numbers blocked server-side.
+                  const row = [
+                      taskId,
+                      data.subcontractor_name || '',
+                      data.invoice_number || '',
+                      data.invoice_date || '',
+                      data.trn || '',
+                      Number(data.net_amount) || 0,
+                      Number(data.vat_amount) || 0,
+                      Number(data.total_amount) || 0
+                  ];
+
+                  const syncRes = await fetchWithAuth(`${TUNNEL_URL}/api/work/sync`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ rows: [row] })
+                  });
+                  const syncData = await syncRes.json();
+
+                  if (!syncRes.ok || !syncData.success) {
+                      window.showToast(`${data.subcontractor_name || 'Invoice'}: not saved (${syncData.error || 'sync failed'})`, 'error');
+                      continue;
                   }
+                  if (syncData.skipped && syncData.skipped.includes(data.invoice_number)) {
+                      window.showToast(`Duplicate blocked: Invoice #${data.invoice_number}`, 'error');
+                      continue;
+                  }
+
+                  count++; totalNet += row[5]; totalVat += row[6]; grossTotal += row[7];
+                  updateUI();
+                  appendLedgerRow(row);
+                  window.showToast(`Saved: ${data.subcontractor_name || 'Invoice'}`, 'success');
               } catch (e) {
                   window.showToast(`Upload error on file ${i+1}`, 'error');
               }
@@ -775,6 +848,18 @@
           dropzone.style.borderColor = 'rgba(255,255,255,0.2)';
           if (e.dataTransfer.files) processFiles(e.dataTransfer.files);
       });
+
+      if (exportBtn) {
+          exportBtn.addEventListener('click', () => {
+              if (csvRows.length <= 1) { window.showToast('No data to export yet.'); return; }
+              const csv = csvRows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              const a = document.createElement('a');
+              a.href = URL.createObjectURL(blob);
+              a.download = `auditor_pro_session_${new Date().toISOString().split('T')[0]}.csv`;
+              a.click();
+          });
+      }
   }
 
   function initOS() {
