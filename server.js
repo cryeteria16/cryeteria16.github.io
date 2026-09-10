@@ -513,7 +513,7 @@ app.get('/stream/movies/:filename', verifyToken, (req, res) => {
 
 app.get('/api/tmdb/search', verifyToken, async (req, res) => {
     const query = (req.query.q || '').trim();
-    if (!query) return.json({ results: [] });
+    if (!query) return res.json({ results: [] });
     if (!TMDB_API_KEY) return res.status(503).json({ error: 'TMDB_API_KEY not configured.' });
     try {
         const tmdbRes = await axios.get('https://api.themoviedb.org/3/search/multi', { params: { api_key: TMDB_API_KEY, query, include_adult: false } });
