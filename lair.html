@@ -802,13 +802,17 @@
 
   document.getElementById('btn-signout').addEventListener('click', () => { signOut(auth); window.location.replace("index.html"); });
 
-  document.querySelectorAll('[data-workseg]').forEach(btn => {
+document.querySelectorAll('[data-workseg]').forEach(btn => {
       btn.addEventListener('click', (e) => {
           triggerHaptic();
           document.querySelectorAll('[data-workseg]').forEach(b => b.classList.remove('active')); 
           e.currentTarget.classList.add('active');
           document.querySelectorAll('.work-module').forEach(t => t.style.display = 'none');
-          document.getElementById(`work-${e.currentTarget.getAttribute('data-workseg')}`).style.display = 'block';
+          const targetSeg = e.currentTarget.getAttribute('data-workseg');
+          document.getElementById(`work-${targetSeg}`).style.display = 'block';
+          if (targetSeg === 'vw' && typeof window.loadVWBriefing === 'function') {
+              window.loadVWBriefing();
+          }
       });
   });
 
