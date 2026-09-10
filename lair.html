@@ -1194,6 +1194,47 @@ document.querySelectorAll('[data-workseg]').forEach(btn => {
       }
   }
 
+  window.loadVWBriefing = async function() {
+      const textEl = document.getElementById('vw-briefing-text');
+      const metricsEl = document.getElementById('vw-metrics-row');
+      if (!textEl) return;
+
+      textEl.textContent = "Analyzing compliance KPIs and generating executive briefing...";
+      metricsEl.innerHTML = "";
+
+      try {
+          const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/vw-briefing`);
+          if (!res.ok) throw new Error('Failed to fetch briefing');
+          
+          const data = await res.json();
+          textEl.textContent = `"${data.summary}"`;
+          textEl.style.fontStyle = 'normal';
+          textEl.style.color = 'var(--ink)';
+
+          const m = data.metrics;
+          metricsEl.innerHTML = `
+              <div style="background:var(--input-bg); padding:12px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                  <span style="display:block; color:var(--ink-soft); font-size:10px; font-family:var(--font-mono); margin-bottom:4px; text-transform:uppercase;">Completed Works</span>
+                  <span style="font-size:16px; font-weight:600; color:var(--ink);">${m.completedWorks}</span>
+              </div>
+              <div style="background:var(--input-bg); padding:12px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                  <span style="display:block; color:var(--ink-soft); font-size:10px; font-family:var(--font-mono); margin-bottom:4px; text-transform:uppercase;">Missing WCRs</span>
+                  <span style="font-size:16px; font-weight:600; color:var(--warn);">${m.missingWcr}</span>
+              </div>
+              <div style="background:var(--input-bg); padding:12px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                  <span style="display:block; color:var(--ink-soft); font-size:10px; font-family:var(--font-mono); margin-bottom:4px; text-transform:uppercase;">Missing SAP Uploads</span>
+                  <span style="font-size:16px; font-weight:600; color:var(--warn);">${m.missingSapUpload}</span>
+              </div>
+              <div style="background:var(--input-bg); padding:12px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                  <span style="display:block; color:var(--ink-soft); font-size:10px; font-family:var(--font-mono); margin-bottom:4px; text-transform:uppercase;">Pending WASL POs</span>
+                  <span style="font-size:16px; font-weight:600; color:var(--err);">${m.pendingWaslPo}</span>
+              </div>
+          `;
+      } catch (e) {
+          textEl.textContent = "Unable to generate AI briefing at this moment.";
+      }
+  };
+
   function initOS() {
     setupAdaptivePolling();
 
