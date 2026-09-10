@@ -112,6 +112,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 const uploadInvoice = multer({ dest: invoicesDir });
+const uploadPO = multer({ dest: invoicesDir });
 
 const API_KEYS = [
     process.env.GEMINI_KEY_1,
@@ -170,6 +171,43 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
     } catch(e) {
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ error: 'Extraction failed' });
+    }
+});
+
+app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No PO file uploaded' });
+    try {
+        const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
+        const genAI = new GoogleGenerativeAI(activeKey);
+        
+        const fileBytes = fs.readFileSync(req.file.path);
+        const base64Data = fileBytes.toString("base64");
+        const fileMimeType = req.file.mimetype; 
+        
+        const prompt = `You are an elite procurement auditor. Read this Microsoft Dynamics Purchase Order PDF and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: 
+        "po_number" (String, e.g., "PO9728-0015534"), 
+        "po_date" (String), 
+        "supplier_name" (String), 
+        "building" (String, extract location or building name mentioned), 
+        "project_name" (String), 
+        "net_amount" (Number), 
+        "tax_amount" (Number), 
+        "total_amount" (Number), 
+        "line_items" (Array of objects with "item", "qty", "total").`;
+        
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
+        
+        let rawText = result.response.text().trim();
+        if (rawText.startsWith('```json')) rawText = rawText.replace(/^```json/, '').replace(/```$/, '').trim();
+        else if (rawText.startsWith('```')) rawText = rawText.replace(/^```/, '').replace(/```$/, '').trim();
+        
+        const data = JSON.parse(rawText);
+        fs.unlinkSync(req.file.path); 
+        res.json(data);
+    } catch(e) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        res.status(500).json({ error: 'PO extraction failed' });
     }
 });
 
