@@ -42,6 +42,7 @@
   }
 
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color: transparent; }
+  
   ::-webkit-scrollbar { display: none; }
   * { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -53,26 +54,30 @@
   
   .os-menubar { position: fixed; top: 0; left: 0; width: 100%; height: calc(60px + env(safe-area-inset-top, 0px)); padding-top: calc(14px + env(safe-area-inset-top, 0px)); padding-bottom: 10px; background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border-bottom: var(--glass-border); box-shadow: var(--liquid-edge); display: flex; align-items: flex-end; justify-content: space-between; padding-left: 28px; padding-right: 28px; font-size: 13px; font-weight: 500; z-index: 900; transition: background 0.4s ease; }
   
+  @media (max-width: 600px) {
+    .nav-btn-text { display: none; }
+    #partner-name { max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .os-menubar { padding-left: 16px; padding-right: 16px; }
+  }
+
   @keyframes pulse-dot { 0% { box-shadow: 0 0 0 0 rgba(112, 148, 122, 0.7); } 70% { box-shadow: 0 0 0 8px rgba(112, 148, 122, 0); } 100% { box-shadow: 0 0 0 0 rgba(112, 148, 122, 0); } }
   .sys-dot { width: 7px; height: 7px; border-radius: 50%; display:inline-block; transition: 0.3s; }
   .sys-dot.pulse { animation: pulse-dot 2.5s infinite cubic-bezier(0.45, 0, 0.55, 1); }
+  
+  #broadcast-banner { display:none; width:100%; background:var(--accent); color:#000; font-family:var(--font-mono); font-size:12px; font-weight:600; text-align:center; padding:10px; z-index:1000; position:fixed; top:0; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);}
 
-  #broadcast-banner { display:none; width:100%; background:var(--accent); color:#000; font-family:var(--font-mono); font-size:12px; font-weight:600; text-align:center; padding:10px; z-index:10000; position:fixed; top:0; left:0; box-shadow:0 4px 20px rgba(0,0,0,0.5);}
-  #toast-container { position: fixed; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
-  .lair-toast { background: rgba(14, 15, 20, 0.88); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); box-shadow: var(--liquid-edge), var(--glass-glow); color: var(--ink); padding: 11px 22px; border-radius: 40px; font-size: 13px; font-weight: 500; animation: toastUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; display: flex; align-items: center; gap: 10px; pointer-events: auto; }
-  @keyframes toastUp { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-  .lair-toast.success { border-color: rgba(112, 148, 122, 0.4); }
-  .lair-toast.error { border-color: rgba(217, 83, 79, 0.4); }
-
-  .os-dock-wrapper { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: 0; width: 100%; display: flex; justify-content: center; z-index: 9999; pointer-events: none; }
-  .os-dock { background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); box-shadow: var(--liquid-edge), var(--glass-glow); border-radius: 36px; padding: 6px 8px; display: flex; gap: 6px; pointer-events: auto; transition: background 0.4s ease; }
-  .dock-app { padding: 9px 20px; border-radius: 26px; color: var(--ink-soft); font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .os-dock-wrapper { position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); left: 0; width: 100%; display: flex; justify-content: center; z-index: 900; pointer-events: none; overflow: hidden; }
+  .os-dock { background: var(--glass-nav); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); box-shadow: var(--liquid-edge), var(--glass-glow); border-radius: 36px; padding: 6px 8px; display: flex; gap: 6px; pointer-events: auto; transition: background 0.4s ease; max-width: 95vw; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .dock-app { padding: 9px 20px; border-radius: 26px; color: var(--ink-soft); font-weight: 500; font-size: 13px; cursor: pointer; transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); scroll-snap-align: center; white-space: nowrap; }
   .dock-app.active { background: var(--ink); color: var(--bg); font-weight: 600; box-shadow: 0 6px 16px -3px rgba(0, 0, 0, 0.25); }
   .dock-app:active { transform: scale(0.92); }
 
-  main { padding: 90px 32px 100px; max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; min-height: 100vh; position: relative; z-index: 10; }
+  main { padding: 90px 32px calc(110px + env(safe-area-inset-bottom, 0px)); max-width: 1400px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; min-height: 100vh; }
   
-  @keyframes cardSlideUp { from { opacity: 0; transform: translateY(20px) scale(0.985); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  @keyframes cardSlideUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
   
   .card { 
     background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); 
@@ -88,7 +93,10 @@
   }
   .ambient-typing { animation: ambientBreath 2s infinite ease-in-out !important; }
 
-  .stagger-1 { animation-delay: 0.04s; } .stagger-2 { animation-delay: 0.09s; } .stagger-3 { animation-delay: 0.14s; } .stagger-4 { animation-delay: 0.19s; }
+  .stagger-1 { animation-delay: 0.04s; }
+  .stagger-2 { animation-delay: 0.09s; }
+  .stagger-3 { animation-delay: 0.14s; }
+  .stagger-4 { animation-delay: 0.19s; }
 
   .card-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
   .card-head h2 { font-family:var(--font-display); font-size:19px; font-weight:500; }
@@ -119,6 +127,7 @@
   @media (max-width: 1024px) { .theater-grid { grid-template-columns: 1fr; } }
   
   .theater-container { width: 100%; max-height: 70vh; aspect-ratio: 16/9; background: #000; border-radius: var(--radius-sm); border: var(--glass-border); box-shadow: 0 35px 70px -15px rgba(0,0,0,0.6); position: relative; overflow: hidden; display: block; }
+  
   .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
   .vault-thumb-card:hover { transform: scale(1.05); }
 
@@ -128,7 +137,7 @@
   .view-container { display: none; opacity: 0; } 
   .view-container.active { display: block; animation: cardSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
-  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); display:none; align-items:center; justify-content:center; z-index:10000; padding:24px; animation: cardSlideUp 0.3s forwards; }
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.85); backdrop-filter:var(--glass-blur); -webkit-backdrop-filter:var(--glass-blur); display:none; align-items:center; justify-content:center; z-index:1000; padding:24px; animation: cardSlideUp 0.3s forwards; }
   .modal-overlay.active { display:flex; }
 
   .voice-orb { width: 170px; height: 170px; border-radius: 50%; margin: 0 auto 26px; background: radial-gradient(circle at 35% 30%, rgba(112,148,122,0.9), rgba(112,148,122,0.15) 70%); display:flex; align-items:center; justify-content:center; box-shadow: 0 0 0 1px rgba(255,255,255,0.08), 0 20px 60px -10px rgba(112,148,122,0.5); transition: box-shadow 0.15s ease, transform 0.15s ease; }
@@ -140,6 +149,17 @@
   .voice-btn:active { transform: scale(0.92); }
   .voice-btn.danger { background: var(--err); color:#fff; }
   .voice-btn.muted { background: var(--warn); color:#000; }
+
+  #toast-container { position: fixed; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); z-index: 1100; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .lair-toast { background: rgba(14, 15, 20, 0.88); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); box-shadow: var(--liquid-edge), var(--glass-glow); color: var(--ink); padding: 11px 22px; border-radius: 40px; font-size: 13px; font-weight: 500; animation: toastUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; display: flex; align-items: center; gap: 10px; pointer-events: auto; }
+  @keyframes toastUp { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .lair-toast.success { border-color: rgba(112, 148, 122, 0.4); }
+  .lair-toast.error { border-color: rgba(217, 83, 79, 0.4); }
+
+  /* Floating Quick Capture FAB */
+  .fab-capture { position: fixed; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); right: 24px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #000; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); z-index: 850; cursor: pointer; transition: transform 0.25s; }
+  .fab-capture:active { transform: scale(0.9); }
+  .field-label { display: block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
 </style>
 </head>
 <body data-theme="dark">
@@ -156,20 +176,24 @@
         <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); display:flex; align-items:center;">
             <span id="partner-dot" class="sys-dot" style="color:var(--err); margin-right:6px;"></span><span id="partner-name">Offline</span>
         </span>
-        <button id="btn-theme-toggle" class="btn-secondary haptic-btn" style="padding:6px 12px; font-size:11px;">☀️ Light</button>
-        <button id="btn-signout" class="haptic-btn" style="color:var(--err); font-size:12px; font-weight:600;">Lock</button>
+        <button id="btn-theme-toggle" class="btn-secondary haptic-btn" style="padding:6px 12px; font-size:11px;"><span class="nav-btn-text">☀️ Light</span><span style="display:none;" id="icon-theme">☀️</span></button>
+        <button id="btn-signout" class="haptic-btn" style="color:var(--err); font-size:12px; font-weight:600;"><span class="nav-btn-text">Lock</span><span style="display:none;" id="icon-lock">🔒</span></button>
     </div>
   </nav>
 
   <div class="os-dock-wrapper">
     <div class="os-dock">
       <div class="dock-app app-link active haptic-btn" data-target="dashboard">Dashboard</div>
-      <div class="dock-app app-link haptic-btn" data-target="work" id="dock-work-link">Work</div>
+      <div class="dock-app app-link haptic-btn" data-target="work">Work</div>
       <div class="dock-app app-link haptic-btn" data-target="drop">Vault</div>
       <div class="dock-app app-link haptic-btn" data-target="theater" id="dock-theater-link">Theater</div>
       <div class="dock-app app-link haptic-btn" data-target="voice" id="dock-voice-link">Voice</div>
       <a href="admin.html" id="dock-admin-link" class="dock-app haptic-btn" style="display:none;">Settings</a>
     </div>
+  </div>
+
+  <div class="fab-capture haptic-btn" id="btn-quick-capture" style="display:none;" title="Quick Capture">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
   </div>
 
   <main id="swipe-zone">
@@ -236,24 +260,77 @@
       </div>
     </section>
 
-    <!-- NEW WORK TAB: Auditor Pro Web App Integration -->
     <section id="view-work" class="view-container">
-      <div class="card stagger-1" style="padding: 0; overflow: hidden; height: 80vh; min-height: 700px; display: flex; flex-direction: column;">
-        <div style="background: var(--glass-nav); padding: 12px 24px; border-bottom: var(--glass-border); display: flex; justify-content: space-between; align-items: center;">
-          <h2 style="font-family: var(--font-display); font-size: 16px; font-weight: 500;">Financial Ledger</h2>
-          <div style="display: flex; gap: 8px;">
-            <span class="sys-dot pulse" style="color: var(--con);"></span>
-            <span style="font-family: var(--font-mono); font-size: 10px; color: var(--con); text-transform: uppercase;">Google Cloud Active</span>
+      <div style="display:flex; justify-content:center; margin-bottom: 20px;">
+          <div class="segment-pill">
+              <button class="seg-btn active haptic-btn" data-workseg="auditor">Auditor PRO</button>
+              <button class="seg-btn haptic-btn" data-workseg="facility">Facility Ops</button>
+              <button class="seg-btn haptic-btn" data-workseg="academic">Academic Matrix</button>
           </div>
-        </div>
-        
-        <!-- DROP YOUR DEPLOYED GOOGLE APPS SCRIPT URL HERE -->
-        <iframe 
-          src="https://script.google.com/macros/s/AKfycby99d_s6ccUREAqNWLHnf1lRaFP1rSv72S5-4RjHx_yZR6Y_bl_QTxgzLVQCfWxurI_ig/exec" 
-          style="width: 100%; height: 100%; border: none; flex: 1; background: transparent;"
-          allow="clipboard-write">
-        </iframe>
-        
+      </div>
+
+      <!-- Financial Ledger Module -->
+      <div id="work-auditor" class="work-module active stagger-1">
+          <div class="card" style="padding: 24px;">
+              <div class="card-head" style="margin-bottom:24px;">
+                  <h2 style="display:flex; align-items:center; gap:8px;">Financial Ledger <span style="font-family:var(--font-mono); font-size:9px; background:var(--glass-bg); border:var(--glass-border); padding:4px 8px; border-radius:12px; color:var(--ink-soft); text-transform:uppercase;">Google Cloud Active</span></h2>
+              </div>
+              
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom: 24px; flex-wrap:wrap;">
+                  <h3 style="font-family:var(--font-display); font-size:22px; margin:0;">Auditor <span style="color:var(--con);">PRO</span></h3>
+                  <span style="font-family:var(--font-mono); font-size:10px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px;">Auto-Retry</span>
+                  <span style="font-family:var(--font-mono); font-size:10px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px;">Enabled</span>
+                  <div style="flex:1;"></div>
+                  <button class="btn-secondary haptic-btn" style="padding:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg></button>
+                  <button class="btn-secondary haptic-btn" style="padding:8px; color:var(--warn);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:24px;">
+                  <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">SESSION INVOICES</p>
+                      <h4 style="font-size:20px; font-weight:600;">0</h4>
+                  </div>
+                  <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">TOTAL NET</p>
+                      <h4 style="font-size:20px; font-weight:600;">0.00</h4>
+                  </div>
+                  <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">TOTAL VAT</p>
+                      <h4 style="font-size:20px; font-weight:600;">0.00</h4>
+                  </div>
+                  <div style="background:rgba(112,148,122,0.1); padding:16px; border-radius:var(--radius-sm); border:1px solid rgba(112,148,122,0.3);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--con); margin-bottom:6px;">GROSS TOTAL</p>
+                      <h4 style="font-size:20px; font-weight:600; color:var(--con);">0.00</h4>
+                  </div>
+              </div>
+
+              <label class="field-label">GLOBAL TASK ID</label>
+              <input type="text" id="work-task-id" placeholder="e.g., FM-2026-901" style="margin-bottom:24px;">
+
+              <label class="field-label">BATCH UPLOAD</label>
+              <div style="background:var(--input-bg); border:1px dashed rgba(255,255,255,0.2); border-radius:var(--radius-sm); padding:32px; text-align:center; cursor:pointer;" onclick="document.getElementById('batch-upload-input').click()">
+                  <input type="file" id="batch-upload-input" accept="application/pdf,image/*" style="display:none;" multiple>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--con)" stroke-width="2" style="margin-bottom:12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                  <p style="font-size:13px; font-weight:500;">Drop multiple PDFs or Images here</p>
+                  <p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Auto-extracts VAT & Totals</p>
+              </div>
+          </div>
+      </div>
+
+      <!-- Facility Ops Module -->
+      <div id="work-facility" class="work-module stagger-2" style="display:none;">
+          <div class="card" style="padding: 24px; text-align:center; min-height: 400px; display:flex; flex-direction:column; justify-content:center;">
+              <h3 style="font-family:var(--font-display); margin-bottom:12px;">Facility Ops Tracker</h3>
+              <p style="font-size:13px; color:var(--ink-soft);">Module currently loading. Track live site deployments and rectifications.</p>
+          </div>
+      </div>
+
+      <!-- Academic Matrix Module -->
+      <div id="work-academic" class="work-module stagger-3" style="display:none;">
+          <div class="card" style="padding: 24px; text-align:center; min-height: 400px; display:flex; flex-direction:column; justify-content:center;">
+              <h3 style="font-family:var(--font-display); margin-bottom:12px;">Academic Matrix</h3>
+              <p style="font-size:13px; color:var(--ink-soft);">Module currently loading. Study sandbox for ATX-UK scenarios and IAL Edexcel Chemistry annotations.</p>
+          </div>
       </div>
     </section>
 
@@ -281,9 +358,15 @@
                 <button class="seg-btn haptic-btn" data-seg="docs">Documents</button>
             </div>
         </div>
-        <div id="timeline-photos" class="vault-timeline active"><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div></div>
-        <div id="timeline-videos" class="vault-timeline"><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div></div>
-        <div id="timeline-docs" class="vault-timeline"><div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div></div>
+        <div id="timeline-photos" class="vault-timeline active">
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
+        </div>
+        <div id="timeline-videos" class="vault-timeline">
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
+        </div>
+        <div id="timeline-docs" class="vault-timeline">
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
+        </div>
       </section>
     </section>
 
@@ -387,11 +470,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
 <script type="module">
-  window.addEventListener('error', (e) => {
-      if (window.showToast) window.showToast('System Error: ' + e.message, 'error');
-      console.error(e);
-  });
-
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, collection, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, addDoc, getDoc, getDocs, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -440,6 +518,7 @@
     });
   };
 
+  // Subtle Parallax (Tuned for iOS Gyroscope)
   function initParallax() {
     const wallpaper = document.getElementById('diurnal-wallpaper');
     if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -498,7 +577,7 @@
   }, {passive: true});
   
   swipeZone.addEventListener('touchend', e => {
-      if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, input, textarea, .artplayer-app, table, iframe')) return;
+      if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, .os-dock, input, textarea, .artplayer-app')) return;
       const diffX = touchStartX - e.changedTouches[0].screenX; const diffY = touchStartY - e.changedTouches[0].screenY;
       if (Math.abs(diffY) > Math.abs(diffX)) return;
 
@@ -588,7 +667,14 @@
             }
             if(snap.data().theme) {
                 document.body.setAttribute('data-theme', snap.data().theme);
-                document.getElementById('btn-theme-toggle').textContent = snap.data().theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+                
+                // Toggle text/icons in Nav for condensement
+                const themeBtnText = document.querySelector('#btn-theme-toggle .nav-btn-text');
+                const themeBtnIcon = document.getElementById('icon-theme');
+                const isLight = snap.data().theme === 'light';
+                
+                themeBtnText.textContent = isLight ? '🌙 Dark' : '☀️ Light';
+                themeBtnIcon.textContent = isLight ? '🌙' : '☀️';
             }
         }
     });
@@ -598,12 +684,30 @@
 
   document.getElementById('btn-signout').addEventListener('click', () => { signOut(auth); window.location.replace("index.html"); });
 
+  // Segment Pill Navigation (For the Work Tab)
+  document.querySelectorAll('[data-workseg]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+          triggerHaptic();
+          document.querySelectorAll('[data-workseg]').forEach(b => b.classList.remove('active')); 
+          e.currentTarget.classList.add('active');
+          document.querySelectorAll('.work-module').forEach(t => t.style.display = 'none');
+          document.getElementById(`work-${e.currentTarget.getAttribute('data-workseg')}`).style.display = 'block';
+      });
+  });
+
   document.querySelectorAll('.app-link').forEach(link => {
     link.addEventListener('click', (e) => {
       document.querySelectorAll('.dock-app').forEach(d => d.classList.remove('active')); 
       e.currentTarget.classList.add('active');
       document.querySelectorAll('.view-container').forEach(w => w.classList.remove('active'));
-      document.getElementById(`view-${e.currentTarget.getAttribute('data-target')}`).classList.add('active'); 
+      
+      const target = e.currentTarget.getAttribute('data-target');
+      document.getElementById(`view-${target}`).classList.add('active'); 
+      
+      // Control FAB visibility
+      const fab = document.getElementById('btn-quick-capture');
+      if (fab) fab.style.display = target === 'work' ? 'flex' : 'none';
+
       window.scrollTo(0,0);
     });
   });
@@ -635,6 +739,15 @@
         setDoc(doc(db, 'users', currentUser.id), { theme: newTheme }, { merge: true });
     });
 
+    // Share Target URL Catch
+    const urlParams = new URLSearchParams(window.location.search);
+    if(urlParams.get('share') === 'true') {
+        window.showToast('Work order media received from Share Sheet.', 'success');
+        document.querySelector('.dock-app[data-target="work"]').click();
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // Fridge Door with Ambient Contextual Glow
     const fridgeText = document.getElementById('fridge-door-text');
     const fridgeStatus = document.getElementById('fridge-status');
     const fridgeCard = document.getElementById('fridge-card');

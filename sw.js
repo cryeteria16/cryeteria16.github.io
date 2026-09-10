@@ -1,5 +1,10 @@
-const CACHE_NAME = 'lair-os-v3';
-const STATIC_ASSETS = ['/manifest.json'];
+const CACHE_NAME = 'lair-os-v5';
+const STATIC_ASSETS = [
+  '/manifest.json',
+  '/index.html',
+  '/lair.html',
+  '/admin.html'
+];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -20,7 +25,6 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Network-First for HTML/Documents so code changes appear immediately
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.mode === 'navigate' || req.destination === 'document') {
@@ -36,7 +40,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-First for static assets
   event.respondWith(
     caches.match(req).then((cachedRes) => {
       return cachedRes || fetch(req);
