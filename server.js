@@ -345,6 +345,90 @@ app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
     }
 });
 
+// --- AI EXECUTIVE BRIEFING (COMPLIANCE & BILLING) ---
+app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
+    try {
+        const authClient = new google.auth.GoogleAuth({ 
+            keyFile: './serviceAccountKey.json', 
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
+        });
+        const sheets = google.sheets({ version: 'v4', auth: authClient });
+
+        const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
+        const sheetName = meta.data.sheets[0].properties.title;
+
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: VW_SPREADSHEET_ID,
+            range: `${sheetName}!A1:AZ`
+        });
+
+        const rows = response.data.values || [];
+        if (rows.length <= 1) return res.json({ summary: "No data available to analyze." });
+
+        const headers = rows[0];
+        const dataRows = rows.slice(1);
+
+        // Compliance Counters
+        let metrics = {
+            totalWorks: dataRows.length,
+            completedWorks: 0,
+            missingWcr: 0,
+            missingSapUpload: 0,
+            missingTijoriUpload: 0,
+            pendingWaslPo: 0
+        };
+
+        dataRows.forEach(row => {
+            const getCol = (name) => {
+                const idx = headers.indexOf(name);
+                return idx !== -1 ? (row[idx] || '').toString().trim() : '';
+            };
+
+            const status = getCol('AGFS Works Status');
+            const wcrPrepared = getCol('WCR Prepared (Yes/Pending/NA)');
+            const sapUpload = getCol('WCR Uploaded in SAP (Yes/No)');
+            const tijoriUpload = getCol('Quote Uploaded in Tijori (Yes/No)');
+            const purchaseOrder = getCol('Purchase Order');
+
+            if (status.toLowerCase().includes('completed')) {
+                metrics.completedWorks++;
+                if (wcrPrepared.toLowerCase() !== 'yes' && wcrPrepared.toLowerCase() !== 'na') metrics.missingWcr++;
+                if (sapUpload.toLowerCase() !== 'yes' && sapUpload.toLowerCase() !== 'na') metrics.missingSapUpload++;
+            }
+
+            if (tijoriUpload.toLowerCase() === 'no' || tijoriUpload === '') metrics.missingTijoriUpload++;
+            if (purchaseOrder === '' || purchaseOrder.toLowerCase() === 'pending') metrics.pendingWaslPo++;
+        });
+
+        // Construct the optimized payload for Gemini
+        const prompt = `
+            You are an elite Facility Management & Financial Auditor. Analyze the following operational compliance snapshot for a property management portfolio. 
+            Provide a crisp, professional 3-4 sentence executive summary highlighting the primary bottlenecks in billing and document closure.
+            Use a direct, authoritative tone. Do not use pleasantries.
+            
+            DATA SNAPSHOT:
+            - Total Tracked Works: ${metrics.totalWorks}
+            - Physically Completed Works: ${metrics.completedWorks}
+            - Completed but missing WCR (Billing Blocker): ${metrics.missingWcr}
+            - WCR Prepared but missing SAP Upload (Invoicing Blocker): ${metrics.missingSapUpload}
+            - Quotes missing Tijori Upload: ${metrics.missingTijoriUpload}
+            - Active jobs missing WASL Purchase Order: ${metrics.pendingWaslPo}
+        `;
+
+        const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
+        const genAI = new GoogleGenerativeAI(activeKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const aiResponse = await model.generateContent(prompt);
+        let summaryText = aiResponse.response.text().trim();
+
+        res.json({ metrics, summary: summaryText });
+    } catch (error) {
+        console.error('[Lair OS] AI Briefing Error:', error);
+        res.status(500).json({ error: 'Failed to generate AI briefing.' });
+    }
+});
+
 // --- INLINE GOOGLE SHEETS EDITING ---
 app.post('/api/work/update-cell', verifyToken, async (req, res) => {
     try {
