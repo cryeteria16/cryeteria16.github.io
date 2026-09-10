@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -158,7 +159,6 @@
   .lair-toast.success { border-color: rgba(112, 148, 122, 0.4); }
   .lair-toast.error { border-color: rgba(217, 83, 79, 0.4); }
 
-  /* Floating Quick Capture FAB */
   .fab-capture { position: fixed; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); right: 24px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #000; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); z-index: 850; cursor: pointer; transition: transform 0.25s; }
   .fab-capture:active { transform: scale(0.9); }
   .field-label { display: block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
@@ -272,7 +272,6 @@
           </div>
       </div>
 
-      <!-- Financial Ledger Module -->
       <div id="work-auditor" class="work-module active stagger-1">
           <div class="card" style="padding: 24px;">
               <div class="card-head" style="margin-bottom:24px;">
@@ -353,7 +352,6 @@
           </div>
       </div>
 
-      <!-- Variable Works (VW) Tracker Module -->
       <div id="work-vw" class="work-module stagger-2" style="display:none;">
           <div class="card" style="padding: 24px; margin-bottom: 20px;">
               <div class="card-head" style="margin-bottom:20px;">
@@ -383,17 +381,14 @@
               </div>
           </div>
         
-<!-- AI EXECUTIVE BRIEFING CARD -->
-                <div id="vw-briefing-card" class="card stagger-2" style="padding: 24px; margin-bottom: 20px;">
-                    <div class="card-head" style="margin-bottom:12px;">
-                        <h2 style="display:flex; align-items:center; gap:8px; font-size:16px;">AI Compliance & Billing Briefing <span style="font-family:var(--font-mono); font-size:9px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px; text-transform:uppercase;">Gemini Synthesis</span></h2>
-                        <button onclick="loadVWBriefing()" class="btn-secondary haptic-btn" style="padding:6px 12px; font-size:11px;">Refresh Analysis</button>
-                    </div>
-                    <p id="vw-briefing-text" class="text-sm" style="color:var(--ink-soft); font-style:italic; margin-bottom:16px; font-size:13px; line-height:1.5;">Synthesizing Variable Works portfolio compliance...</p>
-                    <div id="vw-metrics-row" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; padding-top:14px; border-top:var(--glass-border); font-size:12px;">
-                        <!-- Dynamic metrics load here -->
-                    </div>
-                </div>
+          <div id="vw-briefing-card" class="card stagger-2" style="padding: 24px; margin-bottom: 20px;">
+              <div class="card-head" style="margin-bottom:12px;">
+                  <h2 style="display:flex; align-items:center; gap:8px; font-size:16px;">AI Compliance & Billing Briefing <span style="font-family:var(--font-mono); font-size:9px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px; text-transform:uppercase;">Gemini Synthesis</span></h2>
+                  <button onclick="loadVWBriefing()" class="btn-secondary haptic-btn" style="padding:6px 12px; font-size:11px;">Refresh Analysis</button>
+              </div>
+              <p id="vw-briefing-text" class="text-sm" style="color:var(--ink-soft); font-style:italic; margin-bottom:16px; font-size:13px; line-height:1.5;">Synthesizing Variable Works portfolio compliance...</p>
+              <div id="vw-metrics-row" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; padding-top:14px; border-top:var(--glass-border); font-size:12px;"></div>
+          </div>
         
           <div class="card stagger-3" style="padding:0; overflow:hidden;">
               <div style="display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:var(--glass-border);">
@@ -420,7 +415,6 @@
           </div>
       </div>
 
-      <!-- Facility Ops Module -->
       <div id="work-facility" class="work-module stagger-2" style="display:none;">
           <div class="card" style="padding: 24px; text-align:center; min-height: 400px; display:flex; flex-direction:column; justify-content:center;">
               <h3 style="font-family:var(--font-display); margin-bottom:12px;">Facility Ops Tracker</h3>
@@ -428,7 +422,6 @@
           </div>
       </div>
 
-      <!-- Academic Matrix Module -->
       <div id="work-academic" class="work-module stagger-3" style="display:none;">
           <div class="card" style="padding: 24px; text-align:center; min-height: 400px; display:flex; flex-direction:column; justify-content:center;">
               <h3 style="font-family:var(--font-display); margin-bottom:12px;">Academic Matrix</h3>
@@ -562,16 +555,13 @@
     </div>
   </div>
 
-  <!-- VW Dossier Slide-Over Modal -->
   <div id="vw-dossier-modal" class="modal-overlay">
     <div class="card" style="width:100%; max-width:700px; max-height:85vh; display:flex; flex-direction:column; padding:30px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:var(--glass-border); padding-bottom:12px;">
         <h2 id="vw-dossier-title" style="font-family:var(--font-display); font-size:20px; margin:0;">Work Order Dossier</h2>
         <button class="btn-secondary haptic-btn" onclick="document.getElementById('vw-dossier-modal').classList.remove('active')" style="padding:6px 14px; font-size:12px;">Close</button>
       </div>
-      <div id="vw-dossier-content" style="flex:1; overflow-y:auto; display:grid; grid-template-columns: 1fr 1fr; gap:16px; font-size:13px; padding-right:4px;">
-        <!-- Injected dynamically -->
-      </div>
+      <div id="vw-dossier-content" style="flex:1; overflow-y:auto; display:grid; grid-template-columns: 1fr 1fr; gap:16px; font-size:13px; padding-right:4px;"></div>
     </div>
   </div>
 
@@ -802,7 +792,7 @@
 
   document.getElementById('btn-signout').addEventListener('click', () => { signOut(auth); window.location.replace("index.html"); });
 
-document.querySelectorAll('[data-workseg]').forEach(btn => {
+  document.querySelectorAll('[data-workseg]').forEach(btn => {
       btn.addEventListener('click', (e) => {
           triggerHaptic();
           document.querySelectorAll('[data-workseg]').forEach(b => b.classList.remove('active')); 
@@ -1159,6 +1149,7 @@ document.querySelectorAll('[data-workseg]').forEach(btn => {
 
               allVWRows = data.rows;
               renderTable(allVWRows);
+              if (typeof window.loadVWBriefing === 'function') window.loadVWBriefing();
           } catch (e) {
               tableBody.innerHTML = `<tr><td colspan="6" style="padding:50px 20px; text-align:center; color:var(--err);">Failed to load VW tracker. Check server logs.</td></tr>`;
           }
