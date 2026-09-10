@@ -131,7 +131,7 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
         
         const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
         
-        const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
+        const models = ["gemini-3.8-flash", "gemini-3.5-flash"];
         let result = null;
         let lastError = null;
 
@@ -410,7 +410,7 @@ app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
 
         const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
         const genAI = new GoogleGenerativeAI(activeKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
 
         const aiResponse = await model.generateContent(prompt);
         let summaryText = aiResponse.response.text().trim();
