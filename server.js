@@ -8,10 +8,9 @@ const os = require('os');
 const { exec } = require('child_process');
 const axios = require('axios');
 const multer = require('multer');
-const chokidar = require('chokidar');
 const jwt = require('jsonwebtoken');
 const { initializeApp, cert } = require('firebase-admin/app');
-const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+const { getFirestore } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -116,16 +115,11 @@ const upload = multer({ storage: storage });
 const uploadInvoice = multer({ dest: invoicesDir });
 
 // --- THE TRI-CORE LOAD BALANCER ---
-// --- THE TRI-CORE LOAD BALANCER ---
 const API_KEYS = [
     process.env.GEMINI_KEY_1,
     process.env.GEMINI_KEY_2,
     process.env.GEMINI_KEY_3
 ].filter(Boolean);
-
-if (API_KEYS.length === 0) {
-    console.warn('[Lair OS] WARNING: No Gemini API keys found in environment variables.');
-}
 
 app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
@@ -157,7 +151,6 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
                         const isOverloaded = error.status === 503 || error.status === 429 || (error.message && /high demand|quota|overloaded/i.test(error.message));
                         if (isOverloaded && i < maxRetries - 1) {
                             const waitTime = delay + Math.floor(Math.random() * 1000); 
-                            console.warn(`[Lair OS] ${modelName} overloaded on Key ${activeKey.substring(0,6)}... Retrying in ${waitTime/1000}s`);
                             await new Promise(resolve => setTimeout(resolve, waitTime));
                             delay *= 2; 
                         } else { throw error; }
@@ -261,7 +254,6 @@ app.get('/api/work/ledger', verifyToken, async (req, res) => {
             rows: formattedRows.reverse()
         });
     } catch (error) {
-        console.error('[Lair OS] Ledger Fetch Error:', error);
         res.status(500).json({ error: 'Failed to load ledger from Sheets.' });
     }
 });
@@ -275,7 +267,6 @@ app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
         });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
-        // Automatically fetch the first tab's actual title
         const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
         const sheetName = meta.data.sheets[0].properties.title;
 
@@ -516,13 +507,13 @@ app.get('/stream/movies/:filename', verifyToken, (req, res) => {
         fs.createReadStream(filePath, {start, end}).pipe(res);
     } else {
         res.writeHead(200, { 'Content-Length': fileSize, 'Content-Type': 'video/mp4' });
-        fs.createReadStream(filePath).pipe(res);
+        fs.createReadStream(filePath, {start, end}).pipe(res);
     }
 });
 
 app.get('/api/tmdb/search', verifyToken, async (req, res) => {
     const query = (req.query.q || '').trim();
-    if (!query) return res.json({ results: [] });
+    if (!query) return.json({ results: [] });
     if (!TMDB_API_KEY) return res.status(503).json({ error: 'TMDB_API_KEY not configured.' });
     try {
         const tmdbRes = await axios.get('https://api.themoviedb.org/3/search/multi', { params: { api_key: TMDB_API_KEY, query, include_adult: false } });
