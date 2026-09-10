@@ -275,9 +275,13 @@ app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
         });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
+        // Automatically fetch the first tab's actual title
+        const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
+        const sheetName = meta.data.sheets[0].properties.title;
+
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: VW_SPREADSHEET_ID,
-            range: 'VW_Tracker!A1:AZ'
+            range: `${sheetName}!A1:AZ`
         });
 
         const rows = response.data.values || [];
