@@ -30,6 +30,7 @@ const app = express();
 
 // --- MASTER CONFIGURATION ---
 const SPREADSHEET_ID = '1uX2OOd4HE3c_-Vl-PkeQhZicY2cFh3qFxASG7yl_uEo';
+const VW_SPREADSHEET_ID = '1PVfQqctgI3cehaNjb_6rabkDauudfKYmiJJafLQ3haw';
 const TUNNEL_URL = 'https://vault.ibadhasan.com';
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const STREAM_SECRET = process.env.STREAM_TOKEN_SECRET;
@@ -208,7 +209,7 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
     } catch(e) { res.status(500).json({ error: 'Failed to sync' }); }
 });
 
-// --- LIVE GOOGLE SHEETS HYDRATION ---
+// --- LIVE GOOGLE SHEETS HYDRATION (Auditor PRO) ---
 app.get('/api/work/ledger', verifyToken, async (req, res) => {
     try {
         const authClient = new google.auth.GoogleAuth({ 
@@ -257,6 +258,90 @@ app.get('/api/work/ledger', verifyToken, async (req, res) => {
     } catch (error) {
         console.error('[Lair OS] Ledger Fetch Error:', error);
         res.status(500).json({ error: 'Failed to load ledger from Sheets.' });
+    }
+});
+
+// --- LIVE VARIABLE WORKS (VW) TRACKER HYDRATION ---
+app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
+    try {
+        const authClient = new google.auth.GoogleAuth({ 
+            keyFile: './serviceAccountKey.json', 
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
+        });
+        const sheets = google.sheets({ version: 'v4', auth: authClient });
+
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: VW_SPREADSHEET_ID,
+            range: 'VW_Tracker!A1:AZ'
+        });
+
+        const rows = response.data.values || [];
+        if (rows.length === 0) return res.json({ count: 0, totalSupplierCost: 0, totalWaslCost: 0, statusCounts: {}, rows: [] });
+
+        const headers = rows[0];
+        const dataRows = rows.slice(1);
+
+        let totalSupplierCost = 0;
+        let totalWaslCost = 0;
+        const statusCounts = {};
+
+        const formattedRows = dataRows.map((row, index) => {
+            const getCol = (name) => {
+                const idx = headers.indexOf(name);
+                return idx !== -1 ? (row[idx] || '') : '';
+            };
+
+            const supplierCost = Number(String(getCol('Total Supplier Cost ()') || '0').replace(/,/g, '')) || 0;
+            const waslCost = Number(String(getCol('Total WASL Cost ()') || '0').replace(/,/g, '')) || 0;
+            const status = getCol('AGFS Works Status') || 'Pending';
+
+            totalSupplierCost += supplierCost;
+            totalWaslCost += waslCost;
+            statusCounts[status] = (statusCounts[status] || 0) + 1;
+
+            return {
+                sheetRow: index + 2,
+                crmRef: getCol('CRM REF'),
+                qtnRef: getCol('QTN REF'),
+                qtnDate: getCol('QTN DATE'),
+                description: getCol('Description'),
+                majorCategory: getCol('Major Category'),
+                minorCategory: getCol('Minor Category'),
+                building: getCol('Building'),
+                apartment: getCol('Apartment'),
+                qtnAssignedTo: getCol('QTN Assigned To'),
+                supplierName: getCol('Supplier Name'),
+                supplierCost,
+                waslCost,
+                orderType: getCol('Order Type'),
+                waslOrder: getCol('WASL Order'),
+                purchaseOrder: getCol('Purchase Order'),
+                worksStatus: status,
+                workCompletionDate: getCol('Work Completion Date'),
+                wcrPrepared: getCol('WCR Prepared (Yes/Pending/NA)'),
+                wcrSigned: getCol('WCR Signed from WASL (Yes/No)'),
+                wcrUploadedSap: getCol('WCR Uploaded in SAP (Yes/No)'),
+                poReference: getCol('PO Reference'),
+                invoiceNumber: getCol('Invoice Number'),
+                invoiceDate: getCol('Invoice Date'),
+                taskId: getCol('AGFS CAFM Work Order Number (Task ID)'),
+                remarks: getCol('Remarks'),
+                waslEngineer: getCol('WASL Engineer'),
+                rawHeaders: headers,
+                rawValues: row
+            };
+        });
+
+        res.json({
+            count: formattedRows.length,
+            totalSupplierCost,
+            totalWaslCost,
+            statusCounts,
+            rows: formattedRows.reverse()
+        });
+    } catch (error) {
+        console.error('[Lair OS] VW Tracker Fetch Error:', error);
+        res.status(500).json({ error: 'Failed to load Variable Works tracker from Google Sheets.' });
     }
 });
 
