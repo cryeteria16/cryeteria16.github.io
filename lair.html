@@ -381,7 +381,6 @@
               </div>
           </div>
 
-          <!-- PO Extractor & Supervisor Draft Generator Card -->
           <div class="card stagger-2" style="padding: 24px; margin-bottom: 20px;">
               <div class="card-head" style="margin-bottom:16px;">
                   <h2 style="display:flex; align-items:center; gap:8px;">Microsoft Dynamics PO Extractor & Supervisor Draft <span style="font-family:var(--font-mono); font-size:9px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px; text-transform:uppercase;">AI Powered</span></h2>
@@ -390,7 +389,7 @@
                   <input type="file" id="po-file-input" accept="application/pdf" style="display:none;">
                   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--con)" stroke-width="2" style="margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
                   <p style="font-size:13px; font-weight:500;">Drop Microsoft Dynamics PO PDF here or click to browse</p>
-                  <p style="font-size:11px; color:var(--ink-soft); margin-top:4px;">Automatically extracts line items and generates supervisor email drafts</p>
+                  <p style="font-size:11px; color:var(--ink-soft); margin-top:4px;">Automatically extracts line items, generates supervisor email drafts, & updates sheets</p>
               </div>
               <div id="po-result-container" style="display:none; flex-direction:column; gap:14px; padding-top:14px; border-top:var(--glass-border);">
                   <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px;">
@@ -399,12 +398,21 @@
                       <div style="background:var(--input-bg); padding:10px; border-radius:12px;"><span style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">BUILDING / SITE</span><div id="po-res-building" style="font-weight:600; font-size:13px;">--</div></div>
                       <div style="background:var(--input-bg); padding:10px; border-radius:12px;"><span style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">TOTAL (INCL. VAT)</span><div id="po-res-total" style="font-weight:600; font-size:13px; color:var(--con);">--</div></div>
                   </div>
+
+                  <div>
+                      <label class="field-label">MATCHING QTN OR CRM REF (FOR GOOGLE SHEET)</label>
+                      <div style="display:flex; gap:10px;">
+                          <input type="text" id="po-match-ref" placeholder="e.g., FCA/7956/2024-5 or CRM ID" style="flex:1; margin-bottom:0;">
+                          <button id="btn-sync-po-sheet" class="btn-primary haptic-btn" style="white-space:nowrap;">Sync to VW Sheet</button>
+                      </div>
+                  </div>
+
                   <div>
                       <label class="field-label" style="display:flex; justify-content:space-between; align-items:center;">
                           <span>SUPERVISOR EMAIL DRAFT</span>
                           <button id="btn-copy-email" class="btn-secondary haptic-btn" style="padding:4px 10px; font-size:10px;">Copy Draft</button>
                       </label>
-                      <textarea id="po-email-draft" rows="6" style="width:100%; font-family:var(--font-mono); font-size:12px; line-height:1.5; resize:vertical;"></textarea>
+                      <textarea id="po-email-draft" rows="5" style="width:100%; font-family:var(--font-mono); font-size:12px; line-height:1.5; resize:vertical;"></textarea>
                   </div>
               </div>
           </div>
@@ -1094,6 +1102,8 @@
           'boutique villas': { name: 'Supervisor Team B', email: 'supervisor.b@al-ghurair.com' }
       };
 
+      let extractedPoNumber = '';
+
       const processPOFile = async (file) => {
           if (!file) return;
           window.showToast('Extracting PO details with Gemini...', 'info');
@@ -1105,21 +1115,23 @@
               if (!res.ok) throw new Error('Extraction failed');
               const data = await res.json();
 
-              document.getElementById('po-res-num').textContent = data.po_number || '—';
+              extractedPoNumber = data.po_number || '';
+              document.getElementById('po-res-num').textContent = extractedPoNumber || '—';
               document.getElementById('po-res-supplier').textContent = data.supplier_name || '—';
               document.getElementById('po-res-building').textContent = data.building || 'General';
               document.getElementById('po-res-total').textContent = Number(data.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+              document.getElementById('po-match-ref').value = data.project_name || '';
 
               const buildingKey = Object.keys(supervisorMap).find(k => (data.building || '').toLowerCase().includes(k)) || 'umm hurair';
               const supervisor = supervisorMap[buildingKey];
 
-              const draftText = `Subject: New PO Issued: ${data.po_number} — ${data.building || 'Project Site'}
+              const draftText = `Subject: New PO Issued: ${extractedPoNumber} — ${data.building || 'Project Site'}
 
 Hi ${supervisor.name},
 
 A new Purchase Order has been raised and confirmed for your site execution and tracking:
 
-- PO Number: ${data.po_number}
+- PO Number: ${extractedPoNumber}
 - Supplier: ${data.supplier_name}
 - Building / Location: ${data.building || 'General'}
 - Project: ${data.project_name || 'VAR-TFM DD'}
@@ -1147,6 +1159,36 @@ Lair OS`;
       dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--con)'; });
       dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; });
       dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; if (e.dataTransfer.files[0]) processPOFile(e.dataTransfer.files[0]); });
+
+      const syncSheetBtn = document.getElementById('btn-sync-po-sheet');
+      if (syncSheetBtn && !syncSheetBtn.__hasListener) {
+          syncSheetBtn.__hasListener = true;
+          syncSheetBtn.addEventListener('click', async () => {
+              const refCode = document.getElementById('po-match-ref').value.trim();
+              if (!refCode || !extractedPoNumber) {
+                  window.showToast('Please provide a valid reference code to match.', 'error');
+                  return;
+              }
+
+              triggerHaptic();
+              window.showToast('Syncing PO reference to Google Sheets...', 'info');
+
+              try {
+                  const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/sync-po-to-sheet`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ po_number: extractedPoNumber, ref_code: refCode })
+                  });
+
+                  const result = await res.json();
+                  if (!res.ok || !result.success) throw new Error(result.error || 'Sync failed');
+
+                  window.showToast(`Successfully updated row ${result.updatedRow} with ${extractedPoNumber} ✔`, 'success');
+              } catch (err) {
+                  window.showToast(err.message || 'Failed to update Google Sheet', 'error');
+              }
+          });
+      }
 
       document.getElementById('btn-copy-email').addEventListener('click', () => {
           const textarea = document.getElementById('po-email-draft');
@@ -1524,7 +1566,7 @@ Lair OS`;
           if (d.fontDisplay || d.fontBody) {
               const families = [d.fontDisplay, d.fontBody].filter(Boolean).map(f => f.trim().replace(/ /g, '+'));
               document.getElementById('dynamic-fonts').href = `https://fonts.googleapis.com/css2?${families.map(f => `family=${f}:wght@400;500;600`).join('&')}&display=swap`;
-              if (d.fontDisplay) document.documentElement.style.setProperty('--font-display`, `'${d.fontDisplay}', serif`);
+              if (d.fontDisplay) document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay}', serif`);
               if (d.fontBody) document.documentElement.style.setProperty('--font-body', `'${d.fontBody}', sans-serif`);
           }
 
