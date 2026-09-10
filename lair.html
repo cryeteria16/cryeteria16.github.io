@@ -377,6 +377,7 @@
               </div>
               <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
                   <input type="text" id="vw-search-input" placeholder="Search building, supplier, CRM ref, description..." style="flex:1; min-width:260px; margin-bottom:0;">
+                  <button id="btn-open-po-modal" class="btn-primary haptic-btn" style="padding:14px 20px;">+ Extract PO</button>
                   <button id="vw-refresh-btn" class="btn-secondary haptic-btn" style="padding:14px 20px;">Sync VW Tracker</button>
               </div>
           </div>
@@ -562,6 +563,48 @@
         <button class="btn-secondary haptic-btn" onclick="document.getElementById('vw-dossier-modal').classList.remove('active')" style="padding:6px 14px; font-size:12px;">Close</button>
       </div>
       <div id="vw-dossier-content" style="flex:1; overflow-y:auto; display:grid; grid-template-columns: 1fr 1fr; gap:16px; font-size:13px; padding-right:4px;"></div>
+    </div>
+  </div>
+
+  <div id="po-extractor-modal" class="modal-overlay">
+    <div class="card" style="width:100%; max-width:750px; max-height:85vh; display:flex; flex-direction:column; padding:30px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:var(--glass-border); padding-bottom:12px;">
+        <h2 style="font-family:var(--font-display); font-size:20px; margin:0;">Microsoft Dynamics PO Extractor</h2>
+        <button class="btn-secondary haptic-btn" onclick="document.getElementById('po-extractor-modal').classList.remove('active')" style="padding:6px 14px; font-size:12px;">Close</button>
+      </div>
+      
+      <div style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:16px; padding-right:4px;">
+        <div id="po-dropzone" style="background:var(--input-bg); border:1px dashed rgba(255,255,255,0.2); border-radius:var(--radius-sm); padding:24px; text-align:center; cursor:pointer;" onclick="document.getElementById('po-file-input').click()">
+            <input type="file" id="po-file-input" accept="application/pdf" style="display:none;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--con)" stroke-width="2" style="margin-bottom:8px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            <p style="font-size:13px; font-weight:500;">Drop Microsoft Dynamics PO PDF here or click to browse</p>
+        </div>
+
+        <div id="po-result-container" style="display:none; flex-direction:column; gap:14px;">
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px;">
+                <div style="background:var(--input-bg); padding:10px; border-radius:12px;"><span style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">PO NUMBER</span><div id="po-res-num" style="font-weight:600; font-size:13px;">--</div></div>
+                <div style="background:var(--input-bg); padding:10px; border-radius:12px;"><span style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">SUPPLIER</span><div id="po-res-supplier" style="font-weight:600; font-size:13px;">--</div></div>
+                <div style="background:var(--input-bg); padding:10px; border-radius:12px;"><span style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">BUILDING</span><div id="po-res-building" style="font-weight:600; font-size:13px;">--</div></div>
+                <div style="background:var(--input-bg); padding:10px; border-radius:12px;"><span style="font-size:10px; color:var(--ink-soft); font-family:var(--font-mono);">TOTAL</span><div id="po-res-total" style="font-weight:600; font-size:13px; color:var(--con);">--</div></div>
+            </div>
+
+            <div>
+                <label class="field-label">MATCHING QTN OR CRM REF (FOR GOOGLE SHEET)</label>
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="po-match-ref" placeholder="e.g., FCA/7956/2024-5" style="flex:1; margin-bottom:0;">
+                    <button id="btn-sync-po-sheet" class="btn-primary haptic-btn" style="white-space:nowrap;">Sync to VW Sheet</button>
+                </div>
+            </div>
+
+            <div>
+                <label class="field-label" style="display:flex; justify-content:space-between; align-items:center;">
+                    <span>SUPERVISOR EMAIL DRAFT</span>
+                    <button id="btn-copy-email" class="btn-secondary haptic-btn" style="padding:4px 10px; font-size:10px;">Copy Draft</button>
+                </label>
+                <textarea id="po-email-draft" rows="6" style="width:100%; font-family:var(--font-mono); font-size:12px; line-height:1.5; resize:vertical;"></textarea>
+            </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1054,6 +1097,115 @@
       }
   }
 
+  function initPODropzone() {
+      const dropzone = document.getElementById('po-dropzone');
+      const fileInput = document.getElementById('po-file-input');
+      const resultContainer = document.getElementById('po-result-container');
+      if (!dropzone || !fileInput) return;
+
+      const supervisorMap = {
+          'umm hurair': { name: 'Jan Melvin Jimenez', email: 'jan.melvin@al-ghurair.com' },
+          'al murooj': { name: 'Supervisor Team A', email: 'supervisor.a@al-ghurair.com' },
+          'boutique villas': { name: 'Supervisor Team B', email: 'supervisor.b@al-ghurair.com' }
+      };
+
+      let extractedPoNumber = '';
+
+      const processPOFile = async (file) => {
+          if (!file) return;
+          window.showToast('Extracting PO details with Gemini...', 'info');
+          const fd = new FormData();
+          fd.append('po_file', file);
+
+          try {
+              const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/extract-po`, { method: 'POST', body: fd });
+              if (!res.ok) throw new Error('Extraction failed');
+              const data = await res.json();
+
+              extractedPoNumber = data.po_number || '';
+              document.getElementById('po-res-num').textContent = extractedPoNumber || '—';
+              document.getElementById('po-res-supplier').textContent = data.supplier_name || '—';
+              document.getElementById('po-res-building').textContent = data.building || 'General';
+              document.getElementById('po-res-total').textContent = Number(data.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+              document.getElementById('po-match-ref').value = data.project_name || '';
+
+              const buildingKey = Object.keys(supervisorMap).find(k => (data.building || '').toLowerCase().includes(k)) || 'umm hurair';
+              const supervisor = supervisorMap[buildingKey];
+
+              const draftText = `Subject: New PO Issued: ${extractedPoNumber} — ${data.building || 'Project Site'}
+
+Hi ${supervisor.name},
+
+A new Purchase Order has been raised and confirmed for your site execution and tracking:
+
+- PO Number: ${extractedPoNumber}
+- Supplier: ${data.supplier_name}
+- Building / Location: ${data.building || 'General'}
+- Project: ${data.project_name || 'VAR-TFM DD'}
+- Grand Total: AED ${Number(data.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} (Incl. VAT)
+
+Scope Summary:
+${(data.line_items || []).map(li => `• ${li.item} (Qty: ${li.qty})`).join('\n')}
+
+Please coordinate with the team accordingly.
+
+Best regards,
+Lair OS`;
+
+              document.getElementById('po-email-draft').value = draftText;
+              resultContainer.style.display = 'flex';
+              window.showToast('PO successfully extracted & email drafted ✔', 'success');
+          } catch (err) {
+              window.showToast('Failed to parse PO PDF', 'error');
+          } finally {
+              fileInput.value = '';
+          }
+      };
+
+      fileInput.addEventListener('change', (e) => processPOFile(e.target.files[0]));
+      dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--con)'; });
+      dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; });
+      dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; if (e.dataTransfer.files[0]) processPOFile(e.dataTransfer.files[0]); });
+
+      const syncSheetBtn = document.getElementById('btn-sync-po-sheet');
+      if (syncSheetBtn && !syncSheetBtn.__hasListener) {
+          syncSheetBtn.__hasListener = true;
+          syncSheetBtn.addEventListener('click', async () => {
+              const refCode = document.getElementById('po-match-ref').value.trim();
+              if (!refCode || !extractedPoNumber) {
+                  window.showToast('Please provide a valid reference code to match.', 'error');
+                  return;
+              }
+
+              triggerHaptic();
+              window.showToast('Syncing PO reference to Google Sheets...', 'info');
+
+              try {
+                  const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/sync-po-to-sheet`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ po_number: extractedPoNumber, ref_code: refCode })
+                  });
+
+                  const result = await res.json();
+                  if (!res.ok || !result.success) throw new Error(result.error || 'Sync failed');
+
+                  window.showToast(`Successfully updated row ${result.updatedRow} with ${extractedPoNumber} ✔`, 'success');
+              } catch (err) {
+                  window.showToast(err.message || 'Failed to update Google Sheet', 'error');
+              }
+          });
+      }
+
+      document.getElementById('btn-copy-email').addEventListener('click', () => {
+          const textarea = document.getElementById('po-email-draft');
+          textarea.select();
+          navigator.clipboard.writeText(textarea.value);
+          triggerHaptic();
+          window.showToast('Email draft copied to clipboard!', 'success');
+      });
+  }
+
   function initVWTracker() {
       const tableBody = document.getElementById('vw-table-body');
       const searchInput = document.getElementById('vw-search-input');
@@ -1308,6 +1460,12 @@
     initVoiceRoom();
     initAuditor();
     initVWTracker();
+    initPODropzone();
+
+    document.getElementById('btn-open-po-modal').addEventListener('click', () => {
+        triggerHaptic();
+        document.getElementById('po-extractor-modal').classList.add('active');
+    });
   }
 
   function initTheaterChat() {
