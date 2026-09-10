@@ -211,6 +211,69 @@ app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async 
     }
 });
 
+app.post('/api/work/sync-po-to-sheet', verifyToken, async (req, res) => {
+    try {
+        const { po_number, ref_code } = req.body;
+        if (!po_number || !ref_code) return res.status(400).json({ error: 'PO number and reference code required' });
+
+        const authClient = new google.auth.GoogleAuth({ 
+            keyFile: './serviceAccountKey.json', 
+            scopes: ['https://www.googleapis.com/auth/spreadsheets'] 
+        });
+        const sheets = google.sheets({ version: 'v4', auth: authClient });
+
+        const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
+        const sheetName = meta.data.sheets[0].properties.title;
+
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId: VW_SPREADSHEET_ID,
+            range: `${sheetName}!A1:AZ`
+        });
+
+        const rows = response.data.values || [];
+        if (rows.length === 0) return res.status(404).json({ error: 'Sheet is empty' });
+
+        const headers = rows[0];
+        const qtnIdx = headers.indexOf('QTN REF');
+        const crmIdx = headers.indexOf('CRM REF');
+        const poIdx = headers.indexOf('Purchase Order');
+
+        if (poIdx === -1) return res.status(400).json({ error: "'Purchase Order' column not found in sheet headers." });
+
+        let targetRowIndex = -1;
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const qtnVal = qtnIdx !== -1 ? String(row[qtnIdx] || '').trim().toLowerCase() : '';
+            const crmVal = crmIdx !== -1 ? String(row[crmIdx] || '').trim().toLowerCase() : '';
+            const searchVal = String(ref_code).trim().toLowerCase();
+
+            if ((qtnVal && qtnVal.includes(searchVal)) || (crmVal && crmVal.includes(searchVal))) {
+                targetRowIndex = i + 1;
+                break;
+            }
+        }
+
+        if (targetRowIndex === -1) {
+            return res.status(404).json({ error: `Could not find a matching row for reference '${ref_code}' in the VW tracker.` });
+        }
+
+        const colLetter = String.fromCharCode(65 + poIdx);
+        const updateRange = `${sheetName}!${colLetter}${targetRowIndex}`;
+
+        await sheets.spreadsheets.values.update({
+            spreadsheetId: VW_SPREADSHEET_ID,
+            range: updateRange,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [[po_number]] }
+        });
+
+        res.json({ success: true, updatedRow: targetRowIndex });
+    } catch (error) {
+        console.error('[Lair OS] PO Sheet Sync Error:', error);
+        res.status(500).json({ error: 'Failed to update Google Sheet with PO.' });
+    }
+});
+
 app.post('/api/work/sync', verifyToken, async (req, res) => {
     try {
         const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
