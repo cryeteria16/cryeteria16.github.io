@@ -1,3 +1,4 @@
+// server.js
 require('dotenv').config();
 
 const express = require('express');
@@ -16,7 +17,6 @@ const { getAuth } = require('firebase-admin/auth');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { google } = require('googleapis');
 
-// Safe Sharp Loader
 let sharp;
 try { sharp = require('sharp'); } 
 catch (e) { console.warn('[Lair OS] Sharp module unavailable. WebP compression bypassed.'); }
@@ -27,7 +27,6 @@ const db = getFirestore();
 
 const app = express();
 
-// --- MASTER CONFIGURATION ---
 const SPREADSHEET_ID = '1uX2OOd4HE3c_-Vl-PkeQhZicY2cFh3qFxASG7yl_uEo';
 const VW_SPREADSHEET_ID = '1PVfQqctgI3cehaNjb_6rabkDauudfKYmiJJafLQ3haw';
 const TUNNEL_URL = 'https://vault.ibadhasan.com';
@@ -114,7 +113,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 const uploadInvoice = multer({ dest: invoicesDir });
 
-// --- THE TRI-CORE LOAD BALANCER ---
 const API_KEYS = [
     process.env.GEMINI_KEY_1,
     process.env.GEMINI_KEY_2,
@@ -207,7 +205,6 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
     } catch(e) { res.status(500).json({ error: 'Failed to sync' }); }
 });
 
-// --- LIVE GOOGLE SHEETS HYDRATION (Auditor PRO) ---
 app.get('/api/work/ledger', verifyToken, async (req, res) => {
     try {
         const authClient = new google.auth.GoogleAuth({ 
@@ -258,7 +255,6 @@ app.get('/api/work/ledger', verifyToken, async (req, res) => {
     }
 });
 
-// --- LIVE VARIABLE WORKS (VW) TRACKER HYDRATION ---
 app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
     try {
         const authClient = new google.auth.GoogleAuth({ 
@@ -345,7 +341,6 @@ app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
     }
 });
 
-// --- AI EXECUTIVE BRIEFING (COMPLIANCE & BILLING) ---
 app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
     try {
         const authClient = new google.auth.GoogleAuth({ 
@@ -368,7 +363,6 @@ app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
         const headers = rows[0];
         const dataRows = rows.slice(1);
 
-        // Compliance Counters
         let metrics = {
             totalWorks: dataRows.length,
             completedWorks: 0,
@@ -400,7 +394,6 @@ app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
             if (purchaseOrder === '' || purchaseOrder.toLowerCase() === 'pending') metrics.pendingWaslPo++;
         });
 
-        // Construct the optimized payload for Gemini
         const prompt = `
             You are an elite Facility Management & Financial Auditor. Analyze the following operational compliance snapshot for a property management portfolio. 
             Provide a crisp, professional 3-4 sentence executive summary highlighting the primary bottlenecks in billing and document closure.
@@ -429,7 +422,6 @@ app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
     }
 });
 
-// --- INLINE GOOGLE SHEETS EDITING ---
 app.post('/api/work/update-cell', verifyToken, async (req, res) => {
     try {
         const { row, col, value } = req.body;
