@@ -114,9 +114,9 @@ const uploadInvoice = multer({ dest: invoicesDir });
 
 // --- THE TRI-CORE LOAD BALANCER ---
 const API_KEYS = [
-    process.env.GEMINI_KEY_1,
-    process.env.GEMINI_KEY_2,
-    process.env.GEMINI_KEY_3
+    process.env.GEMINI_KEY_1 || 'AQ.Ab8RN6J0U-2QICflP43f8mpmOsu7kg9foapNJJ2Yk11bi7i3kA',
+    process.env.GEMINI_KEY_2 || 'AQ.Ab8RN6J-3Jp89HnejC1oQiRAfAj4PpDcspSKBwnmjdNXKGwrGA',
+    process.env.GEMINI_KEY_3 || 'AQ.Ab8RN6J-cZ-AecFRCi1pLz9bi-SQDi6M6I47886ACgKCfaZxAA'
 ].filter(Boolean);
 
 app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), async (req, res) => {
@@ -207,7 +207,60 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
     } catch(e) { res.status(500).json({ error: 'Failed to sync' }); }
 });
 
-// --- NEW ROUTE: Inline Google Sheets Editing ---
+// --- LIVE GOOGLE SHEETS HYDRATION ---
+app.get('/api/work/ledger', verifyToken, async (req, res) => {
+    try {
+        const spreadsheetId = '1NaObt-gwnmsn8Ouv1onbF4UUuFiiaPZPZj-pLU3G6SM';
+        const authClient = new google.auth.GoogleAuth({ 
+            keyFile: './serviceAccountKey.json', 
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
+        });
+        const sheets = google.sheets({ version: 'v4', auth: authClient });
+
+        const response = await sheets.spreadsheets.values.get({
+            spreadsheetId,
+            range: 'Sheet1!A2:H'
+        });
+
+        const rows = response.data.values || [];
+        let totalNet = 0, totalVat = 0, grossTotal = 0;
+
+        const formattedRows = rows.map((row, index) => {
+            const net = Number(String(row[5] || '0').replace(/,/g, '')) || 0;
+            const vat = Number(String(row[6] || '0').replace(/,/g, '')) || 0;
+            const total = Number(String(row[7] || '0').replace(/,/g, '')) || 0;
+
+            totalNet += net;
+            totalVat += vat;
+            grossTotal += total;
+
+            return {
+                sheetRow: index + 2,
+                taskId: row[0] || 'UNASSIGNED',
+                subcontractor: row[1] || '',
+                invoiceNumber: row[2] || '',
+                date: row[3] || '',
+                trn: row[4] || '',
+                net,
+                vat,
+                total
+            };
+        });
+
+        res.json({
+            count: formattedRows.length,
+            net: totalNet,
+            vat: totalVat,
+            gross: grossTotal,
+            rows: formattedRows.reverse()
+        });
+    } catch (error) {
+        console.error('[Lair OS] Ledger Fetch Error:', error);
+        res.status(500).json({ error: 'Failed to load ledger from Sheets.' });
+    }
+});
+
+// --- INLINE GOOGLE SHEETS EDITING ---
 app.post('/api/work/update-cell', verifyToken, async (req, res) => {
     try {
         const { row, col, value } = req.body;

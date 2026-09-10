@@ -194,7 +194,7 @@
     </div>
   </div>
 
-  <div class="fab-capture haptic-btn" id="btn-quick-capture" style="display:none;" title="Quick Capture">
+  <div class="fab-capture haptic-btn" id="btn-quick-capture" style="display:none;" title="Quick Camera Stream">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
   </div>
 
@@ -283,8 +283,7 @@
                   <span style="font-family:var(--font-mono); font-size:10px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px;">Auto-Retry</span>
                   <span style="font-family:var(--font-mono); font-size:10px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px;">Enabled</span>
                   <div style="flex:1;"></div>
-                  <button class="btn-secondary haptic-btn" style="padding:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg></button>
-                  <button class="btn-secondary haptic-btn" style="padding:8px; color:var(--warn);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                  <button id="btn-auditor-settings" class="btn-secondary haptic-btn" style="padding:8px; color:var(--warn);" title="Configure Default Task ID"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
               </div>
 
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:24px;">
@@ -330,7 +329,7 @@
                   <h2 style="font-family:var(--font-display); font-size:16px; font-weight:500; margin:0;">Ledger</h2>
                   <button id="auditor-export-btn" class="btn-secondary haptic-btn" style="padding:8px 14px; font-size:11px;">Export CSV</button>
               </div>
-              <div style="overflow-x:auto;">
+              <div class="ledger-scroll-wrapper" style="overflow-x:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;">
                   <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:760px;">
                       <thead>
                           <tr style="font-family:var(--font-mono); font-size:10px; text-transform:uppercase; color:var(--ink-soft); text-align:left;">
@@ -346,7 +345,7 @@
                           </tr>
                       </thead>
                       <tbody id="auditor-table-body">
-                          <tr id="auditor-empty-row"><td colspan="9" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Extracted invoices will stream here and sync to Sheets automatically.</td></tr>
+                          <tr id="auditor-empty-row"><td colspan="9" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Syncing live records with Sheets Matrix...</td></tr>
                       </tbody>
                   </table>
               </div>
@@ -379,10 +378,12 @@
             <span style="font-size:11px; color:var(--ink-soft);">of 100GB Limit</span>
           </div>
         </div>
-        <div style="background:var(--input-bg); border:1px dashed rgba(128,128,128,0.4); border-radius:var(--radius-sm); padding:20px;">
+        <div style="background:var(--input-bg); border:1px dashed rgba(128,128,128,0.4); border-radius:var(--radius-sm); padding:20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
           <input type="file" id="vault-photo-input" accept="image/*,video/*,application/pdf" style="display:none;" multiple>
-          <button class="btn-secondary haptic-btn" onclick="document.getElementById('vault-photo-input').click()">Upload Local Media</button>
-          <p id="vault-status" style="font-size:12px; color:var(--con); margin-top:10px; display:none;"></p>
+          <input type="file" id="vault-camera-input" accept="image/*" capture="environment" style="display:none;">
+          <button class="btn-secondary haptic-btn" onclick="document.getElementById('vault-photo-input').click()">Upload Files</button>
+          <button class="btn-primary haptic-btn" onclick="document.getElementById('vault-camera-input').click()">Direct Camera to PC</button>
+          <p id="vault-status" style="font-size:12px; color:var(--con); margin-top:10px; width:100%; display:none;"></p>
         </div>
       </section>
 
@@ -612,7 +613,7 @@
   }, {passive: true});
   
   swipeZone.addEventListener('touchend', e => {
-      if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, .os-dock, input, textarea, .artplayer-app')) return;
+      if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, .os-dock, input, textarea, .artplayer-app, .ledger-scroll-wrapper, table, #auditor-queue-container')) return;
       const diffX = touchStartX - e.changedTouches[0].screenX; const diffY = touchStartY - e.changedTouches[0].screenY;
       if (Math.abs(diffY) > Math.abs(diffX)) return;
 
@@ -739,8 +740,9 @@
       const target = e.currentTarget.getAttribute('data-target');
       document.getElementById(`view-${target}`).classList.add('active'); 
       
+      // Floating Shutter active exclusively in Work and Vault
       const fab = document.getElementById('btn-quick-capture');
-      if (fab) fab.style.display = target === 'work' ? 'flex' : 'none';
+      if (fab) fab.style.display = (target === 'work' || target === 'drop') ? 'flex' : 'none';
 
       window.scrollTo(0,0);
     });
@@ -754,75 +756,138 @@
       const tableBody = document.getElementById('auditor-table-body');
       const emptyRow = document.getElementById('auditor-empty-row');
       const exportBtn = document.getElementById('auditor-export-btn');
+      const settingsBtn = document.getElementById('btn-auditor-settings');
+      const taskIdInput = document.getElementById('work-task-id');
 
-      if(!dropzone || !fileInput) return;
+      if (!dropzone || !fileInput) return;
 
-      let totalNet = 0, totalVat = 0, grossTotal = 0, count = 0;
-      let csvRows = [["Task ID", "Subcontractor", "Invoice Number", "Date", "TRN", "Net", "VAT", "Total", "Validation"]];
+      let csvRows = [["Task ID", "Subcontractor", "Invoice Number", "Date", "TRN", "Net", "VAT", "Total", "Status"]];
 
-      const updateUI = () => {
-          document.getElementById('auditor-count').textContent = count;
-          document.getElementById('auditor-net').textContent = totalNet.toFixed(2);
-          document.getElementById('auditor-vat').textContent = totalVat.toFixed(2);
-          document.getElementById('auditor-gross').textContent = grossTotal.toFixed(2);
+      // Restore default Task ID from local memory
+      const savedTaskId = localStorage.getItem('lair_default_task_id');
+      if (savedTaskId && taskIdInput) taskIdInput.value = savedTaskId;
+
+      if (settingsBtn && taskIdInput) {
+          settingsBtn.addEventListener('click', () => {
+              triggerHaptic();
+              const newDefault = prompt("Set Default Global Task ID (e.g. FM-2026-901):", taskIdInput.value);
+              if (newDefault !== null) {
+                  taskIdInput.value = newDefault.trim();
+                  localStorage.setItem('lair_default_task_id', newDefault.trim());
+                  window.showToast('Default Task ID saved to device memory.', 'success');
+              }
+          });
+      }
+
+      const updateMetricsUI = (c, net, vat, gross) => {
+          document.getElementById('auditor-count').textContent = c;
+          document.getElementById('auditor-net').textContent = Number(net).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          document.getElementById('auditor-vat').textContent = Number(vat).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          document.getElementById('auditor-gross').textContent = Number(gross).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       };
 
-      // Expose to window so contenteditable onblur can trigger it
-      window.handleCellEdit = async function(element, rowIndex, colIndex, originalValue) {
+      window.handleCellEdit = async function(element, sheetRow, colIdx, originalValue) {
           const newValue = element.innerText.trim();
           if (newValue === originalValue) return;
-          
-          element.style.color = "var(--warn)"; // Processing color
+
+          element.style.color = 'var(--warn)';
           try {
               const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/update-cell`, {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ row: rowIndex, col: colIndex, value: newValue })
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ row: sheetRow, col: colIdx, value: newValue })
               });
-              if(res.ok) {
-                  element.style.color = "var(--con)"; // Success color
-                  setTimeout(() => element.style.color = "var(--ink)", 1500);
-                  element.setAttribute('onblur', `handleCellEdit(this, ${rowIndex}, ${colIndex}, '${newValue.replace(/'/g, "\\'")}')`);
-              } else { throw new Error(); }
+
+              if (res.ok) {
+                  element.style.color = 'var(--con)';
+                  setTimeout(() => { element.style.color = 'inherit'; }, 1500);
+                  element.setAttribute('onblur', `handleCellEdit(this, ${sheetRow}, ${colIdx}, '${newValue.replace(/'/g, "\\'")}')`);
+                  window.showToast('Cell updated in Google Sheets', 'success');
+              } else {
+                  throw new Error();
+              }
           } catch (err) {
-              window.showToast('Network error saving to Sheet', 'error');
+              window.showToast('Failed to update Sheet', 'error');
               element.innerText = originalValue;
-              element.style.color = "var(--ink)";
+              element.style.color = 'inherit';
           }
       };
 
-      const appendLedgerRow = (row, sheetRowIndex) => {
+      const appendLedgerRow = (row, sheetRowIndex, prepend = true) => {
           if (emptyRow) emptyRow.style.display = 'none';
-          const net = Number(row[5]) || 0, vat = Number(row[6]) || 0, total = Number(row[7]) || 0;
+
+          const net = Number(row[5]) || 0;
+          const vat = Number(row[6]) || 0;
+          const total = Number(row[7]) || 0;
           const isValid = Math.abs((net + vat) - total) < 0.05;
+
           const tr = document.createElement('tr');
-          
           tr.style.cssText = isValid ? '' : 'background:rgba(217,83,79,0.08); border-left:3px solid var(--err);';
-          
-          const editableCell = (val, colIdx, align = 'left') => {
-              return `<td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:${align};">
-                  <div contenteditable="true" style="outline:none; min-width:20px;" onblur="handleCellEdit(this, ${sheetRowIndex}, ${colIdx}, '${String(val).replace(/'/g, "\\'")}')">${val}</div>
+
+          const editableCell = (val, colIdx, align = 'left', bold = false) => `
+              <td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:${align}; ${bold ? 'font-weight:600;' : ''}">
+                  <div contenteditable="true" style="outline:none; min-width:20px; -webkit-user-select:text; user-select:text;" onblur="handleCellEdit(this, ${sheetRowIndex}, ${colIdx}, '${String(val).replace(/'/g, "\\'")}')">${val}</div>
               </td>`;
-          };
 
           tr.innerHTML = `
               <td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:center; color:${isValid ? 'var(--con)' : 'var(--err)'};">${isValid ? '✔' : '⚠'}</td>
-              ${editableCell(row[0], 0)}${editableCell(row[1], 1)}${editableCell(row[2], 2)}${editableCell(row[3], 3)}${editableCell(row[4], 4)}
-              ${editableCell(net.toFixed(2), 5, 'right')}${editableCell(vat.toFixed(2), 6, 'right')}${editableCell(total.toFixed(2), 7, 'right')}
+              ${editableCell(row[0], 0)}
+              ${editableCell(row[1], 1)}
+              ${editableCell(row[2], 2, 'left', true)}
+              ${editableCell(row[3], 3)}
+              ${editableCell(row[4], 4)}
+              ${editableCell(net.toFixed(2), 5, 'right')}
+              ${editableCell(vat.toFixed(2), 6, 'right')}
+              ${editableCell(total.toFixed(2), 7, 'right', true)}
           `;
-          tableBody.insertBefore(tr, tableBody.firstChild);
+
+          if (prepend) {
+              tableBody.insertBefore(tr, tableBody.firstChild);
+          } else {
+              tableBody.appendChild(tr);
+          }
+
           csvRows.push([...row, isValid ? "Valid" : "Mismatch"]);
       };
 
+      // Fetch live spreadsheet state on load
+      const loadLiveLedger = async () => {
+          try {
+              const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/ledger`);
+              if (!res.ok) return;
+
+              const data = await res.json();
+              updateMetricsUI(data.count, data.net, data.vat, data.gross);
+
+              if (data.rows && data.rows.length > 0) {
+                  tableBody.innerHTML = '';
+                  data.rows.forEach(item => {
+                      appendLedgerRow([
+                          item.taskId,
+                          item.subcontractor,
+                          item.invoiceNumber,
+                          item.date,
+                          item.trn,
+                          item.net,
+                          item.vat,
+                          item.total
+                      ], item.sheetRow, false);
+                  });
+              }
+          } catch (e) {
+              console.warn('[Lair OS] Unable to hydrate ledger from Sheets.');
+          }
+      };
+      loadLiveLedger();
+
       const processFiles = async (files) => {
           if (!files.length) return;
-          const taskIdInput = document.getElementById('work-task-id');
           const taskId = (taskIdInput && taskIdInput.value.trim()) || 'UNASSIGNED';
           
           queueContainer.style.display = 'flex';
           document.getElementById('auditor-queue-count').textContent = files.length;
           fileList.innerHTML = '';
 
-          // Build the visual queue UI
           Array.from(files).forEach((file, index) => {
               fileList.innerHTML += `
                   <div id="file-card-${index}" style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--glass-bg); border:var(--glass-border); border-radius:12px;">
@@ -831,7 +896,6 @@
                   </div>`;
           });
 
-          // Concurrency Load Balancer (Runs 3 files at a time)
           const CONCURRENCY_LIMIT = 3;
           let active = 0;
           let queueIndex = 0;
@@ -851,17 +915,29 @@
                   if (!res.ok) throw new Error('Parse failed');
                   const data = await res.json();
 
-                  const row = [ taskId, data.subcontractor_name || '', data.invoice_number || '', data.invoice_date || '', data.trn || '', Number(data.net_amount) || 0, Number(data.vat_amount) || 0, Number(data.total_amount) || 0 ];
+                  const row = [ 
+                      taskId, 
+                      data.subcontractor_name || '', 
+                      data.invoice_number || '', 
+                      data.invoice_date || '', 
+                      data.trn || '', 
+                      Number(data.net_amount) || 0, 
+                      Number(data.vat_amount) || 0, 
+                      Number(data.total_amount) || 0 
+                  ];
 
-                  const syncRes = await fetchWithAuth(`${TUNNEL_URL}/api/work/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows: [row] }) });
+                  const syncRes = await fetchWithAuth(`${TUNNEL_URL}/api/work/sync`, { 
+                      method: 'POST', 
+                      headers: { 'Content-Type': 'application/json' }, 
+                      body: JSON.stringify({ rows: [row] }) 
+                  });
                   const syncData = await syncRes.json();
 
                   if (!syncRes.ok || !syncData.success) throw new Error(syncData.error || 'Sync failed');
                   if (syncData.skipped && syncData.skipped.includes(data.invoice_number)) throw new Error('Duplicate');
 
-                  count++; totalNet += row[5]; totalVat += row[6]; grossTotal += row[7];
-                  updateUI();
-                  appendLedgerRow(row, syncData.rowIndex); 
+                  appendLedgerRow(row, syncData.rowIndex, true);
+                  loadLiveLedger();
                   
                   statusEl.textContent = '✔ Done';
                   statusEl.style.color = 'var(--con)';
@@ -874,7 +950,7 @@
                   active--;
                   runNext();
                   if (active === 0 && queueIndex >= files.length) {
-                      setTimeout(() => { queueContainer.style.display = 'none'; }, 5000);
+                      setTimeout(() => { queueContainer.style.display = 'none'; }, 4000);
                   }
               }
           };
@@ -1479,6 +1555,51 @@
   });
 
   async function initVault() {
+    const cameraInput = document.getElementById('vault-camera-input');
+    const quickCaptureFab = document.getElementById('btn-quick-capture');
+
+    // Scoped Quick Shutter click binding
+    if (quickCaptureFab) {
+        quickCaptureFab.onclick = () => {
+            triggerHaptic();
+            const activeTarget = document.querySelector('.dock-app.active')?.getAttribute('data-target');
+            if (activeTarget === 'drop' || activeTarget === 'work') {
+                cameraInput.click();
+            }
+        };
+    }
+
+    // Direct hardware camera upload with zero phone storage retention
+    if (cameraInput && !cameraInput.__hasListener) {
+        cameraInput.__hasListener = true;
+        cameraInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            window.showToast('Streaming direct to Home PC...', 'info');
+            const fd = new FormData();
+            fd.append('photo', file);
+
+            try {
+                const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, {
+                    method: 'POST',
+                    body: fd
+                });
+
+                if (res.ok) {
+                    window.showToast('Safely stored in PC Vault ✔', 'success');
+                    initVault();
+                } else {
+                    throw new Error();
+                }
+            } catch (err) {
+                window.showToast('Upload failed: Home PC unreachable', 'error');
+            } finally {
+                cameraInput.value = '';
+            }
+        });
+    }
+
     try {
       const [storageRes, filesRes] = await Promise.all([ fetchWithAuth(`${TUNNEL_URL}/api/storage`), fetchWithAuth(`${TUNNEL_URL}/api/photos`) ]);
       if(storageRes.ok) {
