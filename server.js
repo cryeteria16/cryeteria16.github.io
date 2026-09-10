@@ -114,9 +114,9 @@ const uploadInvoice = multer({ dest: invoicesDir });
 
 // --- THE TRI-CORE LOAD BALANCER ---
 const API_KEYS = [
-    process.env.GEMINI_KEY_1 || 'AQ.Ab8RN6J0U-2QICflP43f8mpmOsu7kg9foapNJJ2Yk11bi7i3kA',
-    process.env.GEMINI_KEY_2 || 'AQ.Ab8RN6J-3Jp89HnejC1oQiRAfAj4PpDcspSKBwnmjdNXKGwrGA',
-    process.env.GEMINI_KEY_3 || 'AQ.Ab8RN6J-cZ-AecFRCi1pLz9bi-SQDi6M6I47886ACgKCfaZxAA'
+    process.env.GEMINI_KEY_1,
+    process.env.GEMINI_KEY_2,
+    process.env.GEMINI_KEY_3
 ].filter(Boolean);
 
 app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), async (req, res) => {
