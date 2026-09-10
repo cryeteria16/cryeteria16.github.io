@@ -266,6 +266,7 @@
       <div style="display:flex; justify-content:center; margin-bottom: 20px;">
           <div class="segment-pill">
               <button class="seg-btn active haptic-btn" data-workseg="auditor">Auditor PRO</button>
+              <button class="seg-btn haptic-btn" data-workseg="vw">Variable Works</button>
               <button class="seg-btn haptic-btn" data-workseg="facility">Facility Ops</button>
               <button class="seg-btn haptic-btn" data-workseg="academic">Academic Matrix</button>
           </div>
@@ -346,6 +347,61 @@
                       </thead>
                       <tbody id="auditor-table-body">
                           <tr id="auditor-empty-row"><td colspan="9" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Syncing live records with Sheets Matrix...</td></tr>
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+      </div>
+
+      <!-- Variable Works (VW) Tracker Module -->
+      <div id="work-vw" class="work-module stagger-2" style="display:none;">
+          <div class="card" style="padding: 24px; margin-bottom: 20px;">
+              <div class="card-head" style="margin-bottom:20px;">
+                  <h2 style="display:flex; align-items:center; gap:8px;">Variable Works Portfolio <span style="font-family:var(--font-mono); font-size:9px; background:var(--glass-bg); border:var(--glass-border); padding:4px 8px; border-radius:12px; color:var(--con); text-transform:uppercase;">Live VW Tracker</span></h2>
+              </div>
+              <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-bottom:20px;">
+                  <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">TOTAL WORKS</p>
+                      <h4 id="vw-stat-count" style="font-size:20px; font-weight:600;">0</h4>
+                  </div>
+                  <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">SUPPLIER COST</p>
+                      <h4 id="vw-stat-supplier" style="font-size:20px; font-weight:600;">0.00</h4>
+                  </div>
+                  <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">WASL BILLED</p>
+                      <h4 id="vw-stat-wasl" style="font-size:20px; font-weight:600;">0.00</h4>
+                  </div>
+                  <div style="background:rgba(112,148,122,0.1); padding:16px; border-radius:var(--radius-sm); border:1px solid rgba(112,148,122,0.3);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--con); margin-bottom:6px;">ESTIMATED MARGIN</p>
+                      <h4 id="vw-stat-margin" style="font-size:20px; font-weight:600; color:var(--con);">0.00</h4>
+                  </div>
+              </div>
+              <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
+                  <input type="text" id="vw-search-input" placeholder="Search building, supplier, CRM ref, description..." style="flex:1; min-width:260px; margin-bottom:0;">
+                  <button id="vw-refresh-btn" class="btn-secondary haptic-btn" style="padding:14px 20px;">Sync VW Tracker</button>
+              </div>
+          </div>
+
+          <div class="card stagger-3" style="padding:0; overflow:hidden;">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:var(--glass-border);">
+                  <h2 style="font-family:var(--font-display); font-size:16px; font-weight:500; margin:0;">Variable Works Master Grid</h2>
+                  <span style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);">Tap any row for complete 55-column dossier</span>
+              </div>
+              <div class="ledger-scroll-wrapper" style="overflow-x:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;">
+                  <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:920px;">
+                      <thead>
+                          <tr style="font-family:var(--font-mono); font-size:10px; text-transform:uppercase; color:var(--ink-soft); text-align:left;">
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">CRM / QTN</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">Building & Description</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">Supplier</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right;">Supplier Cost</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right;">Wasl Cost</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">Status</th>
+                          </tr>
+                      </thead>
+                      <tbody id="vw-table-body">
+                          <tr><td colspan="6" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Loading Variable Works tracker from Google Sheets...</td></tr>
                       </tbody>
                   </table>
               </div>
@@ -490,6 +546,19 @@
       <div style="display:flex; justify-content:space-between; align-items:center; gap: 12px;">
         <button id="btn-delete-vault-photo" class="haptic-btn" style="color:var(--err); font-size:13px; font-weight:600; flex:1; text-align:left;">Delete from Vault</button>
         <button class="btn-secondary haptic-btn" onclick="document.getElementById('photo-lightbox').classList.remove('active')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VW Dossier Slide-Over Modal -->
+  <div id="vw-dossier-modal" class="modal-overlay">
+    <div class="card" style="width:100%; max-width:700px; max-height:85vh; display:flex; flex-direction:column; padding:30px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:var(--glass-border); padding-bottom:12px;">
+        <h2 id="vw-dossier-title" style="font-family:var(--font-display); font-size:20px; margin:0;">Work Order Dossier</h2>
+        <button class="btn-secondary haptic-btn" onclick="document.getElementById('vw-dossier-modal').classList.remove('active')" style="padding:6px 14px; font-size:12px;">Close</button>
+      </div>
+      <div id="vw-dossier-content" style="flex:1; overflow-y:auto; display:grid; grid-template-columns: 1fr 1fr; gap:16px; font-size:13px; padding-right:4px;">
+        <!-- Injected dynamically -->
       </div>
     </div>
   </div>
@@ -740,7 +809,6 @@
       const target = e.currentTarget.getAttribute('data-target');
       document.getElementById(`view-${target}`).classList.add('active'); 
       
-      // Floating Shutter active exclusively in Work and Vault
       const fab = document.getElementById('btn-quick-capture');
       if (fab) fab.style.display = (target === 'work' || target === 'drop') ? 'flex' : 'none';
 
@@ -763,7 +831,6 @@
 
       let csvRows = [["Task ID", "Subcontractor", "Invoice Number", "Date", "TRN", "Net", "VAT", "Total", "Status"]];
 
-      // Restore default Task ID from local memory
       const savedTaskId = localStorage.getItem('lair_default_task_id');
       if (savedTaskId && taskIdInput) taskIdInput.value = savedTaskId;
 
@@ -850,41 +917,38 @@
           csvRows.push([...row, isValid ? "Valid" : "Mismatch"]);
       };
 
-      // Fetch live spreadsheet state on load
-// Fetch live spreadsheet state on load
-const loadLiveLedger = async () => {
-    try {
-        const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/ledger`);
-        
-        if (!res.ok) {
-            if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--err); font-size:13px;">Error connecting to Google Sheets. Check server terminal for details.</td>';
-            return;
-        }
+      const loadLiveLedger = async () => {
+          try {
+              const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/ledger`);
+              if (!res.ok) {
+                  if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--err); font-size:13px;">Error connecting to Google Sheets. Check server terminal.</td>';
+                  return;
+              }
 
-        const data = await res.json();
-        updateMetricsUI(data.count, data.net, data.vat, data.gross);
+              const data = await res.json();
+              updateMetricsUI(data.count, data.net, data.vat, data.gross);
 
-        if (data.rows && data.rows.length > 0) {
-            tableBody.innerHTML = '';
-            data.rows.forEach(item => {
-                appendLedgerRow([
-                    item.taskId,
-                    item.subcontractor,
-                    item.invoiceNumber,
-                    item.date,
-                    item.trn,
-                    item.net,
-                    item.vat,
-                    item.total
-                ], item.sheetRow, false);
-            });
-        } else {
-            if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Ledger is empty. Drop an invoice to begin.</td>';
-        }
-    } catch (e) {
-        if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--err); font-size:13px;">Server offline or tunnel disconnected.</td>';
-    }
-};
+              if (data.rows && data.rows.length > 0) {
+                  tableBody.innerHTML = '';
+                  data.rows.forEach(item => {
+                      appendLedgerRow([
+                          item.taskId,
+                          item.subcontractor,
+                          item.invoiceNumber,
+                          item.date,
+                          item.trn,
+                          item.net,
+                          item.vat,
+                          item.total
+                      ], item.sheetRow, false);
+                  });
+              } else {
+                  if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Ledger is empty. Drop an invoice to begin.</td>';
+              }
+          } catch (e) {
+              if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--err); font-size:13px;">Server offline or tunnel disconnected.</td>';
+          }
+      };
       loadLiveLedger();
 
       const processFiles = async (files) => {
@@ -984,6 +1048,136 @@ const loadLiveLedger = async () => {
       }
   }
 
+  function initVWTracker() {
+      const tableBody = document.getElementById('vw-table-body');
+      const searchInput = document.getElementById('vw-search-input');
+      const refreshBtn = document.getElementById('vw-refresh-btn');
+      const dossierModal = document.getElementById('vw-dossier-modal');
+      const dossierContent = document.getElementById('vw-dossier-content');
+      const dossierTitle = document.getElementById('vw-dossier-title');
+
+      if (!tableBody) return;
+
+      let allVWRows = [];
+
+      const renderTable = (rowsToRender) => {
+          if (!rowsToRender.length) {
+              tableBody.innerHTML = `<tr><td colspan="6" style="padding:40px; text-align:center; color:var(--ink-soft);">No matching works found.</td></tr>`;
+              return;
+          }
+
+          tableBody.innerHTML = '';
+          rowsToRender.forEach(item => {
+              const tr = document.createElement('tr');
+              tr.style.cssText = 'cursor:pointer; transition:background 0.2s;';
+              tr.onmouseover = () => tr.style.background = 'rgba(255,255,255,0.03)';
+              tr.onmouseout = () => tr.style.background = 'transparent';
+
+              tr.innerHTML = `
+                  <td style="padding:12px 16px; border-bottom:var(--glass-border); font-family:var(--font-mono); font-size:12px;">
+                      <div style="font-weight:600; color:var(--ink);">${item.crmRef || '—'}</div>
+                      <div style="color:var(--ink-soft); font-size:11px;">${item.qtnRef || ''}</div>
+                  </td>
+                  <td style="padding:12px 16px; border-bottom:var(--glass-border);">
+                      <div style="font-weight:500; color:var(--ink); max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.description}">${item.description || '—'}</div>
+                      <div style="color:var(--ink-soft); font-size:11px;">${item.building || 'General'}</div>
+                  </td>
+                  <td style="padding:12px 16px; border-bottom:var(--glass-border); font-size:12px;">
+                      <div>${item.supplierName || '—'}</div>
+                      <div style="color:var(--ink-soft); font-size:11px;">Assignee: ${item.qtnAssignedTo || 'Unassigned'}</div>
+                  </td>
+                  <td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right; font-family:var(--font-mono); font-size:12px;">
+                      ${item.supplierCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right; font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--con);">
+                      ${item.waslCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                  </td>
+                  <td style="padding:12px 16px; border-bottom:var(--glass-border);">
+                      <span style="font-family:var(--font-mono); font-size:10px; padding:4px 8px; border-radius:12px; background:rgba(112,148,122,0.15); color:var(--con);">${item.worksStatus}</span>
+                  </td>
+              `;
+
+              tr.addEventListener('click', () => {
+                  triggerHaptic();
+                  dossierTitle.textContent = `CRM: ${item.crmRef || item.qtnRef || 'Work Details'}`;
+                  dossierContent.innerHTML = '';
+
+                  const headers = item.rawHeaders;
+                  const values = item.rawValues;
+
+                  headers.forEach((header, idx) => {
+                      const val = values[idx];
+                      if (val !== undefined && val !== null && String(val).trim() !== '') {
+                          const box = document.createElement('div');
+                          box.style.cssText = 'background:var(--input-bg); padding:12px; border-radius:var(--radius-sm); border:var(--glass-border);';
+                          box.innerHTML = `
+                              <div style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:4px;">${header}</div>
+                              <div style="color:var(--ink); font-weight:500; word-break:break-word;">${val}</div>
+                          `;
+                          dossierContent.appendChild(box);
+                      }
+                  });
+
+                  dossierModal.classList.add('active');
+              });
+
+              tableBody.appendChild(tr);
+          });
+      };
+
+      const loadVWData = async () => {
+          try {
+              tableBody.innerHTML = `<tr><td colspan="6" style="padding:50px 20px; text-align:center; color:var(--ink-soft);">Syncing Variable Works with Google Sheets...</td></tr>`;
+              const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/vw-tracker`);
+              if (!res.ok) throw new Error('Failed to fetch VW tracker');
+              const data = await res.json();
+
+              document.getElementById('vw-stat-count').textContent = data.count;
+              document.getElementById('vw-stat-supplier').textContent = data.totalSupplierCost.toLocaleString('en-US', { minimumFractionDigits: 2 });
+              document.getElementById('vw-stat-wasl').textContent = data.totalWaslCost.toLocaleString('en-US', { minimumFractionDigits: 2 });
+              
+              const estMargin = data.totalWaslCost - data.totalSupplierCost;
+              const marginEl = document.getElementById('vw-stat-margin');
+              marginEl.textContent = estMargin.toLocaleString('en-US', { minimumFractionDigits: 2 });
+              marginEl.style.color = estMargin >= 0 ? 'var(--con)' : 'var(--err)';
+
+              allVWRows = data.rows;
+              renderTable(allVWRows);
+          } catch (e) {
+              tableBody.innerHTML = `<tr><td colspan="6" style="padding:50px 20px; text-align:center; color:var(--err);">Failed to load VW tracker. Check server logs.</td></tr>`;
+          }
+      };
+
+      loadVWData();
+
+      if (refreshBtn) {
+          refreshBtn.addEventListener('click', () => {
+              triggerHaptic();
+              loadVWData();
+              window.showToast('VW Tracker synced', 'success');
+          });
+      }
+
+      if (searchInput) {
+          searchInput.addEventListener('input', (e) => {
+              const queryStr = e.target.value.toLowerCase().trim();
+              if (!queryStr) {
+                  renderTable(allVWRows);
+                  return;
+              }
+              const filtered = allVWRows.filter(item => 
+                  String(item.crmRef).toLowerCase().includes(queryStr) ||
+                  String(item.qtnRef).toLowerCase().includes(queryStr) ||
+                  String(item.description).toLowerCase().includes(queryStr) ||
+                  String(item.building).toLowerCase().includes(queryStr) ||
+                  String(item.supplierName).toLowerCase().includes(queryStr) ||
+                  String(item.worksStatus).toLowerCase().includes(queryStr)
+              );
+              renderTable(filtered);
+          });
+      }
+  }
+
   function initOS() {
     setupAdaptivePolling();
 
@@ -1065,6 +1259,7 @@ const loadLiveLedger = async () => {
     initRadarFeed();
     initVoiceRoom();
     initAuditor();
+    initVWTracker();
   }
 
   function initTheaterChat() {
@@ -1565,7 +1760,6 @@ const loadLiveLedger = async () => {
     const cameraInput = document.getElementById('vault-camera-input');
     const quickCaptureFab = document.getElementById('btn-quick-capture');
 
-    // Scoped Quick Shutter click binding
     if (quickCaptureFab) {
         quickCaptureFab.onclick = () => {
             triggerHaptic();
@@ -1576,7 +1770,6 @@ const loadLiveLedger = async () => {
         };
     }
 
-    // Direct hardware camera upload with zero phone storage retention
     if (cameraInput && !cameraInput.__hasListener) {
         cameraInput.__hasListener = true;
         cameraInput.addEventListener('change', async (e) => {
