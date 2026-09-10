@@ -17,7 +17,7 @@ const { getAuth } = require('firebase-admin/auth');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { google } = require('googleapis');
 
-// Safe Sharp Loader (Prevents Windows compilation crashes from killing the server)
+// Safe Sharp Loader
 let sharp;
 try { sharp = require('sharp'); } 
 catch (e) { console.warn('[Lair OS] Sharp module unavailable. WebP compression bypassed.'); }
@@ -28,7 +28,12 @@ const db = getFirestore();
 
 const app = express();
 
+// --- MASTER CONFIGURATION ---
+const SPREADSHEET_ID = '1uX2OOd4HE3c_-Vl-PkeQhZicY2cFh3qFxASG7yl_uEo';
+const TUNNEL_URL = 'https://vault.ibadhasan.com';
+const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const STREAM_SECRET = process.env.STREAM_TOKEN_SECRET;
+
 if (!STREAM_SECRET) console.warn('[Lair OS] WARNING: STREAM_TOKEN_SECRET is not set in .env.');
 
 function issueStreamToken(uid, filename, hours = 6) {
@@ -88,9 +93,6 @@ app.post('/api/stream-token', verifyToken, (req, res) => {
   try { res.json({ token: issueStreamToken(req.user.uid, filename, 6) }); } 
   catch (e) { res.status(503).json({ error: 'Streaming unavailable.' }); }
 });
-
-const TUNNEL_URL = 'https://vault.ibadhasan.com';
-const TMDB_API_KEY = process.env.TMDB_API_KEY;
 
 const moviesDir = path.join(__dirname, 'Movies');
 const photosDir = path.join(__dirname, 'Photography');
@@ -179,11 +181,10 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
         const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
         if (!rows.length) return res.json({ success: true, added: 0, skipped: [] });
 
-        const spreadsheetId = '1NaObt-gwnmsn8Ouv1onbF4UUuFiiaPZPZj-pLU3G6SM';
         const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
-        const existing = await sheets.spreadsheets.values.get({ spreadsheetId, range: 'Sheet1!C2:C' });
+        const existing = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Sheet1!C2:C' });
         const seenInvoiceNumbers = new Set((existing.data.values || []).flat().map(v => String(v).trim()).filter(Boolean));
 
         const skipped = [];
@@ -197,7 +198,7 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
         let rowIndex = null;
         if (toWrite.length) {
             const appendRes = await sheets.spreadsheets.values.append({
-                spreadsheetId, range: 'Sheet1!A:H', valueInputOption: 'USER_ENTERED', requestBody: { values: toWrite }
+                spreadsheetId: SPREADSHEET_ID, range: 'Sheet1!A:H', valueInputOption: 'USER_ENTERED', requestBody: { values: toWrite }
             });
             const match = appendRes.data.updates.updatedRange.match(/\d+/);
             if(match) rowIndex = parseInt(match[0], 10);
@@ -210,7 +211,6 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
 // --- LIVE GOOGLE SHEETS HYDRATION ---
 app.get('/api/work/ledger', verifyToken, async (req, res) => {
     try {
-        const spreadsheetId = '1NaObt-gwnmsn8Ouv1onbF4UUuFiiaPZPZj-pLU3G6SM';
         const authClient = new google.auth.GoogleAuth({ 
             keyFile: './serviceAccountKey.json', 
             scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
@@ -218,7 +218,7 @@ app.get('/api/work/ledger', verifyToken, async (req, res) => {
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
         const response = await sheets.spreadsheets.values.get({
-            spreadsheetId,
+            spreadsheetId: SPREADSHEET_ID,
             range: 'Sheet1!A2:H'
         });
 
@@ -271,7 +271,7 @@ app.post('/api/work/update-cell', verifyToken, async (req, res) => {
         const sheets = google.sheets({ version: 'v4', auth: authClient });
         
         await sheets.spreadsheets.values.update({
-            spreadsheetId: '1NaObt-gwnmsn8Ouv1onbF4UUuFiiaPZPZj-pLU3G6SM',
+            spreadsheetId: SPREADSHEET_ID,
             range: range,
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [[value]] }
