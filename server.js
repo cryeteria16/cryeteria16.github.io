@@ -46,7 +46,6 @@ function extractCleanJSON(rawText) {
     if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
     else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
     
-    // Safety net: rip the JSON out of any surrounding conversational text
     const firstBrace = cleaned.indexOf('{');
     const lastBrace = cleaned.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace !== -1) {
@@ -137,14 +136,14 @@ const API_KEYS = [
 
 app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI configuration found on server.' });
+    
     try {
         const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
         const genAI = new GoogleGenerativeAI(activeKey);
         
         const fileBytes = fs.readFileSync(req.file.path);
         const base64Data = fileBytes.toString("base64");
-        
-        // Force correct MIME type regardless of Windows OS quirks
         const fileMimeType = "application/pdf"; 
         
         const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
@@ -191,14 +190,14 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
 
 app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No PO file uploaded' });
+    if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI configuration found on server.' });
+    
     try {
         const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
         const genAI = new GoogleGenerativeAI(activeKey);
         
         const fileBytes = fs.readFileSync(req.file.path);
         const base64Data = fileBytes.toString("base64");
-        
-        // Force correct MIME type regardless of Windows OS quirks
         const fileMimeType = "application/pdf"; 
         
         const prompt = `You are an elite procurement auditor. Read this Microsoft Dynamics Purchase Order PDF and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: 
@@ -540,6 +539,8 @@ app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
             if (purchaseOrder === '' || purchaseOrder.toLowerCase() === 'pending') metrics.pendingWaslPo++;
         });
 
+        if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI configuration found on server.' });
+
         const prompt = `
             You are an elite Facility Management & Financial Auditor. Analyze the following operational compliance snapshot for a property management portfolio. 
             Provide a crisp, professional 3-4 sentence executive summary highlighting the primary bottlenecks in billing and document closure.
@@ -723,16 +724,34 @@ app.get('/stream/movies/:filename', verifyToken, (req, res) => {
     const safeFilename = path.basename(req.params.filename);
     const filePath = path.join(moviesDir, safeFilename);
     if (!fs.existsSync(filePath)) return res.status(404).send('Not found');
-    const stat = fs.statSync(filePath); const fileSize = stat.size; const range = req.headers.range;
+    
+    const stat = fs.statSync(filePath); 
+    const fileSize = stat.size; 
+    const range = req.headers.range;
+    
     if (range) {
-        const parts = range.replace(/bytes=/, "").split("-"); const start = parseInt(parts[0], 10);
+        const parts = range.replace(/bytes=/, "").split("-"); 
+        const start = parseInt(parts[0], 10);
         const end = parts[1] ? parseInt(parts[1], 10) : Math.min(start + (5 * 1024 * 1024) - 1, fileSize - 1);
-        if (start >= fileSize || end >= fileSize) { res.writeHead(416, { 'Content-Range': `bytes */${fileSize}` }); return res.end(); }
-        res.writeHead(206, { 'Content-Range': `bytes ${start}-${end}/${fileSize}`, 'Accept-Ranges': 'bytes', 'Content-Length': (end - start) + 1, 'Content-Type': 'video/mp4' });
+        
+        if (start >= fileSize || end >= fileSize) { 
+            res.writeHead(416, { 'Content-Range': `bytes */${fileSize}` }); 
+            return res.end(); 
+        }
+        
+        res.writeHead(206, { 
+            'Content-Range': `bytes ${start}-${end}/${fileSize}`, 
+            'Accept-Ranges': 'bytes', 
+            'Content-Length': (end - start) + 1, 
+            'Content-Type': 'video/mp4' 
+        });
         fs.createReadStream(filePath, {start, end}).pipe(res);
     } else {
-        res.writeHead(200, { 'Content-Length': fileSize, 'Content-Type': 'video/mp4' });
-        fs.createReadStream(filePath, {start, end}).pipe(res);
+        res.writeHead(200, { 
+            'Content-Length': fileSize, 
+            'Content-Type': 'video/mp4' 
+        });
+        fs.createReadStream(filePath).pipe(res);
     }
 });
 
