@@ -902,7 +902,16 @@ function initTheaterChat() {
         const mine = m.uid === currentUser.id;
         const row = document.createElement('div');
         row.style.cssText = `align-self:${mine ? 'flex-end' : 'flex-start'}; max-width:80%; background:${mine ? 'var(--accent)' : 'var(--input-bg)'}; color:${mine ? '#000' : 'var(--ink)'}; padding:8px 14px; border-radius:16px; font-size:13px;`;
-        row.innerHTML = `${!mine ? `<div style="font-family:var(--font-mono); font-size:10px; opacity:0.7; margin-bottom:2px;">${m.name}</div>` : ''}${m.text}`;
+        
+        if (!mine) {
+            const nameDiv = document.createElement('div');
+            nameDiv.style.cssText = 'font-family:var(--font-mono); font-size:10px; opacity:0.7; margin-bottom:2px;';
+            nameDiv.textContent = m.name;
+            row.appendChild(nameDiv);
+        }
+        
+        const textNode = document.createTextNode(m.text);
+        row.appendChild(textNode);
         return row;
     };
 
