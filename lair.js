@@ -6,6 +6,7 @@ const TUNNEL_URL = "https://vault.ibadhasan.com";
 
 let currentUser = null;
 let activeLightboxFile = null;
+let userAdminPin = "0000"; 
 
 window.showToast = (msg, type = 'info') => {
   const container = document.getElementById('toast-container');
@@ -187,6 +188,9 @@ onAuthStateChanged(auth, (user) => {
       if(snap.exists()) {
           if (snap.data().role === 'admin') {
               document.getElementById('dock-admin-link').style.display = 'block';
+              if (snap.data().adminPin) {
+                  userAdminPin = snap.data().adminPin;
+              }
           }
           if(snap.data().theme) {
               document.body.setAttribute('data-theme', snap.data().theme);
@@ -834,11 +838,62 @@ function initOS() {
   initAuditor();
   initVWTracker();
   initPODropzone();
+  initAdminPinPad();
 
   document.getElementById('btn-open-po-modal').addEventListener('click', () => {
       triggerHaptic();
       document.getElementById('po-extractor-modal').classList.add('active');
   });
+}
+
+function initAdminPinPad() {
+    const adminBtn = document.getElementById('dock-admin-link');
+    const pinModal = document.getElementById('pin-modal');
+    const pinDots = document.querySelectorAll('.pin-dot');
+    let currentPin = '';
+
+    const updateDots = () => {
+        pinDots.forEach((dot, idx) => {
+            dot.style.background = idx < currentPin.length ? 'var(--ink)' : 'transparent';
+        });
+    };
+
+    adminBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        triggerHaptic();
+        currentPin = '';
+        updateDots();
+        pinModal.classList.add('active');
+    });
+
+    document.querySelectorAll('.num-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            triggerHaptic();
+            if(btn.id === 'btn-pin-delete') {
+                currentPin = currentPin.slice(0, -1);
+            } else if(btn.dataset.num && currentPin.length < 4) {
+                currentPin += btn.dataset.num;
+            }
+            updateDots();
+            
+            if (currentPin.length === 4) {
+                setTimeout(() => {
+                    if (currentPin === userAdminPin) {
+                        window.location.href = 'admin.html';
+                    } else {
+                        const dotsContainer = document.getElementById('pin-dots');
+                        dotsContainer.classList.add('shake');
+                        if (navigator.vibrate) navigator.vibrate([100, 50, 100]); 
+                        setTimeout(() => {
+                            dotsContainer.classList.remove('shake');
+                            currentPin = '';
+                            updateDots();
+                        }, 400);
+                    }
+                }, 100);
+            }
+        });
+    });
 }
 
 function initTheaterChat() {
@@ -956,14 +1011,24 @@ function initConfigAndFeatures() {
         }
 
         const f = d.features || {};
+        document.getElementById('dock-dashboard-link').style.display = f.dashboard === false ? 'none' : 'block';
+        document.getElementById('dock-work-link').style.display = f.work === false ? 'none' : 'block';
+        document.getElementById('dock-drop-link').style.display = f.drop === false ? 'none' : 'block';
         document.getElementById('dock-theater-link').style.display = f.theater === false ? 'none' : 'block';
         document.getElementById('dock-voice-link').style.display = f.voice === false ? 'none' : 'block';
+        
         const radarCard = document.getElementById('radar-feed')?.closest('.card');
         if (radarCard) radarCard.style.display = f.radar === false ? 'none' : 'flex';
 
         const activeTarget = document.querySelector('.dock-app.active')?.getAttribute('data-target');
-        if ((activeTarget === 'theater' && f.theater === false) || (activeTarget === 'voice' && f.voice === false)) {
-            document.querySelector('.dock-app[data-target="dashboard"]').click();
+        if ((activeTarget === 'dashboard' && f.dashboard === false) || 
+            (activeTarget === 'work' && f.work === false) || 
+            (activeTarget === 'drop' && f.drop === false) || 
+            (activeTarget === 'theater' && f.theater === false) || 
+            (activeTarget === 'voice' && f.voice === false)) {
+            
+            const firstAvailable = document.querySelector('.dock-app[style*="display: block"], .dock-app:not([style*="display: none"])');
+            if (firstAvailable) firstAvailable.click();
         }
     });
 }

@@ -37,6 +37,9 @@ onAuthStateChanged(auth, (user) => {
       if(d.fontBody) document.getElementById('config-font-body').value = d.fontBody;
       if(d.broadcast) document.getElementById('edit-broadcast').value = d.broadcast;
       if(d.features) {
+          document.getElementById('toggle-dashboard').checked = d.features.dashboard !== false;
+          document.getElementById('toggle-work').checked = d.features.work !== false;
+          document.getElementById('toggle-drop').checked = d.features.drop !== false;
           document.getElementById('toggle-theater').checked = d.features.theater !== false;
           document.getElementById('toggle-voice').checked = d.features.voice !== false;
           document.getElementById('toggle-radar').checked = d.features.radar !== false;
@@ -69,6 +72,9 @@ document.getElementById('btn-save-notifications').addEventListener('click', asyn
 document.getElementById('btn-save-os').addEventListener('click', async () => {
   const broadcast = document.getElementById('edit-broadcast').value;
   const features = { 
+    dashboard: document.getElementById('toggle-dashboard').checked,
+    work: document.getElementById('toggle-work').checked,
+    drop: document.getElementById('toggle-drop').checked,
     theater: document.getElementById('toggle-theater').checked,
     voice: document.getElementById('toggle-voice').checked, 
     radar: document.getElementById('toggle-radar').checked 
@@ -100,6 +106,17 @@ document.getElementById('btn-save-config').addEventListener('click', async () =>
     accentColor: document.getElementById('config-accent').value 
   }, { merge: true }); 
   alert('Aesthetics Applied');
+});
+
+document.getElementById('btn-update-pin').addEventListener('click', async () => {
+    const newPin = document.getElementById('edit-pin').value;
+    if(!/^\d{4}$/.test(newPin)) {
+        alert("PIN must be exactly 4 digits.");
+        return;
+    }
+    await setDoc(doc(db, 'users', currentUser.id), { adminPin: newPin }, { merge: true });
+    alert('Admin PIN Updated');
+    document.getElementById('edit-pin').value = '';
 });
 
 document.getElementById('btn-update-password').addEventListener('click', async () => {

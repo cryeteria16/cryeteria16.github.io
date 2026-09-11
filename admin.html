@@ -69,7 +69,12 @@
       <label class="field-label">Broadcast Banner (Lair OS)</label>
       <input type="text" id="edit-broadcast" placeholder="e.g. Server maintenance tonight at 2AM">
       
-      <label class="field-label" style="margin-top:16px;">Kill Switches</label>
+      <label class="field-label" style="margin-top:16px;">Core Modules</label>
+      <div class="toggle-row"><span>Dashboard</span><input type="checkbox" id="toggle-dashboard" class="toggle-switch"></div>
+      <div class="toggle-row"><span>Work Grid</span><input type="checkbox" id="toggle-work" class="toggle-switch"></div>
+      <div class="toggle-row"><span>Vault (Drop)</span><input type="checkbox" id="toggle-drop" class="toggle-switch"></div>
+
+      <label class="field-label" style="margin-top:16px;">Accessory Kill Switches</label>
       <div class="toggle-row"><span>Theater Module</span><input type="checkbox" id="toggle-theater" class="toggle-switch"></div>
       <div class="toggle-row"><span>Voice Room</span><input type="checkbox" id="toggle-voice" class="toggle-switch"></div>
       <div class="toggle-row"><span>Flight Radar</span><input type="checkbox" id="toggle-radar" class="toggle-switch"></div>
@@ -102,6 +107,13 @@
 
     <section class="card" style="border-color:rgba(217,83,79,0.3);">
       <div class="card-head"><h2 style="color:var(--err);">Security & Authentication</h2></div>
+      
+      <label class="field-label">Admin UI PIN Code (4 Digits)</label>
+      <div style="display:flex; gap:10px; margin-bottom:24px;">
+        <input type="password" id="edit-pin" placeholder="e.g. 1234" maxlength="4" inputmode="numeric" style="margin-bottom:0;">
+        <button class="btn-secondary" id="btn-update-pin" style="white-space:nowrap;">Set PIN</button>
+      </div>
+
       <label class="field-label">New Master Passkey</label>
       <input type="password" id="edit-password" placeholder="Enter new password (min 6 characters)">
       <button class="btn-primary" id="btn-update-password" style="background:rgba(217,83,79,0.2); color:var(--err);">Update Password</button>

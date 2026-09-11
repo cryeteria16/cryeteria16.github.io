@@ -162,6 +162,15 @@
   .fab-capture { position: fixed; bottom: calc(85px + env(safe-area-inset-bottom, 0px)); right: 24px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #000; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); z-index: 850; cursor: pointer; transition: transform 0.25s; }
   .fab-capture:active { transform: scale(0.9); }
   .field-label { display: block; font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+
+  /* PIN Pad Styles */
+  @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 50% { transform: translateX(10px); } 75% { transform: translateX(-10px); } }
+  .shake { animation: shake 0.4s; }
+  .pin-dots { display: flex; gap: 20px; justify-content: center; margin-bottom: 40px; }
+  .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--ink); transition: 0.15s; }
+  .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; max-width: 280px; margin: 0 auto; }
+  .num-btn { width: 75px; height: 75px; border-radius: 50%; font-size: 26px; font-family: var(--font-body); font-weight: 300; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.1s; }
+  .num-btn:active { background: rgba(255,255,255,0.25); transform: scale(0.92); }
 </style>
 </head>
 <body data-theme="dark">
@@ -185,12 +194,12 @@
 
   <div class="os-dock-wrapper">
     <div class="os-dock">
-      <div class="dock-app app-link active haptic-btn" data-target="dashboard">Dashboard</div>
-      <div class="dock-app app-link haptic-btn" data-target="work">Work</div>
-      <div class="dock-app app-link haptic-btn" data-target="drop">Vault</div>
+      <div class="dock-app app-link active haptic-btn" data-target="dashboard" id="dock-dashboard-link">Dashboard</div>
+      <div class="dock-app app-link haptic-btn" data-target="work" id="dock-work-link">Work</div>
+      <div class="dock-app app-link haptic-btn" data-target="drop" id="dock-drop-link">Vault</div>
       <div class="dock-app app-link haptic-btn" data-target="theater" id="dock-theater-link">Theater</div>
       <div class="dock-app app-link haptic-btn" data-target="voice" id="dock-voice-link">Voice</div>
-      <a href="admin.html" id="dock-admin-link" class="dock-app haptic-btn" style="display:none;">Settings</a>
+      <a id="dock-admin-link" class="dock-app haptic-btn" style="display:none;">Settings</a>
     </div>
   </div>
 
@@ -283,7 +292,7 @@
                   <span style="font-family:var(--font-mono); font-size:10px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px;">Auto-Retry</span>
                   <span style="font-family:var(--font-mono); font-size:10px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px;">Enabled</span>
                   <div style="flex:1;"></div>
-                  <button id="btn-auditor-settings" class="btn-secondary haptic-btn" style="padding:8px; color:var(--warn);" title="Configure Default Task ID"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                  <button id="btn-auditor-settings" class="btn-secondary haptic-btn" style="padding:8px; color:var(--warn);" title="Configure Default Task ID"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
               </div>
 
               <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:24px;">
@@ -545,6 +554,30 @@
       </div>
     </section>
   </main>
+
+  <div id="pin-modal" class="modal-overlay">
+    <div style="display:flex; flex-direction:column; align-items:center;">
+      <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:24px;">Enter Passcode</h2>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="numpad">
+        <button class="num-btn haptic-btn" data-num="1">1</button>
+        <button class="num-btn haptic-btn" data-num="2">2</button>
+        <button class="num-btn haptic-btn" data-num="3">3</button>
+        <button class="num-btn haptic-btn" data-num="4">4</button>
+        <button class="num-btn haptic-btn" data-num="5">5</button>
+        <button class="num-btn haptic-btn" data-num="6">6</button>
+        <button class="num-btn haptic-btn" data-num="7">7</button>
+        <button class="num-btn haptic-btn" data-num="8">8</button>
+        <button class="num-btn haptic-btn" data-num="9">9</button>
+        <button class="num-btn haptic-btn" style="visibility:hidden;">*</button>
+        <button class="num-btn haptic-btn" data-num="0">0</button>
+        <button class="num-btn haptic-btn" id="btn-pin-delete">⌫</button>
+      </div>
+      <button class="btn-secondary haptic-btn" style="margin-top:40px; border:none; background:transparent;" onclick="document.getElementById('pin-modal').classList.remove('active')">Cancel</button>
+    </div>
+  </div>
   
   <div id="photo-lightbox" class="modal-overlay">
     <div class="card" style="max-width:90%; text-align:center; padding:20px;">
