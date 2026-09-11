@@ -220,9 +220,7 @@ document.querySelectorAll('[data-workseg]').forEach(btn => {
         document.querySelectorAll('.work-module').forEach(t => t.style.display = 'none');
         const targetSeg = e.currentTarget.getAttribute('data-workseg');
         document.getElementById(`work-${targetSeg}`).style.display = 'block';
-        if (targetSeg === 'vw' && typeof window.loadVWBriefing === 'function') {
-            window.loadVWBriefing();
-        }
+       
     });
 });
 
@@ -678,7 +676,7 @@ function initVWTracker() {
 
             allVWRows = data.rows;
             renderTable(allVWRows);
-            if (typeof window.loadVWBriefing === 'function') window.loadVWBriefing();
+          
         } catch (e) {
             tableBody.innerHTML = `<tr><td colspan="6" style="padding:50px 20px; text-align:center; color:var(--err);">Failed to load VW tracker. Check server logs.</td></tr>`;
         }
