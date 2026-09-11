@@ -130,45 +130,38 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
         const base64Data = fileBytes.toString("base64");
         const fileMimeType = req.file.mimetype; 
         
-        const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
+        const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
         
-        const models = ["gemini-3.5-flash", "gemini-3.1-pro"];
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-3.8-flash",
+            generationConfig: { responseMimeType: "application/json" }
+        });
+        
         let result = null;
-        let lastError = null;
-
-        for (const modelName of models) {
+        let delay = 2000;
+        const maxRetries = 5;
+        
+        for (let i = 0; i < maxRetries; i++) {
             try {
-                const model = genAI.getGenerativeModel({ model: modelName });
-                let delay = 2000;
-                const maxRetries = 5;
-                
-                for (let i = 0; i < maxRetries; i++) {
-                    try {
-                        result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
-                        break; 
-                    } catch (error) {
-                        const isOverloaded = error.status === 503 || error.status === 429 || (error.message && /high demand|quota|overloaded/i.test(error.message));
-                        if (isOverloaded && i < maxRetries - 1) {
-                            const waitTime = delay + Math.floor(Math.random() * 1000); 
-                            await new Promise(resolve => setTimeout(resolve, waitTime));
-                            delay *= 2; 
-                        } else { throw error; }
-                    }
-                }
-                if (result) break; 
-            } catch (err) { lastError = err; }
+                result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
+                break; 
+            } catch (error) {
+                const isOverloaded = error.status === 503 || error.status === 429 || (error.message && /high demand|quota|overloaded/i.test(error.message));
+                if (isOverloaded && i < maxRetries - 1) {
+                    const waitTime = delay + Math.floor(Math.random() * 1000); 
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    delay *= 2; 
+                } else { throw error; }
+            }
         }
         
-        if (!result) throw lastError || new Error('All models failed.');
+        if (!result) throw new Error('Model failed after retries.');
 
-        let rawText = result.response.text().trim();
-        if (rawText.startsWith('```json')) rawText = rawText.replace(/^```json/, '').replace(/```$/, '').trim();
-        else if (rawText.startsWith('```')) rawText = rawText.replace(/^```/, '').replace(/```$/, '').trim();
-        
-        const data = JSON.parse(rawText);
+        const data = JSON.parse(result.response.text().trim());
         fs.unlinkSync(req.file.path); 
         res.json(data);
     } catch(e) {
+        console.error("\n[Lair OS] Invoice Parsing Error:", e);
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ error: 'Extraction failed' });
     }
@@ -184,7 +177,7 @@ app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async 
         const base64Data = fileBytes.toString("base64");
         const fileMimeType = req.file.mimetype; 
         
-        const prompt = `You are an elite procurement auditor. Read this Microsoft Dynamics Purchase Order PDF and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: 
+        const prompt = `You are an elite procurement auditor. Read this Microsoft Dynamics Purchase Order PDF and extract the details. Return strictly a raw JSON object with exact keys: 
         "po_number" (String, e.g., "PO9728-0015534"), 
         "po_date" (String), 
         "supplier_name" (String), 
@@ -195,17 +188,18 @@ app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async 
         "total_amount" (Number), 
         "line_items" (Array of objects with "item", "qty", "total").`;
         
-        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-3.8-flash",
+            generationConfig: { responseMimeType: "application/json" }
+        });
+        
         const result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
+        const data = JSON.parse(result.response.text().trim());
         
-        let rawText = result.response.text().trim();
-        if (rawText.startsWith('```json')) rawText = rawText.replace(/^```json/, '').replace(/```$/, '').trim();
-        else if (rawText.startsWith('```')) rawText = rawText.replace(/^```/, '').replace(/```$/, '').trim();
-        
-        const data = JSON.parse(rawText);
         fs.unlinkSync(req.file.path); 
         res.json(data);
     } catch(e) {
+        console.error("\n[Lair OS] PO Parsing Error:", e);
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ error: 'PO extraction failed' });
     }
@@ -511,7 +505,7 @@ app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
 
         const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
         const genAI = new GoogleGenerativeAI(activeKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
 
         const aiResponse = await model.generateContent(prompt);
         let summaryText = aiResponse.response.text().trim();
