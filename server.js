@@ -40,6 +40,21 @@ function issueStreamToken(uid, filename, hours = 6) {
   return jwt.sign({ uid, filename }, STREAM_SECRET, { expiresIn: `${hours}h` });
 }
 
+// Robust JSON Extraction helper to bypass AI markdown/chatter
+function extractCleanJSON(rawText) {
+    let cleaned = rawText.trim();
+    if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
+    else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+    
+    // Safety net: rip the JSON out of any surrounding conversational text
+    const firstBrace = cleaned.indexOf('{');
+    const lastBrace = cleaned.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace !== -1) {
+        cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+    }
+    return JSON.parse(cleaned);
+}
+
 const allowedOrigins = [
   'https://cryeterialoginpage.firebaseapp.com',
   'https://cryeterialoginpage.web.app',
@@ -128,40 +143,47 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
         
         const fileBytes = fs.readFileSync(req.file.path);
         const base64Data = fileBytes.toString("base64");
-        const fileMimeType = req.file.mimetype; 
         
-        const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
+        // Force correct MIME type regardless of Windows OS quirks
+        const fileMimeType = "application/pdf"; 
         
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-3.8-flash",
-            generationConfig: { responseMimeType: "application/json" }
-        });
+        const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
         
+        const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
         let result = null;
-        let delay = 2000;
-        const maxRetries = 5;
-        
-        for (let i = 0; i < maxRetries; i++) {
+        let lastError = null;
+
+        for (const modelName of models) {
             try {
-                result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
-                break; 
-            } catch (error) {
-                const isOverloaded = error.status === 503 || error.status === 429 || (error.message && /high demand|quota|overloaded/i.test(error.message));
-                if (isOverloaded && i < maxRetries - 1) {
-                    const waitTime = delay + Math.floor(Math.random() * 1000); 
-                    await new Promise(resolve => setTimeout(resolve, waitTime));
-                    delay *= 2; 
-                } else { throw error; }
-            }
+                const model = genAI.getGenerativeModel({ 
+                    model: modelName,
+                    generationConfig: { responseMimeType: "application/json" }
+                });
+                
+                let delay = 2000;
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
+                        break; 
+                    } catch (error) {
+                        const isOverloaded = error.status === 503 || error.status === 429;
+                        if (isOverloaded && i < 2) {
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2; 
+                        } else { throw error; }
+                    }
+                }
+                if (result) break; 
+            } catch (err) { lastError = err; }
         }
         
-        if (!result) throw new Error('Model failed after retries.');
+        if (!result) throw lastError || new Error('All models failed.');
 
-        const data = JSON.parse(result.response.text().trim());
+        const data = extractCleanJSON(result.response.text());
         fs.unlinkSync(req.file.path); 
         res.json(data);
     } catch(e) {
-        console.error("\n[Lair OS] Invoice Parsing Error:", e);
+        console.error("\n[Lair OS] Invoice Parsing Error:", e.message);
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ error: 'Extraction failed' });
     }
@@ -175,9 +197,11 @@ app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async 
         
         const fileBytes = fs.readFileSync(req.file.path);
         const base64Data = fileBytes.toString("base64");
-        const fileMimeType = req.file.mimetype; 
         
-        const prompt = `You are an elite procurement auditor. Read this Microsoft Dynamics Purchase Order PDF and extract the details. Return strictly a raw JSON object with exact keys: 
+        // Force correct MIME type regardless of Windows OS quirks
+        const fileMimeType = "application/pdf"; 
+        
+        const prompt = `You are an elite procurement auditor. Read this Microsoft Dynamics Purchase Order PDF and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: 
         "po_number" (String, e.g., "PO9728-0015534"), 
         "po_date" (String), 
         "supplier_name" (String), 
@@ -188,18 +212,41 @@ app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async 
         "total_amount" (Number), 
         "line_items" (Array of objects with "item", "qty", "total").`;
         
-        const model = genAI.getGenerativeModel({ 
-            model: "gemini-3.8-flash",
-            generationConfig: { responseMimeType: "application/json" }
-        });
+        const models = ["gemini-1.5-flash", "gemini-1.5-pro"];
+        let result = null;
+        let lastError = null;
+
+        for (const modelName of models) {
+            try {
+                const model = genAI.getGenerativeModel({ 
+                    model: modelName,
+                    generationConfig: { responseMimeType: "application/json" }
+                });
+                
+                let delay = 2000;
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
+                        break; 
+                    } catch (error) {
+                        const isOverloaded = error.status === 503 || error.status === 429;
+                        if (isOverloaded && i < 2) {
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            delay *= 2; 
+                        } else { throw error; }
+                    }
+                }
+                if (result) break; 
+            } catch (err) { lastError = err; }
+        }
         
-        const result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
-        const data = JSON.parse(result.response.text().trim());
-        
+        if (!result) throw lastError || new Error('All models failed.');
+
+        const data = extractCleanJSON(result.response.text());
         fs.unlinkSync(req.file.path); 
         res.json(data);
     } catch(e) {
-        console.error("\n[Lair OS] PO Parsing Error:", e);
+        console.error("\n[Lair OS] PO Parsing Error:", e.message);
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ error: 'PO extraction failed' });
     }
@@ -263,7 +310,7 @@ app.post('/api/work/sync-po-to-sheet', verifyToken, async (req, res) => {
 
         res.json({ success: true, updatedRow: targetRowIndex });
     } catch (error) {
-        console.error('[Lair OS] PO Sheet Sync Error:', error);
+        console.error('\n[Lair OS] PO Sheet Sync Error:', error.message);
         res.status(500).json({ error: 'Failed to update Google Sheet with PO.' });
     }
 });
@@ -297,7 +344,10 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
         }
 
         res.json({ success: true, added: toWrite.length, skipped, rowIndex });
-    } catch(e) { res.status(500).json({ error: 'Failed to sync' }); }
+    } catch(e) { 
+        console.error('\n[Lair OS] Sync Error:', e.message);
+        res.status(500).json({ error: 'Failed to sync' }); 
+    }
 });
 
 app.get('/api/work/ledger', verifyToken, async (req, res) => {
@@ -346,6 +396,7 @@ app.get('/api/work/ledger', verifyToken, async (req, res) => {
             rows: formattedRows.reverse()
         });
     } catch (error) {
+        console.error('\n[Lair OS] Ledger Fetch Error:', error.message);
         res.status(500).json({ error: 'Failed to load ledger from Sheets.' });
     }
 });
@@ -431,7 +482,7 @@ app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
             rows: formattedRows.reverse()
         });
     } catch (error) {
-        console.error('[Lair OS] VW Tracker Fetch Error:', error);
+        console.error('\n[Lair OS] VW Tracker Fetch Error:', error.message);
         res.status(500).json({ error: 'Failed to load Variable Works tracker from Google Sheets.' });
     }
 });
@@ -505,14 +556,14 @@ app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
 
         const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
         const genAI = new GoogleGenerativeAI(activeKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const aiResponse = await model.generateContent(prompt);
         let summaryText = aiResponse.response.text().trim();
 
         res.json({ metrics, summary: summaryText });
     } catch (error) {
-        console.error('[Lair OS] AI Briefing Error:', error);
+        console.error('\n[Lair OS] AI Briefing Error:', error.message);
         res.status(500).json({ error: 'Failed to generate AI briefing.' });
     }
 });
@@ -533,7 +584,10 @@ app.post('/api/work/update-cell', verifyToken, async (req, res) => {
             requestBody: { values: [[value]] }
         });
         res.json({ success: true });
-    } catch(e) { res.status(500).json({ error: 'Cell update failed' }); }
+    } catch(e) { 
+        console.error('\n[Lair OS] Cell Update Error:', e.message);
+        res.status(500).json({ error: 'Cell update failed' }); 
+    }
 });
 
 async function generateThumbnail(filename) {
