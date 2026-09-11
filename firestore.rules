@@ -22,7 +22,10 @@ service cloud.firestore {
     match /radar_logs/{document} {
       allow create: if true 
                     && request.resource.data.keys().hasAll(['type', 'ip', 'city', 'country', 'device', 'timestamp'])
-                    && request.resource.data.type is string;
+                    && request.resource.data.type is string && request.resource.data.type.size() < 50
+                    && request.resource.data.ip is string && request.resource.data.ip.size() < 50
+                    && request.resource.data.city is string && request.resource.data.city.size() < 100
+                    && request.resource.data.country is string && request.resource.data.country.size() < 100;
       allow read, update, delete: if isAdmin();
     }
     match /system/analytics {
@@ -60,9 +63,11 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if isAdmin();
     }
+    
     match /users/{userId} {
       allow read: if request.auth != null; 
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null && request.auth.uid == userId && (!request.resource.data.keys().hasAny(['role']) || request.resource.data.role != 'admin');
+      allow update: if request.auth != null && request.auth.uid == userId && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']));
     }
   }
 }
