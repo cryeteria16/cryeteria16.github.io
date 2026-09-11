@@ -1,9 +1,13 @@
-const CACHE_NAME = 'lair-os-v5';
+const CACHE_NAME = 'lair-os-v6';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/index.html',
   '/lair.html',
-  '/admin.html'
+  '/admin.html',
+  '/index.js',
+  '/lair.js',
+  '/admin.js',
+  '/firebase-config.js'
 ];
 
 self.addEventListener('install', (event) => {
