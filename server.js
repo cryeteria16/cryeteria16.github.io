@@ -594,16 +594,27 @@ app.post('/api/work/update-cell', verifyToken, async (req, res) => {
 async function generateThumbnail(filename) {
   if (!sharp) return null;
   const ext = path.extname(filename).toLowerCase();
-  if (!['.jpg', '.jpeg', '.png', '.webp'].includes(ext)) return null;
+  
+  // Added .heic to process iPhone photos
+  if (!['.jpg', '.jpeg', '.png', '.webp', '.heic'].includes(ext)) return null;
+  
   const sourcePath = path.join(photosDir, filename);
   const thumbName = `${filename}.webp`;
   const thumbPath = path.join(thumbsDir, thumbName);
   
   if (fs.existsSync(thumbPath)) return thumbName;
   try {
-    await sharp(sourcePath).resize(320, 320, { fit: 'cover' }).webp({ quality: 80 }).toFile(thumbPath);
+    await sharp(sourcePath)
+      .resize(200, 200, { fit: 'cover', withoutEnlargement: true })
+      .webp({ quality: 50, effort: 6, smartSubsample: true })
+      .withMetadata(false) // Strips heavy camera metadata
+      .toFile(thumbPath);
+      
     return thumbName;
-  } catch (e) { return null; }
+  } catch (e) {
+    console.error(`[Lair OS] Optimization failed for ${filename}:`, e.message);
+    return null; 
+  }
 }
 
 let prevCpu = { idle: 0, total: 0 };
