@@ -13,7 +13,6 @@ const jwt = require('jsonwebtoken');
 const { initializeApp, cert } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
-
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { google } = require('googleapis');
 
@@ -21,10 +20,13 @@ let sharp;
 try { sharp = require('sharp'); } 
 catch (e) { console.warn('[Lair OS] Sharp module unavailable. WebP compression bypassed.'); }
 
+let heicConvert;
+try { heicConvert = require('heic-convert'); } 
+catch (e) { console.warn('[Lair OS] heic-convert module unavailable. iPhone photos will not convert.'); }
+
 const serviceAccount = require('./serviceAccountKey.json');
 initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
-
 const app = express();
 
 const SPREADSHEET_ID = '1uX2OOd4HE3c_-Vl-PkeQhZicY2cFh3qFxASG7yl_uEo';
@@ -40,7 +42,6 @@ function issueStreamToken(uid, filename, hours = 6) {
   return jwt.sign({ uid, filename }, STREAM_SECRET, { expiresIn: `${hours}h` });
 }
 
-// Robust JSON Extraction helper to bypass AI markdown/chatter
 function extractCleanJSON(rawText) {
     let cleaned = rawText.trim();
     if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
@@ -134,6 +135,24 @@ const API_KEYS = [
     process.env.GEMINI_KEY_3
 ].filter(Boolean);
 
+// Dedicated route for the public visionOS site, bypassing token IF flagged public
+app.get('/api/public/cloud/:filename', async (req, res) => {
+    try {
+        const safeFilename = path.basename(req.params.filename);
+        const snap = await db.collection('public_photos').doc(safeFilename).get();
+        if (!snap.exists) return res.status(403).send('Forbidden: Not in Exhibition');
+        
+        const filePath = path.join(photosDir, safeFilename);
+        if (fs.existsSync(filePath)) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            return res.sendFile(filePath);
+        }
+        res.status(404).send('Not found');
+    } catch(e) {
+        res.status(500).send('Server Error');
+    }
+});
+
 app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI configuration found on server.' });
@@ -141,10 +160,8 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
     try {
         const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
         const genAI = new GoogleGenerativeAI(activeKey);
-        
         const fileBytes = fs.readFileSync(req.file.path);
         const base64Data = fileBytes.toString("base64");
-        const fileMimeType = "application/pdf"; 
         
         const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
         
@@ -154,19 +171,14 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
 
         for (const modelName of models) {
             try {
-                const model = genAI.getGenerativeModel({ 
-                    model: modelName,
-                    generationConfig: { responseMimeType: "application/json" }
-                });
-                
+                const model = genAI.getGenerativeModel({ model: modelName, generationConfig: { responseMimeType: "application/json" }});
                 let delay = 2000;
                 for (let i = 0; i < 3; i++) {
                     try {
-                        result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
+                        result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: "application/pdf" } } ]);
                         break; 
                     } catch (error) {
-                        const isOverloaded = error.status === 503 || error.status === 429;
-                        if (isOverloaded && i < 2) {
+                        if ((error.status === 503 || error.status === 429) && i < 2) {
                             await new Promise(resolve => setTimeout(resolve, delay));
                             delay *= 2; 
                         } else { throw error; }
@@ -182,7 +194,6 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
         fs.unlinkSync(req.file.path); 
         res.json(data);
     } catch(e) {
-        console.error("\n[Lair OS] Invoice Parsing Error:", e.message);
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ error: 'Extraction failed' });
     }
@@ -190,62 +201,28 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
 
 app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No PO file uploaded' });
-    if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI configuration found on server.' });
+    if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI config found on server.' });
     
     try {
         const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
         const genAI = new GoogleGenerativeAI(activeKey);
-        
         const fileBytes = fs.readFileSync(req.file.path);
-        const base64Data = fileBytes.toString("base64");
-        const fileMimeType = "application/pdf"; 
         
-        const prompt = `You are an elite procurement auditor. Read this Microsoft Dynamics Purchase Order PDF and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: 
-        "po_number" (String, e.g., "PO9728-0015534"), 
-        "po_date" (String), 
-        "supplier_name" (String), 
-        "building" (String, extract location or building name mentioned), 
-        "project_name" (String), 
-        "net_amount" (Number), 
-        "tax_amount" (Number), 
-        "total_amount" (Number), 
-        "line_items" (Array of objects with "item", "qty", "total").`;
+        const prompt = `You are an elite procurement auditor. Read this Microsoft Dynamics Purchase Order PDF and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: "po_number", "po_date", "supplier_name", "building", "project_name", "net_amount", "tax_amount", "total_amount", "line_items" (Array of objects with "item", "qty", "total").`;
         
-        const models = ["gemini-3.8-flash", "gemini-3.1-pro-preview"];
         let result = null;
-        let lastError = null;
-
-        for (const modelName of models) {
+        for (const modelName of ["gemini-3.8-flash", "gemini-3.1-pro-preview"]) {
             try {
-                const model = genAI.getGenerativeModel({ 
-                    model: modelName,
-                    generationConfig: { responseMimeType: "application/json" }
-                });
-                
-                let delay = 2000;
-                for (let i = 0; i < 3; i++) {
-                    try {
-                        result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: fileMimeType } } ]);
-                        break; 
-                    } catch (error) {
-                        const isOverloaded = error.status === 503 || error.status === 429;
-                        if (isOverloaded && i < 2) {
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            delay *= 2; 
-                        } else { throw error; }
-                    }
-                }
-                if (result) break; 
-            } catch (err) { lastError = err; }
+                const model = genAI.getGenerativeModel({ model: modelName, generationConfig: { responseMimeType: "application/json" }});
+                result = await model.generateContent([ prompt, { inlineData: { data: fileBytes.toString("base64"), mimeType: "application/pdf" } } ]);
+                break; 
+            } catch (err) {}
         }
         
-        if (!result) throw lastError || new Error('All models failed.');
-
         const data = extractCleanJSON(result.response.text());
         fs.unlinkSync(req.file.path); 
         res.json(data);
     } catch(e) {
-        console.error("\n[Lair OS] PO Parsing Error:", e.message);
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         res.status(500).json({ error: 'PO extraction failed' });
     }
@@ -256,29 +233,20 @@ app.post('/api/work/sync-po-to-sheet', verifyToken, async (req, res) => {
         const { po_number, ref_code } = req.body;
         if (!po_number || !ref_code) return res.status(400).json({ error: 'PO number and reference code required' });
 
-        const authClient = new google.auth.GoogleAuth({ 
-            keyFile: './serviceAccountKey.json', 
-            scopes: ['https://www.googleapis.com/auth/spreadsheets'] 
-        });
+        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
         const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
         const sheetName = meta.data.sheets[0].properties.title;
 
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: VW_SPREADSHEET_ID,
-            range: `${sheetName}!A1:AZ`
-        });
-
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId: VW_SPREADSHEET_ID, range: `${sheetName}!A1:AZ` });
         const rows = response.data.values || [];
-        if (rows.length === 0) return res.status(404).json({ error: 'Sheet is empty' });
+        
+        const qtnIdx = rows[0].indexOf('QTN REF');
+        const crmIdx = rows[0].indexOf('CRM REF');
+        const poIdx = rows[0].indexOf('Purchase Order');
 
-        const headers = rows[0];
-        const qtnIdx = headers.indexOf('QTN REF');
-        const crmIdx = headers.indexOf('CRM REF');
-        const poIdx = headers.indexOf('Purchase Order');
-
-        if (poIdx === -1) return res.status(400).json({ error: "'Purchase Order' column not found in sheet headers." });
+        if (poIdx === -1) return res.status(400).json({ error: "'Purchase Order' column not found." });
 
         let targetRowIndex = -1;
         for (let i = 1; i < rows.length; i++) {
@@ -293,25 +261,17 @@ app.post('/api/work/sync-po-to-sheet', verifyToken, async (req, res) => {
             }
         }
 
-        if (targetRowIndex === -1) {
-            return res.status(404).json({ error: `Could not find a matching row for reference '${ref_code}' in the VW tracker.` });
-        }
-
-        const colLetter = String.fromCharCode(65 + poIdx);
-        const updateRange = `${sheetName}!${colLetter}${targetRowIndex}`;
+        if (targetRowIndex === -1) return res.status(404).json({ error: `No match for reference '${ref_code}'.` });
 
         await sheets.spreadsheets.values.update({
             spreadsheetId: VW_SPREADSHEET_ID,
-            range: updateRange,
+            range: `${sheetName}!${String.fromCharCode(65 + poIdx)}${targetRowIndex}`,
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [[po_number]] }
         });
 
         res.json({ success: true, updatedRow: targetRowIndex });
-    } catch (error) {
-        console.error('\n[Lair OS] PO Sheet Sync Error:', error.message);
-        res.status(500).json({ error: 'Failed to update Google Sheet with PO.' });
-    }
+    } catch (error) { res.status(500).json({ error: 'Failed to update Google Sheet.' }); }
 });
 
 app.post('/api/work/sync', verifyToken, async (req, res) => {
@@ -343,24 +303,14 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
         }
 
         res.json({ success: true, added: toWrite.length, skipped, rowIndex });
-    } catch(e) { 
-        console.error('\n[Lair OS] Sync Error:', e.message);
-        res.status(500).json({ error: 'Failed to sync' }); 
-    }
+    } catch(e) { res.status(500).json({ error: 'Failed to sync' }); }
 });
 
 app.get('/api/work/ledger', verifyToken, async (req, res) => {
     try {
-        const authClient = new google.auth.GoogleAuth({ 
-            keyFile: './serviceAccountKey.json', 
-            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
-        });
+        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
-
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: SPREADSHEET_ID,
-            range: 'Sheet1!A2:H'
-        });
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Sheet1!A2:H' });
 
         const rows = response.data.values || [];
         let totalNet = 0, totalVat = 0, grossTotal = 0;
@@ -369,52 +319,23 @@ app.get('/api/work/ledger', verifyToken, async (req, res) => {
             const net = Number(String(row[5] || '0').replace(/,/g, '')) || 0;
             const vat = Number(String(row[6] || '0').replace(/,/g, '')) || 0;
             const total = Number(String(row[7] || '0').replace(/,/g, '')) || 0;
+            totalNet += net; totalVat += vat; grossTotal += total;
 
-            totalNet += net;
-            totalVat += vat;
-            grossTotal += total;
-
-            return {
-                sheetRow: index + 2,
-                taskId: row[0] || 'UNASSIGNED',
-                subcontractor: row[1] || '',
-                invoiceNumber: row[2] || '',
-                date: row[3] || '',
-                trn: row[4] || '',
-                net,
-                vat,
-                total
-            };
+            return { sheetRow: index + 2, taskId: row[0] || '', subcontractor: row[1] || '', invoiceNumber: row[2] || '', date: row[3] || '', trn: row[4] || '', net, vat, total };
         });
 
-        res.json({
-            count: formattedRows.length,
-            net: totalNet,
-            vat: totalVat,
-            gross: grossTotal,
-            rows: formattedRows.reverse()
-        });
-    } catch (error) {
-        console.error('\n[Lair OS] Ledger Fetch Error:', error.message);
-        res.status(500).json({ error: 'Failed to load ledger from Sheets.' });
-    }
+        res.json({ count: formattedRows.length, net: totalNet, vat: totalVat, gross: grossTotal, rows: formattedRows.reverse() });
+    } catch (error) { res.status(500).json({ error: 'Failed to load ledger.' }); }
 });
 
 app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
     try {
-        const authClient = new google.auth.GoogleAuth({ 
-            keyFile: './serviceAccountKey.json', 
-            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
-        });
+        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
         const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
         const sheetName = meta.data.sheets[0].properties.title;
-
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: VW_SPREADSHEET_ID,
-            range: `${sheetName}!A1:AZ`
-        });
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId: VW_SPREADSHEET_ID, range: `${sheetName}!A1:AZ` });
 
         const rows = response.data.values || [];
         if (rows.length === 0) return res.json({ count: 0, totalSupplierCost: 0, totalWaslCost: 0, statusCounts: {}, rows: [] });
@@ -422,180 +343,80 @@ app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
         const headers = rows[0];
         const dataRows = rows.slice(1);
 
-        let totalSupplierCost = 0;
-        let totalWaslCost = 0;
-        const statusCounts = {};
+        let totalSupplierCost = 0; let totalWaslCost = 0; const statusCounts = {};
 
         const formattedRows = dataRows.map((row, index) => {
-            const getCol = (name) => {
-                const idx = headers.indexOf(name);
-                return idx !== -1 ? (row[idx] || '') : '';
-            };
-
+            const getCol = (name) => { const idx = headers.indexOf(name); return idx !== -1 ? (row[idx] || '') : ''; };
             const supplierCost = Number(String(getCol('Total Supplier Cost ()') || '0').replace(/,/g, '')) || 0;
             const waslCost = Number(String(getCol('Total WASL Cost ()') || '0').replace(/,/g, '')) || 0;
             const status = getCol('AGFS Works Status') || 'Pending';
 
-            totalSupplierCost += supplierCost;
-            totalWaslCost += waslCost;
+            totalSupplierCost += supplierCost; totalWaslCost += waslCost;
             statusCounts[status] = (statusCounts[status] || 0) + 1;
 
             return {
-                sheetRow: index + 2,
-                crmRef: getCol('CRM REF'),
-                qtnRef: getCol('QTN REF'),
-                qtnDate: getCol('QTN DATE'),
-                description: getCol('Description'),
-                majorCategory: getCol('Major Category'),
-                minorCategory: getCol('Minor Category'),
-                building: getCol('Building'),
-                apartment: getCol('Apartment'),
-                qtnAssignedTo: getCol('QTN Assigned To'),
-                supplierName: getCol('Supplier Name'),
-                supplierCost,
-                waslCost,
-                orderType: getCol('Order Type'),
-                waslOrder: getCol('WASL Order'),
-                purchaseOrder: getCol('Purchase Order'),
-                worksStatus: status,
-                workCompletionDate: getCol('Work Completion Date'),
-                wcrPrepared: getCol('WCR Prepared (Yes/Pending/NA)'),
-                wcrSigned: getCol('WCR Signed from WASL (Yes/No)'),
-                wcrUploadedSap: getCol('WCR Uploaded in SAP (Yes/No)'),
-                poReference: getCol('PO Reference'),
-                invoiceNumber: getCol('Invoice Number'),
-                invoiceDate: getCol('Invoice Date'),
-                taskId: getCol('AGFS CAFM Work Order Number (Task ID)'),
-                remarks: getCol('Remarks'),
-                waslEngineer: getCol('WASL Engineer'),
-                rawHeaders: headers,
-                rawValues: row
+                sheetRow: index + 2, crmRef: getCol('CRM REF'), qtnRef: getCol('QTN REF'), description: getCol('Description'),
+                building: getCol('Building'), qtnAssignedTo: getCol('QTN Assigned To'), supplierName: getCol('Supplier Name'),
+                supplierCost, waslCost, worksStatus: status, rawHeaders: headers, rawValues: row
             };
         });
 
-        res.json({
-            count: formattedRows.length,
-            totalSupplierCost,
-            totalWaslCost,
-            statusCounts,
-            rows: formattedRows.reverse()
-        });
-    } catch (error) {
-        console.error('\n[Lair OS] VW Tracker Fetch Error:', error.message);
-        res.status(500).json({ error: 'Failed to load Variable Works tracker from Google Sheets.' });
-    }
+        res.json({ count: formattedRows.length, totalSupplierCost, totalWaslCost, statusCounts, rows: formattedRows.reverse() });
+    } catch (error) { res.status(500).json({ error: 'Failed to load VW tracker.' }); }
 });
 
 app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
     try {
-        const authClient = new google.auth.GoogleAuth({ 
-            keyFile: './serviceAccountKey.json', 
-            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
-        });
+        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
         const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
-        const sheetName = meta.data.sheets[0].properties.title;
-
-        const response = await sheets.spreadsheets.values.get({
-            spreadsheetId: VW_SPREADSHEET_ID,
-            range: `${sheetName}!A1:AZ`
-        });
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId: VW_SPREADSHEET_ID, range: `${meta.data.sheets[0].properties.title}!A1:AZ` });
 
         const rows = response.data.values || [];
         if (rows.length <= 1) return res.json({ summary: "No data available to analyze." });
 
-        const headers = rows[0];
-        const dataRows = rows.slice(1);
+        let metrics = { totalWorks: rows.length - 1, completedWorks: 0, missingWcr: 0, missingSapUpload: 0, missingTijoriUpload: 0, pendingWaslPo: 0 };
 
-        let metrics = {
-            totalWorks: dataRows.length,
-            completedWorks: 0,
-            missingWcr: 0,
-            missingSapUpload: 0,
-            missingTijoriUpload: 0,
-            pendingWaslPo: 0
-        };
-
-        dataRows.forEach(row => {
-            const getCol = (name) => {
-                const idx = headers.indexOf(name);
-                return idx !== -1 ? (row[idx] || '').toString().trim() : '';
-            };
-
+        rows.slice(1).forEach(row => {
+            const getCol = (name) => { const idx = rows[0].indexOf(name); return idx !== -1 ? (row[idx] || '').toString().trim() : ''; };
             const status = getCol('AGFS Works Status');
-            const wcrPrepared = getCol('WCR Prepared (Yes/Pending/NA)');
-            const sapUpload = getCol('WCR Uploaded in SAP (Yes/No)');
-            const tijoriUpload = getCol('Quote Uploaded in Tijori (Yes/No)');
-            const purchaseOrder = getCol('Purchase Order');
-
             if (status.toLowerCase().includes('completed')) {
                 metrics.completedWorks++;
-                if (wcrPrepared.toLowerCase() !== 'yes' && wcrPrepared.toLowerCase() !== 'na') metrics.missingWcr++;
-                if (sapUpload.toLowerCase() !== 'yes' && sapUpload.toLowerCase() !== 'na') metrics.missingSapUpload++;
+                if (getCol('WCR Prepared (Yes/Pending/NA)').toLowerCase() !== 'yes') metrics.missingWcr++;
+                if (getCol('WCR Uploaded in SAP (Yes/No)').toLowerCase() !== 'yes') metrics.missingSapUpload++;
             }
-
-            if (tijoriUpload.toLowerCase() === 'no' || tijoriUpload === '') metrics.missingTijoriUpload++;
-            if (purchaseOrder === '' || purchaseOrder.toLowerCase() === 'pending') metrics.pendingWaslPo++;
+            if (getCol('Quote Uploaded in Tijori (Yes/No)').toLowerCase() === 'no') metrics.missingTijoriUpload++;
+            if (getCol('Purchase Order') === '') metrics.pendingWaslPo++;
         });
 
-        if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI configuration found on server.' });
-
-        const prompt = `
-            You are an elite Facility Management & Financial Auditor. Analyze the following operational compliance snapshot for a property management portfolio. 
-            Provide a crisp, professional 3-4 sentence executive summary highlighting the primary bottlenecks in billing and document closure.
-            Use a direct, authoritative tone. Do not use pleasantries.
-            
-            DATA SNAPSHOT:
-            - Total Tracked Works: ${metrics.totalWorks}
-            - Physically Completed Works: ${metrics.completedWorks}
-            - Completed but missing WCR (Billing Blocker): ${metrics.missingWcr}
-            - WCR Prepared but missing SAP Upload (Invoicing Blocker): ${metrics.missingSapUpload}
-            - Quotes missing Tijori Upload: ${metrics.missingTijoriUpload}
-            - Active jobs missing WASL Purchase Order: ${metrics.pendingWaslPo}
-        `;
+        if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI config found.' });
 
         const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
         const genAI = new GoogleGenerativeAI(activeKey);
         const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
 
-        const aiResponse = await model.generateContent(prompt);
-        let summaryText = aiResponse.response.text().trim();
-
-        res.json({ metrics, summary: summaryText });
-    } catch (error) {
-        console.error('\n[Lair OS] AI Briefing Error:', error.message);
-        res.status(500).json({ error: 'Failed to generate AI briefing.' });
-    }
+        const aiResponse = await model.generateContent(`Analyze this ops snapshot and provide a 3 sentence executive summary of billing blockers. Data: ${JSON.stringify(metrics)}`);
+        res.json({ metrics, summary: aiResponse.response.text().trim() });
+    } catch (error) { res.status(500).json({ error: 'AI Briefing failed.' }); }
 });
 
 app.post('/api/work/update-cell', verifyToken, async (req, res) => {
     try {
         const { row, col, value } = req.body;
-        const sheetCol = String.fromCharCode(65 + col); 
-        const range = `Sheet1!${sheetCol}${row}`;
-        
         const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
-        
         await sheets.spreadsheets.values.update({
-            spreadsheetId: SPREADSHEET_ID,
-            range: range,
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [[value]] }
+            spreadsheetId: SPREADSHEET_ID, range: `Sheet1!${String.fromCharCode(65 + col)}${row}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [[value]] }
         });
         res.json({ success: true });
-    } catch(e) { 
-        console.error('\n[Lair OS] Cell Update Error:', e.message);
-        res.status(500).json({ error: 'Cell update failed' }); 
-    }
+    } catch(e) { res.status(500).json({ error: 'Cell update failed' }); }
 });
 
+// Highly optimized thumbnail generator
 async function generateThumbnail(filename) {
   if (!sharp) return null;
   const ext = path.extname(filename).toLowerCase();
-  
-  // Added .heic to process iPhone photos
   if (!['.jpg', '.jpeg', '.png', '.webp', '.heic'].includes(ext)) return null;
   
   const sourcePath = path.join(photosDir, filename);
@@ -605,11 +426,10 @@ async function generateThumbnail(filename) {
   if (fs.existsSync(thumbPath)) return thumbName;
   try {
     await sharp(sourcePath)
-      .resize(200, 200, { fit: 'cover', withoutEnlargement: true })
-      .webp({ quality: 50, effort: 6, smartSubsample: true })
-      .withMetadata(false) // Strips heavy camera metadata
+      .resize(300, 300, { fit: 'cover', withoutEnlargement: true })
+      .webp({ quality: 65, effort: 6, smartSubsample: true })
+      .withMetadata(false) 
       .toFile(thumbPath);
-      
     return thumbName;
   } catch (e) {
     console.error(`[Lair OS] Optimization failed for ${filename}:`, e.message);
@@ -617,68 +437,54 @@ async function generateThumbnail(filename) {
   }
 }
 
-let prevCpu = { idle: 0, total: 0 };
-function getCpuSnapshot() {
+app.get('/api/stats', verifyToken, (req, res) => {
     const cpus = os.cpus();
     let idle = 0; let total = 0;
     cpus.forEach(cpu => { for (const type in cpu.times) total += cpu.times[type]; idle += cpu.times.idle; });
-    return { idle: idle / cpus.length, total: total / cpus.length };
-}
-
-app.get('/api/stats', verifyToken, (req, res) => {
-    try {
-        const current = getCpuSnapshot();
-        const idleDiff = current.idle - prevCpu.idle;
-        const totalDiff = current.total - prevCpu.total;
-        prevCpu = current;
-        const usage = totalDiff === 0 ? "0.0" : Math.max(0, Math.min(100, 100 - (100 * idleDiff / totalDiff))).toFixed(1);
-        const totalMem = os.totalmem(); const freeMem = os.freemem();
-        const ramPercent = (((totalMem - freeMem) / totalMem) * 100).toFixed(1);
-        res.json({ cpu: usage, ram: ramPercent });
-    } catch(e) { res.json({ cpu: "0.0", ram: "0.0" }); }
+    const usage = Math.max(0, Math.min(100, 100 - (100 * idle / total))).toFixed(1);
+    const ramPercent = (((os.totalmem() - os.freemem()) / os.totalmem()) * 100).toFixed(1);
+    res.json({ cpu: usage, ram: ramPercent });
 });
 
-const COMMAND_WHITELIST = {
-    'help': 'echo Available commands: ping, ip, uptime, storage, tasks, ver, git pull, git status',
-    'ping': 'ping -n 3 8.8.8.8',
-    'ip': 'ipconfig',
-    'uptime': 'net statistics workstation',
-    'storage': 'powershell -command "Get-Volume | Select-Object DriveLetter, FileSystemLabel, SizeRemaining, Size"',
-    'tasks': 'tasklist /fi "STATUS eq running" /fo table /nh',
-    'ver': 'ver', 'git pull': 'git pull', 'git status': 'git status -s'
-};
-
 app.post('/api/terminal', verifyToken, (req, res) => {
-    const rawCmd = (req.body.command || '').trim().toLowerCase();
-    const targetCmd = COMMAND_WHITELIST[rawCmd];
-    if (!targetCmd) return res.json({ output: `Command '${rawCmd}' is not permitted. Type 'help'.` });
-    exec(targetCmd, { timeout: 12000, windowsHide: true }, (error, stdout, stderr) => {
-        res.json({ output: stdout || stderr || (error ? error.message : '') || 'Command executed.' });
-    });
+    const cmd = (req.body.command || '').trim().toLowerCase();
+    const whitelist = { 'ping': 'ping -n 3 8.8.8.8', 'ip': 'ipconfig', 'uptime': 'net statistics workstation', 'ver': 'ver', 'git pull': 'git pull' };
+    if (!whitelist[cmd]) return res.json({ output: `Command '${cmd}' not permitted.` });
+    exec(whitelist[cmd], { timeout: 12000, windowsHide: true }, (error, stdout, stderr) => { res.json({ output: stdout || stderr || 'Executed.' }); });
 });
 
 app.get('/api/storage', verifyToken, (req, res) => {
     let totalBytes = 0;
     try {
-        if (fs.existsSync(photosDir)) fs.readdirSync(photosDir).forEach(f => { if (f !== '.thumbs') { try { totalBytes += fs.statSync(path.join(photosDir, f)).size; } catch(err) {} } });
-        if (fs.existsSync(moviesDir)) fs.readdirSync(moviesDir).forEach(f => { try { totalBytes += fs.statSync(path.join(moviesDir, f)).size; } catch(err) {} });
+        if (fs.existsSync(photosDir)) fs.readdirSync(photosDir).forEach(f => { if (f !== '.thumbs') totalBytes += fs.statSync(path.join(photosDir, f)).size; });
+        if (fs.existsSync(moviesDir)) fs.readdirSync(moviesDir).forEach(f => totalBytes += fs.statSync(path.join(moviesDir, f)).size; );
         res.json({ totalBytes, maxBytes: 100 * 1024 * 1024 * 1024 });
     } catch(e) { res.json({ totalBytes: 0, maxBytes: 100 * 1024 * 1024 * 1024 }); }
 });
 
-app.use('/stream/photography', verifyToken, express.static(photosDir));
-
+// CRITICAL ROUTE FIX: Thumbnail logic sits BEFORE general static folder
 app.get('/stream/photography/thumb/:filename', verifyToken, async (req, res) => {
     const safeFilename = path.basename(req.params.filename);
     const thumbName = `${safeFilename}.webp`;
     const thumbPath = path.join(thumbsDir, thumbName);
-    if (fs.existsSync(thumbPath)) return res.sendFile(thumbPath);
+    
+    if (fs.existsSync(thumbPath)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        return res.sendFile(thumbPath);
+    }
+    
     const created = await generateThumbnail(safeFilename);
-    if (created && fs.existsSync(thumbPath)) return res.sendFile(thumbPath);
-    const originalPath = path.join(photosDir, safeFilename);
-    if (fs.existsSync(originalPath)) return res.sendFile(originalPath);
-    res.status(404).send('Not found');
+    if (created && fs.existsSync(thumbPath)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        return res.sendFile(thumbPath);
+    }
+    
+    // Removed dangerous fallback. If no thumbnail, send 404 cleanly.
+    res.status(404).send('Thumbnail unavailable');
 });
+
+// General static directory fallback sits AFTER thumbnail route
+app.use('/stream/photography', verifyToken, express.static(photosDir));
 
 app.get('/api/photos', verifyToken, (req, res) => {
     try {
@@ -707,7 +513,25 @@ app.get('/api/photos', verifyToken, (req, res) => {
 
 app.post('/api/photos/upload', verifyToken, upload.single('photo'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    await generateThumbnail(req.file.filename);
+    
+    let targetFilename = req.file.filename;
+    
+    // HEIC Conversion intercept for iPhone support
+    if (targetFilename.toLowerCase().endsWith('.heic') && heicConvert) {
+        try {
+            const filePath = path.join(photosDir, targetFilename);
+            const inputBuffer = fs.readFileSync(filePath);
+            const outputBuffer = await heicConvert({ buffer: inputBuffer, format: 'JPEG', quality: 0.8 });
+            
+            targetFilename = targetFilename.replace(/\.heic$/i, '.jpg');
+            fs.writeFileSync(path.join(photosDir, targetFilename), outputBuffer);
+            fs.unlinkSync(filePath); // delete original HEIC
+        } catch(e) {
+            console.error('[Lair OS] HEIC conversion failed:', e);
+        }
+    }
+    
+    await generateThumbnail(targetFilename);
     res.json({ success: true });
 });
 
@@ -744,24 +568,11 @@ app.get('/stream/movies/:filename', verifyToken, (req, res) => {
         const parts = range.replace(/bytes=/, "").split("-"); 
         const start = parseInt(parts[0], 10);
         const end = parts[1] ? parseInt(parts[1], 10) : Math.min(start + (5 * 1024 * 1024) - 1, fileSize - 1);
-        
-        if (start >= fileSize || end >= fileSize) { 
-            res.writeHead(416, { 'Content-Range': `bytes */${fileSize}` }); 
-            return res.end(); 
-        }
-        
-        res.writeHead(206, { 
-            'Content-Range': `bytes ${start}-${end}/${fileSize}`, 
-            'Accept-Ranges': 'bytes', 
-            'Content-Length': (end - start) + 1, 
-            'Content-Type': 'video/mp4' 
-        });
+        if (start >= fileSize || end >= fileSize) { res.writeHead(416, { 'Content-Range': `bytes */${fileSize}` }); return res.end(); }
+        res.writeHead(206, { 'Content-Range': `bytes ${start}-${end}/${fileSize}`, 'Accept-Ranges': 'bytes', 'Content-Length': (end - start) + 1, 'Content-Type': 'video/mp4' });
         fs.createReadStream(filePath, {start, end}).pipe(res);
     } else {
-        res.writeHead(200, { 
-            'Content-Length': fileSize, 
-            'Content-Type': 'video/mp4' 
-        });
+        res.writeHead(200, { 'Content-Length': fileSize, 'Content-Type': 'video/mp4' });
         fs.createReadStream(filePath).pipe(res);
     }
 });
