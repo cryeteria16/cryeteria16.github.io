@@ -457,7 +457,7 @@ app.get('/api/storage', verifyToken, (req, res) => {
     let totalBytes = 0;
     try {
         if (fs.existsSync(photosDir)) fs.readdirSync(photosDir).forEach(f => { if (f !== '.thumbs') totalBytes += fs.statSync(path.join(photosDir, f)).size; });
-        if (fs.existsSync(moviesDir)) fs.readdirSync(moviesDir).forEach(f => totalBytes += fs.statSync(path.join(moviesDir, f)).size; );
+        if (fs.existsSync(moviesDir)) fs.readdirSync(moviesDir).forEach(f => totalBytes += fs.statSync(path.join(moviesDir, f)).size);
         res.json({ totalBytes, maxBytes: 100 * 1024 * 1024 * 1024 });
     } catch(e) { res.json({ totalBytes: 0, maxBytes: 100 * 1024 * 1024 * 1024 }); }
 });
