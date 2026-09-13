@@ -29,8 +29,8 @@ initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
 const app = express();
 
-const SPREADSHEET_ID = '1uX2OOd4HE3c_-Vl-PkeQhZicY2cFh3qFxASG7yl_uEo';
-const VW_SPREADSHEET_ID = '1PVfQqctgI3cehaNjb_6rabkDauudfKYmiJJafLQ3haw';
+const SPREADSHEET_ID = '1uX2OOd4HE3c_-Vl-PkeQhZicY2cFh3qFxASG7yl_uEo'; // Your private Auditor Ledger
+const VW_SPREADSHEET_ID = '16xMK8-wOZsysB2g28uwzN0BL3iZg3jet-_Nv_M9jxB4'; // The Manager's New Sheet (READ ONLY)
 const TUNNEL_URL = 'https://vault.ibadhasan.com';
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const STREAM_SECRET = process.env.STREAM_TOKEN_SECRET;
@@ -135,7 +135,6 @@ const API_KEYS = [
     process.env.GEMINI_KEY_3
 ].filter(Boolean);
 
-// Dedicated route for the public visionOS site, bypassing token IF flagged public
 app.get('/api/public/cloud/:filename', async (req, res) => {
     try {
         const safeFilename = path.basename(req.params.filename);
@@ -165,30 +164,16 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
         
         const prompt = `You are a financial auditor. Read this invoice and extract the details. Return strictly a raw JSON object (no markdown) with exact keys: "subcontractor_name" (String), "invoice_number" (String), "invoice_date" (YYYY-MM-DD), "trn" (String or ""), "net_amount" (Number), "vat_amount" (Number), "total_amount" (Number).`;
         
-        const models = ["gemini-3.8-flash", "gemini-3.1-pro-preview"];
         let result = null;
-        let lastError = null;
-
-        for (const modelName of models) {
+        for (const modelName of ["gemini-3.8-flash", "gemini-3.1-pro-preview"]) {
             try {
                 const model = genAI.getGenerativeModel({ model: modelName, generationConfig: { responseMimeType: "application/json" }});
-                let delay = 2000;
-                for (let i = 0; i < 3; i++) {
-                    try {
-                        result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: "application/pdf" } } ]);
-                        break; 
-                    } catch (error) {
-                        if ((error.status === 503 || error.status === 429) && i < 2) {
-                            await new Promise(resolve => setTimeout(resolve, delay));
-                            delay *= 2; 
-                        } else { throw error; }
-                    }
-                }
-                if (result) break; 
-            } catch (err) { lastError = err; }
+                result = await model.generateContent([ prompt, { inlineData: { data: base64Data, mimeType: "application/pdf" } } ]);
+                break; 
+            } catch (err) {}
         }
         
-        if (!result) throw lastError || new Error('All models failed.');
+        if (!result) throw new Error('All models failed.');
 
         const data = extractCleanJSON(result.response.text());
         fs.unlinkSync(req.file.path); 
@@ -228,51 +213,8 @@ app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async 
     }
 });
 
-app.post('/api/work/sync-po-to-sheet', verifyToken, async (req, res) => {
-    try {
-        const { po_number, ref_code } = req.body;
-        if (!po_number || !ref_code) return res.status(400).json({ error: 'PO number and reference code required' });
-
-        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
-        const sheets = google.sheets({ version: 'v4', auth: authClient });
-
-        const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
-        const sheetName = meta.data.sheets[0].properties.title;
-
-        const response = await sheets.spreadsheets.values.get({ spreadsheetId: VW_SPREADSHEET_ID, range: `${sheetName}!A1:AZ` });
-        const rows = response.data.values || [];
-        
-        const qtnIdx = rows[0].indexOf('QTN REF');
-        const crmIdx = rows[0].indexOf('CRM REF');
-        const poIdx = rows[0].indexOf('Purchase Order');
-
-        if (poIdx === -1) return res.status(400).json({ error: "'Purchase Order' column not found." });
-
-        let targetRowIndex = -1;
-        for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            const qtnVal = qtnIdx !== -1 ? String(row[qtnIdx] || '').trim().toLowerCase() : '';
-            const crmVal = crmIdx !== -1 ? String(row[crmIdx] || '').trim().toLowerCase() : '';
-            const searchVal = String(ref_code).trim().toLowerCase();
-
-            if ((qtnVal && qtnVal.includes(searchVal)) || (crmVal && crmVal.includes(searchVal))) {
-                targetRowIndex = i + 1;
-                break;
-            }
-        }
-
-        if (targetRowIndex === -1) return res.status(404).json({ error: `No match for reference '${ref_code}'.` });
-
-        await sheets.spreadsheets.values.update({
-            spreadsheetId: VW_SPREADSHEET_ID,
-            range: `${sheetName}!${String.fromCharCode(65 + poIdx)}${targetRowIndex}`,
-            valueInputOption: 'USER_ENTERED',
-            requestBody: { values: [[po_number]] }
-        });
-
-        res.json({ success: true, updatedRow: targetRowIndex });
-    } catch (error) { res.status(500).json({ error: 'Failed to update Google Sheet.' }); }
-});
+// REMOVED: /api/work/sync-po-to-sheet
+// ENFORCING STRICT READ-ONLY POLICY ON MANAGER'S SHEET
 
 app.post('/api/work/sync', verifyToken, async (req, res) => {
     try {
@@ -328,77 +270,29 @@ app.get('/api/work/ledger', verifyToken, async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Failed to load ledger.' }); }
 });
 
+// PASSIVE SYNC TO MANAGER'S SHEET - STRICT READ ONLY SCOPE
 app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
     try {
-        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] });
+        const authClient = new google.auth.GoogleAuth({ 
+            keyFile: './serviceAccountKey.json', 
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] // Impenetrable read-only wall
+        });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
         const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
-        const sheetName = meta.data.sheets[0].properties.title;
-        const response = await sheets.spreadsheets.values.get({ spreadsheetId: VW_SPREADSHEET_ID, range: `${sheetName}!A1:AZ` });
+        // Target VW_Tracker tab explicitly, fallback to first tab if missing
+        const targetSheet = meta.data.sheets.find(s => s.properties.title === 'VW_Tracker') || meta.data.sheets[0];
+        const sheetName = targetSheet.properties.title;
+        
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId: VW_SPREADSHEET_ID, range: `'${sheetName}'!A1:AZ` });
 
         const rows = response.data.values || [];
-        if (rows.length === 0) return res.json({ count: 0, totalSupplierCost: 0, totalWaslCost: 0, statusCounts: {}, rows: [] });
-
-        const headers = rows[0];
-        const dataRows = rows.slice(1);
-
-        let totalSupplierCost = 0; let totalWaslCost = 0; const statusCounts = {};
-
-        const formattedRows = dataRows.map((row, index) => {
-            const getCol = (name) => { const idx = headers.indexOf(name); return idx !== -1 ? (row[idx] || '') : ''; };
-            const supplierCost = Number(String(getCol('Total Supplier Cost ()') || '0').replace(/,/g, '')) || 0;
-            const waslCost = Number(String(getCol('Total WASL Cost ()') || '0').replace(/,/g, '')) || 0;
-            const status = getCol('AGFS Works Status') || 'Pending';
-
-            totalSupplierCost += supplierCost; totalWaslCost += waslCost;
-            statusCounts[status] = (statusCounts[status] || 0) + 1;
-
-            return {
-                sheetRow: index + 2, crmRef: getCol('CRM REF'), qtnRef: getCol('QTN REF'), description: getCol('Description'),
-                building: getCol('Building'), qtnAssignedTo: getCol('QTN Assigned To'), supplierName: getCol('Supplier Name'),
-                supplierCost, waslCost, worksStatus: status, rawHeaders: headers, rawValues: row
-            };
-        });
-
-        res.json({ count: formattedRows.length, totalSupplierCost, totalWaslCost, statusCounts, rows: formattedRows.reverse() });
-    } catch (error) { res.status(500).json({ error: 'Failed to load VW tracker.' }); }
-});
-
-app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
-    try {
-        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] });
-        const sheets = google.sheets({ version: 'v4', auth: authClient });
-
-        const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
-        const response = await sheets.spreadsheets.values.get({ spreadsheetId: VW_SPREADSHEET_ID, range: `${meta.data.sheets[0].properties.title}!A1:AZ` });
-
-        const rows = response.data.values || [];
-        if (rows.length <= 1) return res.json({ summary: "No data available to analyze." });
-
-        let metrics = { totalWorks: rows.length - 1, completedWorks: 0, missingWcr: 0, missingSapUpload: 0, missingTijoriUpload: 0, pendingWaslPo: 0 };
-
-        rows.slice(1).forEach(row => {
-            const getCol = (name) => { const idx = rows[0].indexOf(name); return idx !== -1 ? (row[idx] || '').toString().trim() : ''; };
-            const status = getCol('AGFS Works Status');
-            if (status.toLowerCase().includes('completed')) {
-                metrics.completedWorks++;
-                if (getCol('WCR Prepared (Yes/Pending/NA)').toLowerCase() !== 'yes') metrics.missingWcr++;
-                if (getCol('WCR Uploaded in SAP (Yes/No)').toLowerCase() !== 'yes') metrics.missingSapUpload++;
-            }
-            if (getCol('Quote Uploaded in Tijori (Yes/No)').toLowerCase() === 'no') metrics.missingTijoriUpload++;
-            if (getCol('Purchase Order') === '') metrics.pendingWaslPo++;
-        });
-
-        if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI config found.' });
-
-        const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
-        const genAI = new GoogleGenerativeAI(activeKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" });
-
-        const aiResponse = await model.generateContent(`Analyze this ops snapshot and provide a 3 sentence executive summary of billing blockers. Data: ${JSON.stringify(metrics)}`);
-        res.json({ metrics, summary: aiResponse.response.text().trim() });
-    } catch (error) { res.status(500).json({ error: 'AI Briefing failed.' }); }
+        // We pass the raw matrix directly to the frontend to allow the dashboard to parse and render it dynamically
+        res.json({ success: true, rows });
+    } catch (error) { 
+        console.error('[Lair OS] VW Tracker Sync Error:', error.message);
+        res.status(500).json({ error: 'Failed to load VW tracker from Google Cloud.' }); 
+    }
 });
 
 app.post('/api/work/update-cell', verifyToken, async (req, res) => {
@@ -413,7 +307,6 @@ app.post('/api/work/update-cell', verifyToken, async (req, res) => {
     } catch(e) { res.status(500).json({ error: 'Cell update failed' }); }
 });
 
-// Highly optimized thumbnail generator
 async function generateThumbnail(filename) {
   if (!sharp) return null;
   const ext = path.extname(filename).toLowerCase();
@@ -432,7 +325,6 @@ async function generateThumbnail(filename) {
       .toFile(thumbPath);
     return thumbName;
   } catch (e) {
-    console.error(`[Lair OS] Optimization failed for ${filename}:`, e.message);
     return null; 
   }
 }
@@ -462,7 +354,6 @@ app.get('/api/storage', verifyToken, (req, res) => {
     } catch(e) { res.json({ totalBytes: 0, maxBytes: 100 * 1024 * 1024 * 1024 }); }
 });
 
-// CRITICAL ROUTE FIX: Thumbnail logic sits BEFORE general static folder
 app.get('/stream/photography/thumb/:filename', verifyToken, async (req, res) => {
     const safeFilename = path.basename(req.params.filename);
     const thumbName = `${safeFilename}.webp`;
@@ -479,11 +370,9 @@ app.get('/stream/photography/thumb/:filename', verifyToken, async (req, res) => 
         return res.sendFile(thumbPath);
     }
     
-    // Removed dangerous fallback. If no thumbnail, send 404 cleanly.
     res.status(404).send('Thumbnail unavailable');
 });
 
-// General static directory fallback sits AFTER thumbnail route
 app.use('/stream/photography', verifyToken, express.static(photosDir));
 
 app.get('/api/photos', verifyToken, (req, res) => {
@@ -513,10 +402,7 @@ app.get('/api/photos', verifyToken, (req, res) => {
 
 app.post('/api/photos/upload', verifyToken, upload.single('photo'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-    
     let targetFilename = req.file.filename;
-    
-    // HEIC Conversion intercept for iPhone support
     if (targetFilename.toLowerCase().endsWith('.heic') && heicConvert) {
         try {
             const filePath = path.join(photosDir, targetFilename);
@@ -525,12 +411,9 @@ app.post('/api/photos/upload', verifyToken, upload.single('photo'), async (req, 
             
             targetFilename = targetFilename.replace(/\.heic$/i, '.jpg');
             fs.writeFileSync(path.join(photosDir, targetFilename), outputBuffer);
-            fs.unlinkSync(filePath); // delete original HEIC
-        } catch(e) {
-            console.error('[Lair OS] HEIC conversion failed:', e);
-        }
+            fs.unlinkSync(filePath); 
+        } catch(e) { console.error('[Lair OS] HEIC conversion failed:', e); }
     }
-    
     await generateThumbnail(targetFilename);
     res.json({ success: true });
 });
