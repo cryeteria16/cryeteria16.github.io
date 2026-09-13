@@ -819,15 +819,20 @@ function initOS() {
   const fridgeCard = document.getElementById('fridge-card');
   let fridgeTimeout; let isTyping = false; let glowTimeout;
 
-  onSnapshot(doc(db, 'system', 'fridge_door'), (snap) => {
+ onSnapshot(doc(db, 'system', 'fridge_door'), (snap) => {
       if(snap.exists()) {
           const data = snap.data();
-          if(data.updatedBy !== currentUser.id && !isTyping) {
+          // Populate text box on load or partner update, as long as you aren't actively typing inside it
+          if (!isTyping && document.activeElement !== fridgeText) {
               fridgeText.value = data.content || '';
-              fridgeStatus.textContent = `Last edit: ${data.updatedByName || 'Partner'}`;
-              fridgeCard.classList.add('ambient-typing');
-              clearTimeout(glowTimeout);
-              glowTimeout = setTimeout(() => fridgeCard.classList.remove('ambient-typing'), 3500);
+              if (data.updatedBy !== currentUser.id) {
+                  fridgeStatus.textContent = `Last edit: ${data.updatedByName || 'Partner'}`;
+                  fridgeCard.classList.add('ambient-typing');
+                  clearTimeout(glowTimeout);
+                  glowTimeout = setTimeout(() => fridgeCard.classList.remove('ambient-typing'), 3500);
+              } else {
+                  fridgeStatus.textContent = 'Synced';
+              }
           }
       }
   });
