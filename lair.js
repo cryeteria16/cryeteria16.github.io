@@ -865,7 +865,11 @@ function initPDFEngine() {
         const formData = new FormData();
         formData.append('subject', subject);
         formData.append('email', email);
-        pdfQueue.forEach(file => formData.append('pdfs', file));
+        formData.append('mode', 'gmail');
+        // Field name must match multer's uploadPDF.array('pdf_files', ...) on
+        // the server — it was previously sent as 'pdfs' and multer silently
+        // dropped every file, so req.files was always empty.
+        pdfQueue.forEach(file => formData.append('pdf_files', file));
 
         try {
             const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/assemble`, {
@@ -887,6 +891,153 @@ function initPDFEngine() {
             btnAssemble.textContent = "Assemble & Push";
         }
     });
+}
+
+// NOTE: this function was being *called* by initOS() below but was missing
+// from the file entirely — that threw "initVault is not defined" the
+// instant initOS() ran, which silently aborted every init call that was
+// queued after it (theater chat, watchlist, config/features, radar feed,
+// voice room, the invoice auditor, the VW tracker, the PO dropzone, the
+// admin PIN pad, the fridge magnet, and the PDF engine). Restoring this
+// function is what makes the rest of the app work again.
+function initVault() {
+  const photoInput = document.getElementById('vault-photo-input');
+  const cameraInput = document.getElementById('vault-camera-input');
+  const statusEl = document.getElementById('vault-status');
+  const gaugeEl = document.getElementById('drop-gauge');
+  const usageText = document.getElementById('drop-usage-text');
+  const lightbox = document.getElementById('photo-lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const btnDelete = document.getElementById('btn-delete-vault-photo');
+
+  if (!photoInput || !gaugeEl || !lightbox) return;
+
+  const grids = {
+    photos: document.querySelector('#timeline-photos > div'),
+    videos: document.querySelector('#timeline-videos > div'),
+    docs: document.querySelector('#timeline-docs > div')
+  };
+
+  const IMAGE_EXT = /\.(jpg|jpeg|png|webp|heic|gif)$/i;
+  const VIDEO_EXT = /\.(mp4|mov|m4v)$/i;
+  const bucketFor = (filename) => IMAGE_EXT.test(filename) ? 'photos' : VIDEO_EXT.test(filename) ? 'videos' : 'docs';
+  const formatBytes = (bytes) => `${((bytes || 0) / (1024 ** 3)).toFixed(1)}GB`;
+
+  const refreshStorage = async () => {
+    try {
+      const res = await fetchWithAuth(`${TUNNEL_URL}/api/storage`);
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const pct = Math.min(100, (data.totalBytes / data.maxBytes) * 100);
+      gaugeEl.style.setProperty('--pct', pct.toFixed(1));
+      usageText.textContent = formatBytes(data.totalBytes);
+    } catch (e) { /* leave last-known values in place */ }
+  };
+
+  const openLightbox = (photo) => {
+    activeLightboxFile = photo.filename;
+    lightboxImg.src = photo.url;
+    lightbox.classList.add('active');
+  };
+
+  const renderGrid = (photos) => {
+    Object.values(grids).forEach(g => { if (g) g.innerHTML = ''; });
+
+    photos.forEach(photo => {
+      const bucket = bucketFor(photo.filename);
+      const grid = grids[bucket];
+      if (!grid) return;
+
+      const card = document.createElement('div');
+      card.className = 'haptic-btn';
+      card.style.cssText = 'aspect-ratio:1; border-radius:14px; overflow:hidden; background:var(--input-bg); cursor:pointer; position:relative;';
+
+      if (bucket === 'docs') {
+        card.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:28px;">📄</div>`;
+        card.addEventListener('click', () => { triggerHaptic(); window.open(photo.url, '_blank'); });
+      } else if (bucket === 'videos') {
+        card.innerHTML = `<img src="${photo.thumbUrl}" loading="lazy" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'"><div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:22px; pointer-events:none;">▶</div>`;
+        card.addEventListener('click', () => { triggerHaptic(); window.open(photo.url, '_blank'); });
+      } else {
+        card.innerHTML = `<img src="${photo.thumbUrl}" loading="lazy" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='${photo.url}'">`;
+        card.addEventListener('click', () => { triggerHaptic(); openLightbox(photo); });
+      }
+      grid.appendChild(card);
+    });
+
+    Object.values(grids).forEach(grid => {
+      if (grid && !grid.children.length) {
+        grid.innerHTML = `<p style="font-size:12px; color:var(--ink-soft);">Nothing here yet.</p>`;
+      }
+    });
+  };
+
+  const loadVault = async () => {
+    try {
+      const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos`);
+      if (!res.ok) throw new Error();
+      renderGrid(await res.json());
+    } catch (e) {
+      window.showToast('Could not reach Vault storage.', 'error');
+    }
+    refreshStorage();
+  };
+
+  document.querySelectorAll('.seg-btn[data-seg]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      triggerHaptic();
+      document.querySelectorAll('.seg-btn[data-seg]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      Object.entries(grids).forEach(([key, grid]) => {
+        const timeline = grid ? grid.closest('.vault-timeline') : null;
+        if (timeline) timeline.classList.toggle('active', key === btn.dataset.seg);
+      });
+    });
+  });
+
+  const uploadFiles = async (files) => {
+    if (!files || !files.length) return;
+    statusEl.style.display = 'block';
+    let done = 0;
+    for (const file of Array.from(files)) {
+      done++;
+      statusEl.textContent = `Uploading ${file.name} (${done}/${files.length})...`;
+      const fd = new FormData();
+      fd.append('photo', file);
+      try {
+        const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd });
+        if (!res.ok) throw new Error();
+      } catch (e) {
+        window.showToast(`Failed to upload ${file.name}`, 'error');
+      }
+    }
+    statusEl.textContent = 'Upload complete.';
+    setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+    loadVault();
+  };
+
+  photoInput.addEventListener('change', (e) => { uploadFiles(e.target.files); photoInput.value = ''; });
+  if (cameraInput) cameraInput.addEventListener('change', (e) => { uploadFiles(e.target.files); cameraInput.value = ''; });
+
+  if (btnDelete) {
+    btnDelete.addEventListener('click', async () => {
+      if (!activeLightboxFile) return;
+      triggerHaptic();
+      const filename = activeLightboxFile;
+      try {
+        const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/delete/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error();
+        window.showToast('Deleted from Vault.', 'success');
+        lightbox.classList.remove('active');
+        activeLightboxFile = null;
+        loadVault();
+      } catch (e) {
+        window.showToast('Failed to delete file.', 'error');
+      }
+    });
+  }
+
+  loadVault();
 }
 
 function initOS() {

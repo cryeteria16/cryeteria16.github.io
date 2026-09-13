@@ -669,6 +669,17 @@
     </div>
   </div>
   
+  <div id="confirm-modal" class="modal-overlay">
+    <div class="card" style="max-width:360px; text-align:center; padding:32px;">
+      <h2 id="confirm-title" style="font-family:var(--font-display); font-size:20px; margin-bottom:12px;">Are you sure?</h2>
+      <p id="confirm-msg" style="font-size:13px; color:var(--ink-soft); margin-bottom:24px;"></p>
+      <div style="display:flex; gap:12px;">
+        <button id="btn-confirm-cancel" class="btn-secondary haptic-btn" style="flex:1;">Cancel</button>
+        <button id="btn-confirm-ok" class="btn-primary haptic-btn" style="flex:1; background:rgba(217,83,79,0.85); color:#fff;">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <div id="photo-lightbox" class="modal-overlay">
     <div class="card" style="max-width:90%; text-align:center; padding:20px;">
       <img id="lightbox-img" src="" style="max-width:100%; max-height:70vh; border-radius:var(--radius-sm); margin-bottom:18px;">

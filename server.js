@@ -25,9 +25,24 @@ let heicConvert;
 try { heicConvert = require('heic-convert'); } 
 catch (e) { console.warn('[Lair OS] heic-convert module unavailable. iPhone photos will not convert.'); }
 
-const serviceAccount = require('./serviceAccountKey.json');
-initializeApp({ credential: cert(serviceAccount) });
+// Prefer loading the service account from an environment variable so the
+// key never has to exist as a file on disk. Set FIREBASE_SERVICE_ACCOUNT to
+// the full JSON contents of the key. Falls back to the local file for dev.
+const serviceAccountJSON = process.env.FIREBASE_SERVICE_ACCOUNT
+  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+  : require('./serviceAccountKey.json');
+
+initializeApp({ credential: cert(serviceAccountJSON) });
 const db = getFirestore();
+
+// Every Sheets/Gmail call below used to hardcode keyFile:
+// './serviceAccountKey.json', which only works with a key file physically
+// present on disk. This reuses whichever credential source was resolved
+// above (env var first, file as a dev fallback) so both paths work
+// everywhere consistently.
+function getGoogleAuthClient(scopes) {
+  return new google.auth.GoogleAuth({ credentials: serviceAccountJSON, scopes });
+}
 const app = express();
 
 const SPREADSHEET_ID = '1uX2OOd4HE3c_-Vl-PkeQhZicY2cFh3qFxASG7yl_uEo'; 
@@ -104,6 +119,24 @@ async function verifyToken(req, res, next) {
   } catch (error) { return res.status(403).json({ error: 'Forbidden: Expired token.' }); }
 }
 
+// Must run AFTER verifyToken. verifyToken only proves someone is signed in
+// to the Lair (e.g. either household member) — it does NOT prove they're
+// the admin. Routes that touch the work/financial ledger, the server
+// terminal, or host stats need this extra check too, or any signed-in
+// account could reach them.
+async function requireAdmin(req, res, next) {
+  if (!req.user || !req.user.uid) return res.status(401).json({ error: 'Unauthorized.' });
+  try {
+    const userDoc = await db.collection('users').doc(req.user.uid).get();
+    if (!userDoc.exists || userDoc.data().role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden: Admin privileges required.' });
+    }
+    next();
+  } catch (e) {
+    return res.status(500).json({ error: 'Could not verify admin privileges.' });
+  }
+}
+
 app.post('/api/stream-token', verifyToken, (req, res) => {
   const filename = path.basename(req.body.filename || '');
   if (!filename) return res.status(400).json({ error: 'filename required' });
@@ -147,7 +180,7 @@ app.post('/api/fridge/log', verifyToken, async (req, res) => {
         const { text, user } = req.body;
         if (!text || text.trim() === '') return res.json({ success: true, skipped: true });
 
-        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
+        const authClient = getGoogleAuthClient(['https://www.googleapis.com/auth/spreadsheets']);
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
         const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai', hour12: false });
@@ -170,7 +203,7 @@ app.post('/api/fridge/log', verifyToken, async (req, res) => {
 });
 
 // ==== PDF ASSEMBLY ENGINE (PDFtk + GMAIL API) ====
-app.post('/api/work/assemble', verifyToken, uploadPDF.array('pdf_files', 15), async (req, res) => {
+app.post('/api/work/assemble', verifyToken, requireAdmin, uploadPDF.array('pdf_files', 15), async (req, res) => {
     try {
         const { subject, email, mode } = req.body;
         const files = req.files;
@@ -215,10 +248,7 @@ app.post('/api/work/assemble', verifyToken, uploadPDF.array('pdf_files', 15), as
             return res.send(emlBody);
         } else if (mode === 'gmail') {
             // Push directly to Google Workspace Gmail Drafts
-            const authClient = new google.auth.GoogleAuth({
-                keyFile: './serviceAccountKey.json',
-                scopes: ['https://www.googleapis.com/auth/gmail.compose']
-            });
+            const authClient = getGoogleAuthClient(['https://www.googleapis.com/auth/gmail.compose']);
             
             // Requires Domain-Wide Delegation to impersonate your admin email
             // (If not set up, this will throw an error telling you to configure it)
@@ -237,6 +267,11 @@ app.post('/api/work/assemble', verifyToken, uploadPDF.array('pdf_files', 15), as
                 console.error("[Lair OS] Gmail API Error. Requires Domain-Wide Delegation:", gmailErr.message);
                 throw new Error('Gmail API requires Google Workspace Domain-Wide Delegation.');
             }
+        } else {
+            // Previously, an unrecognized/missing `mode` fell through both
+            // branches above without ever calling res.send/res.json — the
+            // request just hung until the client timed out. Always respond.
+            return res.status(400).json({ error: `Unknown mode '${mode}'. Expected 'eml' or 'gmail'.` });
         }
     } catch(e) {
         console.error(e);
@@ -261,7 +296,7 @@ app.get('/api/public/cloud/:filename', async (req, res) => {
     }
 });
 
-app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), async (req, res) => {
+app.post('/api/work/extract', verifyToken, requireAdmin, uploadInvoice.single('invoice'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI configuration found on server.' });
     
@@ -293,7 +328,7 @@ app.post('/api/work/extract', verifyToken, uploadInvoice.single('invoice'), asyn
     }
 });
 
-app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async (req, res) => {
+app.post('/api/work/extract-po', verifyToken, requireAdmin, uploadPO.single('po_file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No PO file uploaded' });
     if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI config found on server.' });
     
@@ -322,12 +357,12 @@ app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async 
     }
 });
 
-app.post('/api/work/sync', verifyToken, async (req, res) => {
+app.post('/api/work/sync', verifyToken, requireAdmin, async (req, res) => {
     try {
         const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
         if (!rows.length) return res.json({ success: true, added: 0, skipped: [] });
 
-        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
+        const authClient = getGoogleAuthClient(['https://www.googleapis.com/auth/spreadsheets']);
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
         const existing = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Sheet1!C2:C' });
@@ -354,7 +389,7 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
     } catch(e) { res.status(500).json({ error: 'Failed to sync' }); }
 });
 
-app.post('/api/work/draft-eml', verifyToken, (req, res) => {
+app.post('/api/work/draft-eml', verifyToken, requireAdmin, (req, res) => {
     const { type, crmRef, building, prNumber, rfNumber, isUrgent } = req.body;
     
     const safeRef = crmRef || 'Pending';
@@ -380,9 +415,9 @@ app.post('/api/work/draft-eml', verifyToken, (req, res) => {
     res.json({ success: true, eml: emlString, filename: `${safeRef.replace(/[^a-zA-Z0-9]/g, '_')}_${type}_Draft.eml` });
 });
 
-app.get('/api/work/ledger', verifyToken, async (req, res) => {
+app.get('/api/work/ledger', verifyToken, requireAdmin, async (req, res) => {
     try {
-        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] });
+        const authClient = getGoogleAuthClient(['https://www.googleapis.com/auth/spreadsheets.readonly']);
         const sheets = google.sheets({ version: 'v4', auth: authClient });
         const response = await sheets.spreadsheets.values.get({ spreadsheetId: SPREADSHEET_ID, range: 'Sheet1!A2:H' });
 
@@ -402,12 +437,9 @@ app.get('/api/work/ledger', verifyToken, async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Failed to load ledger.' }); }
 });
 
-app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
+app.get('/api/work/vw-tracker', verifyToken, requireAdmin, async (req, res) => {
     try {
-        const authClient = new google.auth.GoogleAuth({ 
-            keyFile: './serviceAccountKey.json', 
-            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
-        });
+        const authClient = getGoogleAuthClient(['https://www.googleapis.com/auth/spreadsheets.readonly']);
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
         const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
@@ -422,12 +454,9 @@ app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
     }
 });
 
-app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
+app.get('/api/work/vw-briefing', verifyToken, requireAdmin, async (req, res) => {
     try {
-        const authClient = new google.auth.GoogleAuth({ 
-            keyFile: './serviceAccountKey.json', 
-            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
-        });
+        const authClient = getGoogleAuthClient(['https://www.googleapis.com/auth/spreadsheets.readonly']);
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
         const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
@@ -478,10 +507,10 @@ app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
     }
 });
 
-app.post('/api/work/update-cell', verifyToken, async (req, res) => {
+app.post('/api/work/update-cell', verifyToken, requireAdmin, async (req, res) => {
     try {
         const { row, col, value } = req.body;
-        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
+        const authClient = getGoogleAuthClient(['https://www.googleapis.com/auth/spreadsheets']);
         const sheets = google.sheets({ version: 'v4', auth: authClient });
         await sheets.spreadsheets.values.update({
             spreadsheetId: SPREADSHEET_ID, range: `Sheet1!${String.fromCharCode(65 + col)}${row}`, valueInputOption: 'USER_ENTERED', requestBody: { values: [[value]] }
@@ -512,7 +541,7 @@ async function generateThumbnail(filename) {
   }
 }
 
-app.get('/api/stats', verifyToken, (req, res) => {
+app.get('/api/stats', verifyToken, requireAdmin, (req, res) => {
     const cpus = os.cpus();
     let idle = 0; let total = 0;
     cpus.forEach(cpu => { for (const type in cpu.times) total += cpu.times[type]; idle += cpu.times.idle; });
@@ -521,14 +550,14 @@ app.get('/api/stats', verifyToken, (req, res) => {
     res.json({ cpu: usage, ram: ramPercent });
 });
 
-app.post('/api/terminal', verifyToken, (req, res) => {
+app.post('/api/terminal', verifyToken, requireAdmin, (req, res) => {
     const cmd = (req.body.command || '').trim().toLowerCase();
     const whitelist = { 'ping': 'ping -n 3 8.8.8.8', 'ip': 'ipconfig', 'uptime': 'net statistics workstation', 'ver': 'ver', 'git pull': 'git pull' };
     if (!whitelist[cmd]) return res.json({ output: `Command '${cmd}' not permitted.` });
     exec(whitelist[cmd], { timeout: 12000, windowsHide: true }, (error, stdout, stderr) => { res.json({ output: stdout || stderr || 'Executed.' }); });
 });
 
-app.get('/api/storage', verifyToken, (req, res) => {
+app.get('/api/storage', verifyToken, requireAdmin, (req, res) => {
     let totalBytes = 0;
     try {
         if (fs.existsSync(photosDir)) fs.readdirSync(photosDir).forEach(f => { if (f !== '.thumbs') totalBytes += fs.statSync(path.join(photosDir, f)).size; });
