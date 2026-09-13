@@ -101,7 +101,7 @@ swipeZone.addEventListener('touchstart', e => {
 }, {passive: true});
 
 swipeZone.addEventListener('touchend', e => {
-    if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, .os-dock, input, textarea, .artplayer-app, .ledger-scroll-wrapper, table, #auditor-queue-container')) return;
+    if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, .os-dock, input, textarea, .artplayer-app, .ledger-scroll-wrapper, table, #auditor-queue-container, #fridge-magnet')) return;
     const diffX = touchStartX - e.changedTouches[0].screenX; const diffY = touchStartY - e.changedTouches[0].screenY;
     if (Math.abs(diffY) > Math.abs(diffX)) return;
 
@@ -191,18 +191,6 @@ onAuthStateChanged(auth, (user) => {
               if (snap.data().adminPin) {
                   userAdminPin = snap.data().adminPin;
               }
-          }
-          if(snap.data().theme) {
-              document.body.setAttribute('data-theme', snap.data().theme);
-              
-              const themeBtnText = document.querySelector('#btn-theme-toggle .nav-btn-text');
-              const themeBtnIcon = document.getElementById('icon-theme');
-              const isLight = snap.data().theme === 'light';
-              
-              themeBtnText.textContent = isLight ? '🌙 Dark' : '☀️ Light';
-              themeBtnIcon.textContent = isLight ? '🌙' : '☀️';
-
-              document.getElementById('meta-theme-color').setAttribute('content', isLight ? '#F2F2F7' : '#060709');
           }
       }
   });
@@ -610,8 +598,9 @@ function initVWTracker() {
                     }
                 });
 
-                const prIdx = item.rawHeaders.findIndex(h => h.toLowerCase().includes('pr'));
-                const rfIdx = item.rawHeaders.findIndex(h => h.toLowerCase().includes('rf'));
+                // Safeguard against undefined headers
+                const prIdx = item.rawHeaders.findIndex(h => String(h).toLowerCase().includes('pr'));
+                const rfIdx = item.rawHeaders.findIndex(h => String(h).toLowerCase().includes('rf'));
                 const prVal = prIdx !== -1 ? item.rawValues[prIdx] : '';
                 const rfVal = rfIdx !== -1 ? item.rawValues[rfIdx] : '';
                 const isUrgent = item.urgencyScore >= 2; 
@@ -638,7 +627,6 @@ function initVWTracker() {
 
                 dossierContent.appendChild(actionBox);
 
-                // Wire up the buttons
                 document.getElementById('btn-eml-mgr').onclick = () => triggerEMLDownload('manager', item.crmRef, item.building, prVal, rfVal, isUrgent);
                 document.getElementById('btn-eml-proc').onclick = () => triggerEMLDownload('procurement', item.crmRef, item.building, prVal, rfVal, isUrgent);
                 
@@ -727,7 +715,7 @@ function initVWTracker() {
     };
     loadVWData();
 
-    // Clickable KPI Filters Logic
+    // The Interactive KPI Filter Engine
     const applyFilter = (filterFn) => {
         triggerHaptic();
         if(searchInput) searchInput.value = '';
@@ -812,10 +800,11 @@ function initOS() {
      });
   });
 
+  // ==== GLOBAL THEME SYSTEM ====
   const themeBtn = document.getElementById('btn-theme-toggle');
   themeBtn.addEventListener('click', () => {
       const newTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      setDoc(doc(db, 'users', currentUser.id), { theme: newTheme }, { merge: true });
+      setDoc(doc(db, 'system', 'config'), { theme: newTheme }, { merge: true });
   });
 
   const urlParams = new URLSearchParams(window.location.search);
@@ -851,11 +840,127 @@ function initOS() {
       }, 500); 
   });
   
-  fridgeText.addEventListener('blur', () => { isTyping = false; });
+  // ==== FRIDGE DOOR: GOOGLE SHEETS LOGGING ====
+  fridgeText.addEventListener('blur', () => { 
+      isTyping = false; 
+      fetchWithAuth(`${TUNNEL_URL}/api/fridge/log`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: fridgeText.value, user: currentUser.name })
+      }).catch(e => console.log('Silently failed to log to Sheets', e));
+  });
 
-  initWatchParty(); initVault(); initTheaterChat(); initWatchlist(); initConfigAndFeatures(); initRadarFeed(); initVoiceRoom(); initAuditor(); initVWTracker(); initPODropzone(); initAdminPinPad();
+  initWatchParty(); initVault(); initTheaterChat(); initWatchlist(); initConfigAndFeatures(); initRadarFeed(); initVoiceRoom(); initAuditor(); initVWTracker(); initPODropzone(); initAdminPinPad(); initFridgeMagnet();
 
   document.getElementById('btn-open-po-modal').addEventListener('click', () => { triggerHaptic(); document.getElementById('po-extractor-modal').classList.add('active'); });
+}
+
+// ==== THE FRIDGE MAGNET (DRAWING BOARD) ====
+function initFridgeMagnet() {
+    const btnToggle = document.getElementById('btn-toggle-magnet');
+    const magnet = document.getElementById('fridge-magnet');
+    const canvas = document.getElementById('magnet-canvas');
+    const header = document.getElementById('magnet-header');
+    const resize = document.getElementById('magnet-resize');
+    const btnClear = document.getElementById('btn-clear-magnet');
+    if(!btnToggle || !magnet || !canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    let isDrawing = false; let x = 0; let y = 0;
+    
+    const resizeCanvas = () => {
+        const rect = canvas.getBoundingClientRect();
+        if(canvas.width !== rect.width || canvas.height !== rect.height) {
+            canvas.width = rect.width; canvas.height = rect.height;
+            ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = 'var(--accent)';
+        }
+    };
+
+    onSnapshot(doc(db, 'system', 'fridge_magnet'), (snap) => {
+        if(snap.exists()) {
+            const data = snap.data();
+            
+            if(!magnet.dataset.isDragging && data.style) {
+                magnet.style.left = data.style.left;
+                magnet.style.top = data.style.top;
+                magnet.style.width = data.style.width;
+                magnet.style.height = data.style.height;
+                resizeCanvas();
+            }
+
+            if(data.updatedBy !== currentUser.id && data.image) {
+                const img = new Image();
+                img.onload = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0); };
+                img.src = data.image;
+            } else if (!data.image) {
+                ctx.clearRect(0,0,canvas.width,canvas.height);
+            }
+        }
+    });
+
+    const saveStateToFirebase = async () => {
+        await setDoc(doc(db, 'system', 'fridge_magnet'), {
+            image: canvas.toDataURL(),
+            updatedBy: currentUser.id,
+            style: { left: magnet.style.left, top: magnet.style.top, width: magnet.style.width, height: magnet.style.height }
+        }, {merge: true});
+    };
+
+    btnToggle.addEventListener('click', () => {
+        magnet.style.display = magnet.style.display === 'none' ? 'flex' : 'none';
+        resizeCanvas();
+    });
+
+    btnClear.addEventListener('click', async () => {
+        triggerHaptic(); ctx.clearRect(0,0,canvas.width,canvas.height);
+        await setDoc(doc(db, 'system', 'fridge_magnet'), { image: null, updatedBy: currentUser.id }, {merge: true});
+    });
+
+    const startDrawing = (e) => {
+        isDrawing = true; resizeCanvas();
+        const rect = canvas.getBoundingClientRect();
+        x = (e.clientX || e.touches[0].clientX) - rect.left;
+        y = (e.clientY || e.touches[0].clientY) - rect.top;
+    };
+    const draw = (e) => {
+        if(!isDrawing) return; e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const newX = (e.clientX || e.touches[0].clientX) - rect.left;
+        const newY = (e.clientY || e.touches[0].clientY) - rect.top;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(newX, newY); ctx.stroke(); ctx.closePath();
+        x = newX; y = newY;
+    };
+    const stopDrawing = () => { if(isDrawing) { isDrawing = false; saveStateToFirebase(); } };
+
+    canvas.addEventListener('mousedown', startDrawing); canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing); canvas.addEventListener('mouseleave', stopDrawing);
+    canvas.addEventListener('touchstart', startDrawing); canvas.addEventListener('touchmove', draw); canvas.addEventListener('touchend', stopDrawing);
+
+    let isDragging = false; let dragX = 0; let dragY = 0;
+    header.addEventListener('mousedown', e => {
+        isDragging = true; magnet.dataset.isDragging = "true";
+        dragX = e.clientX - magnet.getBoundingClientRect().left;
+        dragY = e.clientY - magnet.getBoundingClientRect().top;
+    });
+    window.addEventListener('mousemove', e => {
+        if(!isDragging) return;
+        magnet.style.left = `${e.clientX - dragX}px`;
+        magnet.style.top = `${e.clientY - dragY}px`;
+    });
+    window.addEventListener('mouseup', () => {
+        if(isDragging) { isDragging = false; magnet.dataset.isDragging = ""; saveStateToFirebase(); }
+    });
+
+    let isResizing = false;
+    resize.addEventListener('mousedown', e => { isResizing = true; magnet.dataset.isDragging = "true"; e.stopPropagation(); });
+    window.addEventListener('mousemove', e => {
+        if(!isResizing) return;
+        const rect = magnet.getBoundingClientRect();
+        magnet.style.width = `${e.clientX - rect.left}px`;
+        magnet.style.height = `${e.clientY - rect.top}px`;
+    });
+    window.addEventListener('mouseup', () => {
+        if(isResizing) { isResizing = false; magnet.dataset.isDragging = ""; resizeCanvas(); saveStateToFirebase(); }
+    });
 }
 
 function initAdminPinPad() {
@@ -922,8 +1027,27 @@ function initWatchlist() {
         listEl.innerHTML = '';
         snap.forEach(docSnap => {
             const m = docSnap.data(); const card = document.createElement('div'); card.style.cssText = 'width:110px; cursor:pointer;';
-            card.innerHTML = `<div style="width:110px; height:160px; border-radius:12px; background:${m.poster ? `url('${m.poster}') center/cover` : 'var(--input-bg)'}; border:var(--glass-border); margin-bottom:6px;"></div><div style="font-size:11px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${m.title}</div><div style="font-size:10px; color:var(--ink-soft);">${m.streamUrl ? '▶ Play' : m.status || ''}</div>`;
-            if (m.streamUrl) { card.addEventListener('click', async () => { triggerHaptic(); document.querySelector('.dock-app[data-target="theater"]').click(); document.getElementById('theater-join-overlay').style.display = 'none'; const { mountMediaFromWatchlist } = window.__lairTheater || {}; if (mountMediaFromWatchlist) mountMediaFromWatchlist(m.streamUrl); }); }
+            card.innerHTML = `
+                <div style="width:110px; height:160px; border-radius:12px; background:${m.poster ? `url('${m.poster}') center/cover` : 'var(--input-bg)'}; border:var(--glass-border); margin-bottom:6px;"></div>
+                <div style="font-size:11px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${m.title}</div>
+                <div style="font-size:10px; color:${m.streamUrl ? 'var(--con)' : 'var(--ink-soft)'}; margin-top:2px;">${m.streamUrl ? '▶ Play in Theater' : '🔗 Link Media File'}</div>
+            `;
+            
+            card.addEventListener('click', async () => { 
+                triggerHaptic(); 
+                if (m.streamUrl) {
+                    document.querySelector('.dock-app[data-target="theater"]').click(); 
+                    document.getElementById('theater-join-overlay').style.display = 'none'; 
+                    const { mountMediaFromWatchlist } = window.__lairTheater || {}; 
+                    if (mountMediaFromWatchlist) mountMediaFromWatchlist(m.streamUrl); 
+                } else {
+                    const url = prompt(`Paste direct video URL (from Vault or YouTube) to permanently link it to ${m.title}:`);
+                    if (url && url.trim() !== '') {
+                        await updateDoc(docSnap.ref, { streamUrl: url.trim() });
+                        window.showToast('Media linked successfully', 'success');
+                    }
+                }
+            }); 
             listEl.appendChild(card);
         });
     });
@@ -954,6 +1078,18 @@ function initWatchlist() {
 function initConfigAndFeatures() {
     onSnapshot(doc(db, 'system', 'config'), (snap) => {
         if (!snap.exists()) return; const d = snap.data();
+        
+        if (d.theme) {
+            document.body.setAttribute('data-theme', d.theme);
+            const themeBtnText = document.querySelector('#btn-theme-toggle .nav-btn-text');
+            const themeBtnIcon = document.getElementById('icon-theme');
+            const isLight = d.theme === 'light';
+            if(themeBtnText) themeBtnText.textContent = isLight ? '🌙 Dark' : '☀️ Light';
+            if(themeBtnIcon) themeBtnIcon.textContent = isLight ? '🌙' : '☀️';
+            const meta = document.getElementById('meta-theme-color');
+            if(meta) meta.setAttribute('content', isLight ? '#F2F2F7' : '#060709');
+        }
+
         const banner = document.getElementById('broadcast-banner');
         if (d.broadcast) { banner.textContent = d.broadcast; banner.style.display = 'block'; } else { banner.style.display = 'none'; }
         if (d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
