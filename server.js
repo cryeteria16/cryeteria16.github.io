@@ -135,6 +135,31 @@ const API_KEYS = [
     process.env.GEMINI_KEY_3
 ].filter(Boolean);
 
+app.post('/api/fridge/log', verifyToken, async (req, res) => {
+    try {
+        const { text, user } = req.body;
+        if (!text || text.trim() === '') return res.json({ success: true, skipped: true });
+
+        const authClient = getGoogleAuthClient(['https://www.googleapis.com/auth/spreadsheets']);
+        const sheets = google.sheets({ version: 'v4', auth: authClient });
+
+        const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai', hour12: false });
+        const rowData = [timestamp, user, "Fridge", "Updated Note", text];
+
+        await sheets.spreadsheets.values.append({
+            spreadsheetId: FRIDGE_SHEET_ID,
+            range: "'Check-ins'!A:E", 
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [rowData] }
+        });
+
+        res.json({ success: true });
+    } catch(e) { 
+        console.error('[Lair OS] Fridge Log Error:', e.message);
+        res.status(500).json({ error: 'Failed to log to Google Sheets' }); 
+    }
+});
+
 app.get('/api/public/cloud/:filename', async (req, res) => {
     try {
         const safeFilename = path.basename(req.params.filename);
