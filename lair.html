@@ -458,9 +458,46 @@
       </div>
 
       <div id="work-facility" class="work-module stagger-2" style="display:none;">
-          <div class="card" style="padding: 24px; text-align:center; min-height: 400px; display:flex; flex-direction:column; justify-content:center;">
-              <h3 style="font-family:var(--font-display); margin-bottom:12px;">Facility Ops Smart Slots</h3>
-              <p style="font-size:13px; color:var(--ink-soft);">Module currently loading. Preparing automated PDF assembly line...</p>
+          <div class="card" style="padding: 24px; min-height: 400px; display:flex; flex-direction:column;">
+              <div class="card-head" style="margin-bottom:20px;">
+                  <h2 style="display:flex; align-items:center; gap:8px;">PDF Assembly Engine <span style="font-family:var(--font-mono); font-size:9px; background:rgba(112,148,122,0.15); border:1px solid rgba(112,148,122,0.4); padding:4px 8px; border-radius:12px; color:var(--con); text-transform:uppercase;">Cloud Injector Active</span></h2>
+              </div>
+              
+              <div id="pdf-dropzone" style="background:var(--input-bg); border:1px dashed rgba(255,255,255,0.2); border-radius:var(--radius-sm); padding:40px 20px; text-align:center; cursor:pointer; margin-bottom: 20px; transition: 0.2s;" onclick="document.getElementById('pdf-file-input').click()">
+                  <input type="file" id="pdf-file-input" accept="application/pdf" style="display:none;" multiple>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--con)" stroke-width="2" style="margin-bottom:12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                  <p style="font-size:14px; font-weight:500; color:var(--ink);">Drop PDFs here or click to browse</p>
+                  <p style="font-size:12px; color:var(--ink-soft); margin-top:8px;">Drag and drop the rows to reorder them before merging</p>
+              </div>
+
+              <div id="pdf-queue-container" style="display:none; flex-direction:column; gap:8px; margin-bottom:24px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <h3 style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase;">Assembly Queue (<span id="pdf-queue-count">0</span>)</h3>
+                      <button id="btn-clear-pdf-queue" class="haptic-btn" style="font-size:10px; color:var(--err); text-transform:uppercase; font-weight:600;">Clear All</button>
+                  </div>
+                  <div id="pdf-sortable-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+              </div>
+
+              <div id="pdf-dispatch-config" style="display:none; flex-direction:column; gap:16px; border-top:var(--glass-border); padding-top:20px;">
+                  <div>
+                      <label class="field-label">Dispatch Method</label>
+                      <div style="display:flex; gap:14px; margin-bottom:16px;">
+                          <label style="font-size:13px; display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio" name="pdf_dispatch_mode" value="eml" checked> Download .eml</label>
+                          <label style="font-size:13px; display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio" name="pdf_dispatch_mode" value="gmail"> Push to Cloud Drafts</label>
+                      </div>
+                  </div>
+                  <div>
+                      <label class="field-label">Email Subject Line</label>
+                      <input type="text" id="pdf-subject-input" placeholder="e.g. Variable Works Documentation - [Building Name]" style="margin-bottom:0;">
+                  </div>
+                  <div>
+                      <label class="field-label">Target Cloud Draft Email</label>
+                      <div style="display:flex; gap:10px;">
+                          <input type="text" id="pdf-email-input" placeholder="manager.name@al-ghurair.com" style="flex:1; margin-bottom:0;">
+                          <button id="btn-assemble-push" class="btn-primary haptic-btn" style="white-space:nowrap; background:var(--con); color:#000;">Assemble & Push</button>
+                      </div>
+                  </div>
+              </div>
           </div>
       </div>
 
