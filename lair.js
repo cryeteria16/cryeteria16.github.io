@@ -1501,3 +1501,127 @@ document.getElementById('vault-photo-input').addEventListener('change', async (e
   window.showToast('Media uploaded to Vault', 'success');
   initVault(); e.target.value = '';
 });
+// Fridge Magnet Drawing & Auto-Save Engine
+const canvas = document.getElementById('magnet-canvas');
+const ctx = canvas ? canvas.getContext('2d') : null;
+const colorPicker = document.getElementById('magnet-color');
+const clearBtn = document.getElementById('btn-clear-canvas');
+
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+let saveTimeout;
+
+function resizeCanvas() {
+    if (!canvas || !ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+        if (canvas.width !== Math.floor(rect.width) || canvas.height !== Math.floor(rect.height)) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCtx.drawImage(canvas, 0, 0);
+
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            ctx.drawImage(tempCanvas, 0, 0);
+        }
+    }
+}
+
+window.addEventListener('resize', resizeCanvas);
+setTimeout(resizeCanvas, 100);
+
+function startDrawing(e) {
+    if (!canvas) return;
+    isDrawing = true;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+    lastX = clientX - rect.left;
+    lastY = clientY - rect.top;
+}
+
+function draw(e) {
+    if (!isDrawing || !canvas || !ctx) return;
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+    const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+    
+    const currentX = clientX - rect.left;
+    const currentY = clientY - rect.top;
+
+    ctx.strokeStyle = colorPicker ? colorPicker.value : '#70947A';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(currentX, currentY);
+    ctx.stroke();
+
+    lastX = currentX;
+    lastY = currentY;
+}
+
+function queueMagnetSave() {
+    clearTimeout(saveTimeout);
+    const statusEl = document.getElementById('fridge-status');
+    if (statusEl) statusEl.textContent = 'Saving...';
+    
+    saveTimeout = setTimeout(() => {
+        if (!canvas) return;
+        canvas.toBlob(blob => {
+            const formData = new FormData();
+            formData.append('magnet_image', blob, `magnet_${Date.now()}.png`);
+
+            fetchWithAuth(`${TUNNEL_URL}/api/fridge/save-magnet`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (statusEl) {
+                    if (data.success) {
+                        statusEl.textContent = 'Synced to Drive';
+                    } else {
+                        statusEl.textContent = 'Sync Failed';
+                    }
+                }
+            })
+            .catch(() => {
+                if (statusEl) statusEl.textContent = 'Offline';
+            });
+        }, 'image/png');
+    }, 2000);
+}
+
+function stopDrawing() {
+    if (!isDrawing) return;
+    isDrawing = false;
+    queueMagnetSave();
+}
+
+if (canvas) {
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+
+    canvas.addEventListener('touchstart', startDrawing, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    canvas.addEventListener('touchend', stopDrawing);
+}
+
+if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+        if (canvas && ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            queueMagnetSave();
+        }
+    });
+}
+
