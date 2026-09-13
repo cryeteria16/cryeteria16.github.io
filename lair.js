@@ -1501,7 +1501,7 @@ document.getElementById('vault-photo-input').addEventListener('change', async (e
   window.showToast('Media uploaded to Vault', 'success');
   initVault(); e.target.value = '';
 });
-// Fridge Magnet Drawing & Auto-Save Engine
+// ==== THE FRIDGE MAGNET (DRAWING BOARD & DRIVE AUTO-SAVE) ====
 const canvas = document.getElementById('magnet-canvas');
 const ctx = canvas ? canvas.getContext('2d') : null;
 const colorPicker = document.getElementById('magnet-color');
@@ -1533,32 +1533,35 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 setTimeout(resizeCanvas, 100);
 
-function startDrawing(e) {
-    if (!canvas) return;
-    isDrawing = true;
+function getCoords(e) {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
-    const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-    const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-    
-    lastX = (clientX - rect.left) * scaleX;
-    lastY = (clientY - rect.top) * scaleY;
+
+    let x, y;
+    if (e.touches && e.touches[0]) {
+        x = e.touches[0].clientX - rect.left;
+        y = e.touches[0].clientY - rect.top;
+    } else {
+        x = e.offsetX !== undefined ? e.offsetX : (e.clientX - rect.left);
+        y = e.offsetY !== undefined ? e.offsetY : (e.clientY - rect.top);
+    }
+
+    return { x: x * scaleX, y: y * scaleY };
+}
+
+function startDrawing(e) {
+    if (!canvas) return;
+    isDrawing = true;
+    const pos = getCoords(e);
+    lastX = pos.x;
+    lastY = pos.y;
 }
 
 function draw(e) {
     if (!isDrawing || !canvas || !ctx) return;
     e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
-    
-    const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
-    const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-    
-    const currentX = (clientX - rect.left) * scaleX;
-    const currentY = (clientY - rect.top) * scaleY;
+    const pos = getCoords(e);
 
     ctx.strokeStyle = colorPicker ? colorPicker.value : '#70947A';
     ctx.lineWidth = 3;
@@ -1567,11 +1570,11 @@ function draw(e) {
 
     ctx.beginPath();
     ctx.moveTo(lastX, lastY);
-    ctx.lineTo(currentX, currentY);
+    ctx.lineTo(pos.x, pos.y);
     ctx.stroke();
 
-    lastX = currentX;
-    lastY = currentY;
+    lastX = pos.x;
+    lastY = pos.y;
 }
 
 function queueMagnetSave() {
@@ -1631,4 +1634,3 @@ if (clearBtn) {
         }
     });
 }
-
