@@ -475,24 +475,6 @@ function initPODropzone() {
     dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; });
     dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; if (e.dataTransfer.files[0]) processPOFile(e.dataTransfer.files[0]); });
 
-    const syncSheetBtn = document.getElementById('btn-sync-po-sheet');
-    if (syncSheetBtn && !syncSheetBtn.__hasListener) {
-        syncSheetBtn.__hasListener = true;
-        syncSheetBtn.addEventListener('click', async () => {
-            const refCode = document.getElementById('po-match-ref').value.trim();
-            if (!refCode || !extractedPoNumber) { window.showToast('Please provide a valid reference code to match.', 'error'); return; }
-
-            triggerHaptic(); window.showToast('Syncing PO reference to Google Sheets...', 'info');
-
-            try {
-                const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/sync-po-to-sheet`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ po_number: extractedPoNumber, ref_code: refCode }) });
-                const result = await res.json();
-                if (!res.ok || !result.success) throw new Error(result.error || 'Sync failed');
-                window.showToast(`Successfully updated row ${result.updatedRow} with ${extractedPoNumber} ✔`, 'success');
-            } catch (err) { window.showToast(err.message || 'Failed to update Google Sheet', 'error'); }
-        });
-    }
-
     document.getElementById('btn-copy-email').addEventListener('click', () => {
         const textarea = document.getElementById('po-email-draft'); textarea.select(); navigator.clipboard.writeText(textarea.value); triggerHaptic(); window.showToast('Email draft copied to clipboard!', 'success');
     });
@@ -509,21 +491,51 @@ function initVWTracker() {
     if (!tableBody) return;
     let allVWRows = [];
 
+    const getPill = (val, type) => {
+        const text = String(val).trim().toLowerCase();
+        if (text === '' || text === 'na' || text === 'n/a' || text === 'no') return `<span class="sync-icon no">✖</span>`;
+        if (text.includes('yes') || text.includes('uploaded')) return `<span class="sync-icon yes">✔</span>`;
+        return `<span class="vw-pill warn" style="font-size:8px;">Pending</span>`;
+    };
+
+    const getStatusPill = (status) => {
+        const s = String(status).trim().toLowerCase();
+        if (s.includes('completed') || s.includes('approved')) return `<span class="vw-pill success">${status}</span>`;
+        if (s.includes('pending') || s.includes('progress') || s.includes('ongoing')) return `<span class="vw-pill warn">${status}</span>`;
+        if (s.includes('rejected') || s.includes('cancelled')) return `<span class="vw-pill danger">${status}</span>`;
+        return `<span class="vw-pill neutral">${status || 'Unknown'}</span>`;
+    };
+
     const renderTable = (rowsToRender) => {
-        if (!rowsToRender.length) { tableBody.innerHTML = `<tr><td colspan="6" style="padding:40px; text-align:center; color:var(--ink-soft);">No matching works found.</td></tr>`; return; }
+        if (!rowsToRender.length) { tableBody.innerHTML = `<tr><td colspan="7" style="padding:40px; text-align:center; color:var(--ink-soft);">No matching works found.</td></tr>`; return; }
         tableBody.innerHTML = '';
+        
+        rowsToRender.sort((a, b) => (b.urgencyScore || 0) - (a.urgencyScore || 0));
+
         rowsToRender.forEach(item => {
             const tr = document.createElement('tr');
-            tr.style.cssText = 'cursor:pointer; transition:background 0.2s;';
-            tr.onmouseover = () => tr.style.background = 'rgba(255,255,255,0.03)'; tr.onmouseout = () => tr.style.background = 'transparent';
+            tr.style.cssText = `cursor:pointer; transition:background 0.2s; border-bottom:var(--glass-border); ${item.urgencyScore > 0 ? 'background:rgba(229,169,60,0.02);' : ''}`;
+            tr.onmouseover = () => tr.style.background = 'rgba(255,255,255,0.05)'; 
+            tr.onmouseout = () => tr.style.background = item.urgencyScore > 0 ? 'rgba(229,169,60,0.02)' : 'transparent';
 
             tr.innerHTML = `
-                <td style="padding:12px 16px; border-bottom:var(--glass-border); font-family:var(--font-mono); font-size:12px;"><div style="font-weight:600; color:var(--ink);">${item.crmRef || '—'}</div><div style="color:var(--ink-soft); font-size:11px;">${item.qtnRef || ''}</div></td>
-                <td style="padding:12px 16px; border-bottom:var(--glass-border);"><div style="font-weight:500; color:var(--ink); max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.description}">${item.description || '—'}</div><div style="color:var(--ink-soft); font-size:11px;">${item.building || 'General'}</div></td>
-                <td style="padding:12px 16px; border-bottom:var(--glass-border); font-size:12px;"><div>${item.supplierName || '—'}</div><div style="color:var(--ink-soft); font-size:11px;">Assignee: ${item.qtnAssignedTo || 'Unassigned'}</div></td>
-                <td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right; font-family:var(--font-mono); font-size:12px;">${item.supplierCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                <td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right; font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--con);">${item.waslCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</td>
-                <td style="padding:12px 16px; border-bottom:var(--glass-border);"><span style="font-family:var(--font-mono); font-size:10px; padding:4px 8px; border-radius:12px; background:rgba(112,148,122,0.15); color:var(--con);">${item.worksStatus}</span></td>
+                <td style="padding:16px; border-right:var(--glass-border);">
+                    <div style="font-weight:600; font-family:var(--font-mono); font-size:12px; color:var(--ink);">${item.crmRef || '—'}</div>
+                    <div style="color:var(--ink-soft); font-size:11px; margin-top:4px;">${item.qtnRef || ''}</div>
+                </td>
+                <td style="padding:16px;">
+                    <div style="margin-bottom:8px;">${getStatusPill(item.worksStatus)}</div>
+                    <div style="font-weight:500; color:var(--ink); max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.description}">${item.description || '—'}</div>
+                    <div style="color:var(--ink-soft); font-size:10px; margin-top:4px; text-transform:uppercase;">${item.building || 'General'}</div>
+                </td>
+                <td style="padding:16px; text-align:center;">${getPill(item.tijoriSync)}</td>
+                <td style="padding:16px; font-family:var(--font-mono); font-size:11px; color:${item.waslPo ? 'var(--con)' : 'var(--err)'};">${item.waslPo || 'PENDING'}</td>
+                <td style="padding:16px; text-align:center;">${getPill(item.wcrSync)}</td>
+                <td style="padding:16px; text-align:center;">${getPill(item.sapSync)}</td>
+                <td style="padding:16px; text-align:right; font-family:var(--font-mono); font-size:12px;">
+                    <div style="color:var(--con); font-weight:600;" title="WASL Cost">${item.waslCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                    <div style="color:var(--ink-soft); font-size:10px; margin-top:4px;" title="Supplier Cost">V: ${item.supplierCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+                </td>
             `;
 
             tr.addEventListener('click', () => {
@@ -545,34 +557,86 @@ function initVWTracker() {
 
     const loadVWData = async () => {
         try {
-            tableBody.innerHTML = `<tr><td colspan="6" style="padding:50px 20px; text-align:center; color:var(--ink-soft);">Syncing Variable Works with Google Sheets...</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Establishing read-only link to Google Cloud...</td></tr>`;
             const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/vw-tracker`);
             if (!res.ok) throw new Error('Failed to fetch VW tracker');
-            const data = await res.json();
-
-            document.getElementById('vw-stat-count').textContent = data.count;
-            document.getElementById('vw-stat-supplier').textContent = data.totalSupplierCost.toLocaleString('en-US', { minimumFractionDigits: 2 });
-            document.getElementById('vw-stat-wasl').textContent = data.totalWaslCost.toLocaleString('en-US', { minimumFractionDigits: 2 });
             
-            const estMargin = data.totalWaslCost - data.totalSupplierCost;
-            const marginEl = document.getElementById('vw-stat-margin');
-            marginEl.textContent = estMargin.toLocaleString('en-US', { minimumFractionDigits: 2 });
-            marginEl.style.color = estMargin >= 0 ? 'var(--con)' : 'var(--err)';
+            const data = await res.json();
+            if(!data.rows || data.rows.length <= 1) {
+                tableBody.innerHTML = `<tr><td colspan="7" style="padding:50px 20px; text-align:center; color:var(--ink-soft);">Tracker sheet is empty or unavailable.</td></tr>`;
+                return;
+            }
 
-            allVWRows = data.rows; renderTable(allVWRows);
-        } catch (e) { tableBody.innerHTML = `<tr><td colspan="6" style="padding:50px 20px; text-align:center; color:var(--err);">Failed to load VW tracker. Check server logs.</td></tr>`; }
+            const headers = data.rows[0].map(h => String(h).toLowerCase());
+            const dataRows = data.rows.slice(1);
+
+            const idxCrm = headers.findIndex(h => h.includes('crm ref'));
+            const idxQtn = headers.findIndex(h => h.includes('qtn ref'));
+            const idxDesc = headers.findIndex(h => h.includes('description'));
+            const idxBuilding = headers.findIndex(h => h.includes('building'));
+            const idxStatus = headers.findIndex(h => h.includes('status'));
+            const idxWaslPo = headers.findIndex(h => h.includes('purchase order') || h.includes('lpo'));
+            const idxTijori = headers.findIndex(h => h.includes('tijori'));
+            const idxWcr = headers.findIndex(h => h.includes('wcr prepared'));
+            const idxSap = headers.findIndex(h => h.includes('sap') && h.includes('uploaded'));
+            const idxWaslCost = headers.findIndex(h => h.includes('total wasl cost') || (h.includes('wasl') && h.includes('cost')));
+            const idxSupCost = headers.findIndex(h => h.includes('supplier cost') || (h.includes('supplier') && h.includes('cost')));
+
+            let pendingRevenue = 0;
+            let poBlockers = 0;
+            let missingWcrs = 0;
+            let missingSap = 0;
+
+            allVWRows = dataRows.map((row) => {
+                const getVal = (idx) => idx !== -1 ? (row[idx] || '') : '';
+                
+                const crmRef = getVal(idxCrm);
+                const status = getVal(idxStatus);
+                const waslPo = getVal(idxWaslPo);
+                const wcrSync = getVal(idxWcr);
+                const sapSync = getVal(idxSap);
+                const waslCost = Number(String(getVal(idxWaslCost)).replace(/,/g, '')) || 0;
+                
+                const isApproved = status.toLowerCase().includes('approved') || status.toLowerCase().includes('completed');
+                let urgencyScore = 0;
+
+                if (isApproved && !waslPo) { poBlockers++; urgencyScore += 2; }
+                if (isApproved && waslPo && !String(wcrSync).toLowerCase().includes('yes')) { missingWcrs++; urgencyScore += 3; }
+                if (isApproved && String(wcrSync).toLowerCase().includes('yes') && !String(sapSync).toLowerCase().includes('yes')) { missingSap++; urgencyScore += 4; }
+                
+                if (isApproved && (!String(wcrSync).toLowerCase().includes('yes') || !String(sapSync).toLowerCase().includes('yes'))) {
+                    pendingRevenue += waslCost;
+                }
+
+                return {
+                    crmRef, qtnRef: getVal(idxQtn), description: getVal(idxDesc), building: getVal(idxBuilding),
+                    worksStatus: status, waslPo, tijoriSync: getVal(idxTijori), wcrSync, sapSync,
+                    waslCost, supplierCost: Number(String(getVal(idxSupCost)).replace(/,/g, '')) || 0,
+                    urgencyScore, rawHeaders: data.rows[0], rawValues: row
+                };
+            });
+
+            if(document.getElementById('vw-stat-revenue')) document.getElementById('vw-stat-revenue').textContent = pendingRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 });
+            if(document.getElementById('vw-stat-po-blockers')) document.getElementById('vw-stat-po-blockers').textContent = poBlockers;
+            if(document.getElementById('vw-stat-missing-wcrs')) document.getElementById('vw-stat-missing-wcrs').textContent = missingWcrs;
+            if(document.getElementById('vw-stat-sap-missing')) document.getElementById('vw-stat-sap-missing').textContent = missingSap;
+
+            renderTable(allVWRows);
+        } catch (e) { 
+            tableBody.innerHTML = `<tr><td colspan="7" style="padding:50px 20px; text-align:center; color:var(--err);">Failed to read Google Sheet.</td></tr>`; 
+        }
     };
     loadVWData();
 
-    if (refreshBtn) refreshBtn.addEventListener('click', () => { triggerHaptic(); loadVWData(); window.showToast('VW Tracker synced', 'success'); });
+    if (refreshBtn) refreshBtn.addEventListener('click', () => { triggerHaptic(); loadVWData(); window.showToast('Pulling live updates...', 'info'); });
+    
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
             const queryStr = e.target.value.toLowerCase().trim();
             if (!queryStr) { renderTable(allVWRows); return; }
             const filtered = allVWRows.filter(item => 
-                String(item.crmRef).toLowerCase().includes(queryStr) || String(item.qtnRef).toLowerCase().includes(queryStr) ||
-                String(item.description).toLowerCase().includes(queryStr) || String(item.building).toLowerCase().includes(queryStr) ||
-                String(item.supplierName).toLowerCase().includes(queryStr) || String(item.worksStatus).toLowerCase().includes(queryStr)
+                String(item.crmRef).toLowerCase().includes(queryStr) || String(item.building).toLowerCase().includes(queryStr) ||
+                String(item.worksStatus).toLowerCase().includes(queryStr) || String(item.waslPo).toLowerCase().includes(queryStr)
             );
             renderTable(filtered);
         });
@@ -1036,7 +1100,6 @@ async function initVault() {
     if(filesRes.ok) {
         const allFiles = await filesRes.json();
         
-        // Massive Mobile Optimization: Lazy Load Intersection Observer
         const observer = new IntersectionObserver((entries, obs) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -1045,7 +1108,7 @@ async function initVault() {
                     obs.unobserve(el);
                 }
             });
-        }, { rootMargin: '300px' }); // Load shortly before entering screen
+        }, { rootMargin: '300px' }); 
 
         const renderGrid = (list, containerId) => {
             const container = document.querySelector(`#${containerId} > div`);
@@ -1073,7 +1136,6 @@ async function initVault() {
         renderGrid(allFiles.filter(f => /\.(mp4|mov|m4v)$/i.test(f.filename)), 'timeline-videos');
         renderGrid(allFiles.filter(f => /\.(pdf)$/i.test(f.filename)), 'timeline-docs');
 
-        // Apply Intersection Observer
         document.querySelectorAll('.lazy-bg').forEach(card => observer.observe(card));
 
         document.querySelectorAll('.media-card').forEach(card => {
@@ -1087,7 +1149,6 @@ async function initVault() {
                 document.getElementById('lightbox-img').src = card.getAttribute('data-url'); 
                 document.getElementById('photo-lightbox').classList.add('active');
 
-                // Dynamic "Send to Exhibition" toggle generation
                 let toggleBtn = document.getElementById('btn-toggle-public');
                 if (!toggleBtn) {
                     toggleBtn = document.createElement('button');
@@ -1147,10 +1208,7 @@ document.getElementById('btn-delete-vault-photo').addEventListener('click', asyn
         const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/delete/${encodeURIComponent(activeLightboxFile)}`, { method: 'DELETE' });
         if(res.ok) { 
           document.getElementById('photo-lightbox').classList.remove('active'); 
-          
-          // Ensure it's also pulled from the public site if it was there
           await deleteDoc(doc(db, 'public_photos', activeLightboxFile));
-          
           initVault(); 
           window.showToast('Item deleted successfully', 'success');
         }

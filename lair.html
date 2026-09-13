@@ -172,13 +172,12 @@
   .num-btn { width: 75px; height: 75px; border-radius: 50%; font-size: 26px; font-family: var(--font-body); font-weight: 300; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.1s; }
   .num-btn:active { background: rgba(255,255,255,0.25); transform: scale(0.92); }
 
-  /* New Visual Status Pills */
+  /* Variable Works Specific CSS */
   .vw-pill { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 12px; font-family: var(--font-mono); font-size: 10px; font-weight: 500; text-transform: uppercase; border: 1px solid transparent; }
   .vw-pill.success { background: rgba(112, 148, 122, 0.15); color: var(--con); border-color: rgba(112, 148, 122, 0.3); }
   .vw-pill.warn { background: rgba(229, 169, 60, 0.15); color: var(--warn); border-color: rgba(229, 169, 60, 0.3); }
   .vw-pill.danger { background: rgba(217, 83, 79, 0.15); color: var(--err); border-color: rgba(217, 83, 79, 0.3); }
   .vw-pill.neutral { background: var(--input-bg); color: var(--ink-soft); border: var(--glass-border); }
-  
   .sync-icon { width:16px; height:16px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:10px; margin-right:6px; font-weight:bold; }
   .sync-icon.yes { background: var(--con); color: #000; }
   .sync-icon.no { background: transparent; border: 1px solid var(--ink-soft); color: transparent; }
@@ -219,9 +218,7 @@
   </div>
 
   <main id="swipe-zone">
-    <!-- DASHBOARD VIEW REMOVED FOR BREVITY - PRESERVED IN YOUR FILE -->
     <section id="view-dashboard" class="view-container active">
-        <!-- Kept exactly the same as your code -->
       <div class="card stagger-1" style="padding:22px; display:flex; justify-content:space-around; align-items:center; margin-bottom:20px;">
           <div style="text-align:center;">
               <h3 style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:4px;">Dubai HQ</h3>
@@ -263,21 +260,115 @@
                 <input type="text" id="terminal-in" style="background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.2); border-radius:0; padding:6px 0; color:#fff; font-family:var(--font-mono); font-size:13px; width:100%; outline:none;" placeholder="Execute command..." autocomplete="off">
             </div>
         </div>
+
+        <div class="card stagger-3" id="fridge-card" style="padding:22px; display:flex; flex-direction:column;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+              <h2 style="font-size:13px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft);">The Fridge Door</h2>
+              <span id="fridge-status" style="font-size:11px; font-family:var(--font-mono); color:var(--ink-soft);">Synced</span>
+          </div>
+          <textarea id="fridge-door-text" placeholder="Write a shared note here..." spellcheck="false" style="flex:1; min-height:140px; resize:none; font-family:var(--font-body); font-size:14px; line-height:1.6; background:transparent; padding:0; border:none;"></textarea>
+        </div>
+
+        <div class="card stagger-4" style="padding:22px; display:flex; flex-direction:column;">
+          <h2 style="font-size:13px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft); margin-bottom:14px;">Live Radar</h2>
+          <div id="radar-feed" style="flex:1; overflow-y:auto; max-height:140px;">
+             <p style="font-size:12px; color:var(--ink-soft);">Waiting for telemetry...</p>
+          </div>
+        </div>
       </div>
     </section>
 
     <section id="view-work" class="view-container">
       <div style="display:flex; justify-content:center; margin-bottom: 20px;">
           <div class="segment-pill">
-              <button class="seg-btn active haptic-btn" data-workseg="vw">Variable Works</button>
-              <button class="seg-btn haptic-btn" data-workseg="auditor">Auditor PRO</button>
+              <button class="seg-btn active haptic-btn" data-workseg="auditor">Auditor PRO</button>
+              <button class="seg-btn haptic-btn" data-workseg="vw">Variable Works</button>
               <button class="seg-btn haptic-btn" data-workseg="facility">Facility Ops</button>
               <button class="seg-btn haptic-btn" data-workseg="academic">Academic Matrix</button>
           </div>
       </div>
 
-      <!-- NEW READ-ONLY VARIABLE WORKS DASHBOARD -->
-      <div id="work-vw" class="work-module active stagger-1">
+      <div id="work-auditor" class="work-module active stagger-1">
+          <div class="card" style="padding: 24px;">
+              <div class="card-head" style="margin-bottom:24px;">
+                  <h2 style="display:flex; align-items:center; gap:8px;">Financial Ledger <span style="font-family:var(--font-mono); font-size:9px; background:var(--glass-bg); border:var(--glass-border); padding:4px 8px; border-radius:12px; color:var(--ink-soft); text-transform:uppercase;">Google Cloud Active</span></h2>
+              </div>
+              
+              <div style="display:flex; align-items:center; gap:12px; margin-bottom: 24px; flex-wrap:wrap;">
+                  <h3 style="font-family:var(--font-display); font-size:22px; margin:0;">Auditor <span style="color:var(--con);">PRO</span></h3>
+                  <span style="font-family:var(--font-mono); font-size:10px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px;">Auto-Retry</span>
+                  <span style="font-family:var(--font-mono); font-size:10px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px;">Enabled</span>
+                  <div style="flex:1;"></div>
+                  <button id="btn-auditor-settings" class="btn-secondary haptic-btn" style="padding:8px; color:var(--warn);" title="Configure Default Task ID"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+              </div>
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:24px;">
+                  <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">SESSION INVOICES</p>
+                      <h4 id="auditor-count" style="font-size:20px; font-weight:600;">0</h4>
+                  </div>
+                  <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">TOTAL NET</p>
+                      <h4 id="auditor-net" style="font-size:20px; font-weight:600;">0.00</h4>
+                  </div>
+                  <div style="background:var(--input-bg); padding:16px; border-radius:var(--radius-sm); border:var(--glass-border);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); margin-bottom:6px;">TOTAL VAT</p>
+                      <h4 id="auditor-vat" style="font-size:20px; font-weight:600;">0.00</h4>
+                  </div>
+                  <div style="background:rgba(112,148,122,0.1); padding:16px; border-radius:var(--radius-sm); border:1px solid rgba(112,148,122,0.3);">
+                      <p style="font-family:var(--font-mono); font-size:10px; color:var(--con); margin-bottom:6px;">GROSS TOTAL</p>
+                      <h4 id="auditor-gross" style="font-size:20px; font-weight:600; color:var(--con);">0.00</h4>
+                  </div>
+              </div>
+
+              <label class="field-label">GLOBAL TASK ID</label>
+              <input type="text" id="work-task-id" placeholder="e.g., FM-2026-901" style="margin-bottom:24px;">
+
+              <label class="field-label">BATCH UPLOAD</label>
+              <div id="auditor-dropzone" style="background:var(--input-bg); border:1px dashed rgba(255,255,255,0.2); border-radius:var(--radius-sm); padding:32px; text-align:center; cursor:pointer;" onclick="document.getElementById('batch-upload-input').click()">
+                  <input type="file" id="batch-upload-input" accept="application/pdf,image/*" style="display:none;" multiple>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--con)" stroke-width="2" style="margin-bottom:12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                  <p id="auditor-drop-text" style="font-size:13px; font-weight:500;">Drop multiple PDFs or Images here</p>
+                  <p style="font-size:11px; color:var(--ink-soft); margin-top:8px;">Auto-extracts VAT & Totals</p>
+              </div>
+
+              <div id="auditor-queue-container" style="display:none; flex-direction:column; gap:8px; margin-top:16px;">
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <h3 style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase;">Queue (<span id="auditor-queue-count">0</span>)</h3>
+                  </div>
+                  <div id="auditor-file-list" style="display:flex; flex-direction:column; gap:8px; max-height:200px; overflow-y:auto;"></div>
+              </div>
+          </div>
+
+          <div class="card stagger-2" style="padding:0; overflow:hidden; margin-top:20px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:18px 22px; border-bottom:var(--glass-border);">
+                  <h2 style="font-family:var(--font-display); font-size:16px; font-weight:500; margin:0;">Ledger</h2>
+                  <button id="auditor-export-btn" class="btn-secondary haptic-btn" style="padding:8px 14px; font-size:11px;">Export CSV</button>
+              </div>
+              <div class="ledger-scroll-wrapper" style="overflow-x:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;">
+                  <table style="width:100%; border-collapse:collapse; font-size:13px; min-width:760px;">
+                      <thead>
+                          <tr style="font-family:var(--font-mono); font-size:10px; text-transform:uppercase; color:var(--ink-soft); text-align:left;">
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border); width:36px; text-align:center;">·</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">Task ID</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">Subcontractor</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">Invoice #</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">Date</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border);">TRN</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right;">Net</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right;">VAT</th>
+                              <th style="padding:12px 16px; border-bottom:var(--glass-border); text-align:right;">Total</th>
+                          </tr>
+                      </thead>
+                      <tbody id="auditor-table-body">
+                          <tr id="auditor-empty-row"><td colspan="9" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Syncing live records with Sheets Matrix...</td></tr>
+                      </tbody>
+                  </table>
+              </div>
+          </div>
+      </div>
+
+      <div id="work-vw" class="work-module stagger-2" style="display:none;">
           <div class="card" style="padding: 24px; margin-bottom: 20px;">
               <div class="card-head" style="margin-bottom:20px;">
                   <h2 style="display:flex; align-items:center; gap:8px;">Facility Ops Command <span style="font-family:var(--font-mono); font-size:9px; background:rgba(112,148,122,0.15); border:1px solid rgba(112,148,122,0.4); padding:4px 8px; border-radius:12px; color:var(--con); text-transform:uppercase;">Live Read-Only Matrix</span></h2>
@@ -309,6 +400,15 @@
 
               <input type="text" id="vw-search-input" placeholder="Quick search building, CRM ref, or status..." style="width:100%; margin-bottom:0;">
           </div>
+
+          <div id="vw-briefing-card" class="card stagger-2" style="padding: 24px; margin-bottom: 20px;">
+              <div class="card-head" style="margin-bottom:12px;">
+                  <h2 style="display:flex; align-items:center; gap:8px; font-size:16px;">AI Compliance & Billing Briefing <span style="font-family:var(--font-mono); font-size:9px; background:rgba(112,148,122,0.2); color:var(--con); padding:4px 8px; border-radius:12px; text-transform:uppercase;">Gemini Synthesis</span></h2>
+                  <button onclick="loadVWBriefing()" class="btn-secondary haptic-btn" style="padding:6px 12px; font-size:11px;">Refresh Analysis</button>
+              </div>
+              <p id="vw-briefing-text" class="text-sm" style="color:var(--ink-soft); font-style:italic; margin-bottom:16px; font-size:13px; line-height:1.5;">Synthesizing Variable Works portfolio compliance...</p>
+              <div id="vw-metrics-row" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; padding-top:14px; border-top:var(--glass-border); font-size:12px;"></div>
+          </div>
         
           <div class="card stagger-2" style="padding:0; overflow:hidden;">
               <div class="ledger-scroll-wrapper" style="overflow-x:auto; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; min-height:400px;">
@@ -332,14 +432,6 @@
           </div>
       </div>
 
-      <!-- OLD AUDITOR PRO MODULE -->
-      <div id="work-auditor" class="work-module stagger-2" style="display:none;">
-          <div class="card" style="padding: 24px; text-align:center; min-height: 400px; display:flex; flex-direction:column; justify-content:center;">
-              <h3 style="font-family:var(--font-display); margin-bottom:12px;">Auditor PRO Ledger</h3>
-              <p style="font-size:13px; color:var(--ink-soft);">Module preserved in code. Use side navigation to access.</p>
-          </div>
-      </div>
-
       <div id="work-facility" class="work-module stagger-2" style="display:none;">
           <div class="card" style="padding: 24px; text-align:center; min-height: 400px; display:flex; flex-direction:column; justify-content:center;">
               <h3 style="font-family:var(--font-display); margin-bottom:12px;">Facility Ops Smart Slots</h3>
@@ -355,14 +447,155 @@
       </div>
     </section>
 
-    <!-- OTHER VIEWS PRESERVED -->
     <section id="view-drop" class="view-container">
-        <!-- Vault Content Kept Exactly As Is -->
+      <section class="card stagger-1" style="margin-bottom:24px; text-align:center;">
+        <div class="card-head" style="justify-content:center; margin-bottom:14px;"><h2>Lair Cloud Drive</h2></div>
+        <div class="storage-gauge-wrapper" id="drop-gauge" style="--pct: 0;">
+          <div class="storage-gauge-inner">
+            <span id="drop-usage-text" style="font-family:var(--font-mono); font-size:22px; font-weight:600;">0GB</span>
+            <span style="font-size:11px; color:var(--ink-soft);">of 100GB Limit</span>
+          </div>
+        </div>
+        <div style="background:var(--input-bg); border:1px dashed rgba(128,128,128,0.4); border-radius:var(--radius-sm); padding:20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+          <input type="file" id="vault-photo-input" accept="image/*,video/*,application/pdf" style="display:none;" multiple>
+          <input type="file" id="vault-camera-input" accept="image/*" capture="environment" style="display:none;">
+          <button class="btn-secondary haptic-btn" onclick="document.getElementById('vault-photo-input').click()">Upload Files</button>
+          <button class="btn-primary haptic-btn" onclick="document.getElementById('vault-camera-input').click()">Direct Camera to PC</button>
+          <p id="vault-status" style="font-size:12px; color:var(--con); margin-top:10px; width:100%; display:none;"></p>
+        </div>
+      </section>
+
+      <section class="card stagger-2">
+        <div style="display:flex; justify-content:center;">
+            <div class="segment-pill">
+                <button class="seg-btn active haptic-btn" data-seg="photos">Photography</button>
+                <button class="seg-btn haptic-btn" data-seg="videos">Videos</button>
+                <button class="seg-btn haptic-btn" data-seg="docs">Documents</button>
+            </div>
+        </div>
+        <div id="timeline-photos" class="vault-timeline active">
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
+        </div>
+        <div id="timeline-videos" class="vault-timeline">
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
+        </div>
+        <div id="timeline-docs" class="vault-timeline">
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap:14px;"></div>
+        </div>
+      </section>
     </section>
-    
+
+    <section id="view-theater" class="view-container">
+      <div class="theater-grid">
+        <div style="display:flex; flex-direction:column; gap:24px;">
+          <section class="card stagger-1" style="padding:22px;">
+            <div class="theater-container" id="theater-frame-box" style="margin-bottom:18px;">
+                <div id="theater-join-overlay" style="position:absolute; inset:0; z-index:50; background:rgba(0,0,0,0.85); display:flex; flex-direction:column; align-items:center; justify-content:center; backdrop-filter:var(--glass-blur);">
+                    <h3 style="font-family:var(--font-display); font-size:22px; margin-bottom:14px;">The Lair Theater</h3>
+                    <button id="btn-join-party" class="btn-primary haptic-btn" style="font-size:13px; padding:12px 24px;">Initialize Watch Party</button>
+                    <p style="font-size:11px; color:var(--ink-soft); margin-top:10px; text-align:center;">Required to bypass mobile autoplay restrictions</p>
+                </div>
+                
+                <div id="theater-player-slot" style="width:100%; height:100%; display:none; align-items:center; justify-content:center; color:var(--ink-soft); font-family:var(--font-mono); font-size:13px;">
+                    <span id="theater-placeholder-text">Waiting for media stream...</span>
+                </div>
+                <div id="yt-container" style="width:100%; height:100%; display:none; pointer-events:auto;">
+                    <div id="yt-player-slot"></div>
+                </div>
+            </div>
+            
+            <div style="display:flex; gap:12px;">
+              <input type="text" id="cowatch-url-input" placeholder="Direct Video URL (.mp4 or YouTube)...">
+              <button class="btn-primary haptic-btn" id="btn-load-cowatch">Stream</button>
+            </div>
+          </section>
+
+          <section class="card stagger-2" style="padding:22px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <h2 style="font-family:var(--font-display); font-size:19px;">Vault Watchlist</h2>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-bottom:18px;">
+              <input type="text" id="tmdb-search-input" placeholder="Search TMDB to add to Wishlist...">
+              <button class="btn-secondary haptic-btn" id="btn-tmdb-search" style="width:auto;">Search</button>
+            </div>
+            <div class="carousel-snap" id="tmdb-results" style="margin-bottom:18px;"></div>
+            
+            <div class="carousel-snap" id="shared-watchlist">
+                <p style="font-size:12px; color:var(--ink-soft);">Loading movies...</p>
+            </div>
+          </section>
+        </div>
+
+        <section class="card stagger-3" style="display:flex; flex-direction:column; min-height:420px; padding:22px;">
+          <h2 style="font-family:var(--font-display); font-size:19px; margin-bottom:18px;">Live Chat</h2>
+          <div id="chat-window" style="flex:1; overflow-y:auto; margin-bottom:14px; font-size:14px; display:flex; flex-direction:column; gap:8px;"></div>
+          <div style="display:flex; gap:8px;">
+            <input type="text" id="chat-input" placeholder="Write message...">
+            <button class="btn-primary haptic-btn" id="btn-send-chat">&rarr;</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section id="view-voice" class="view-container">
+      <div class="card stagger-1" style="max-width:460px; margin:0 auto; padding:36px 28px; text-align:center;">
+        <h2 style="font-family:var(--font-display); font-size:22px; margin-bottom:8px;">Voice Room</h2>
+        <p style="font-size:12px; color:var(--ink-soft); margin-bottom:28px;">Private 1:1 voice link. Direct WebRTC audio streams without cloud relay.</p>
+
+        <div class="voice-orb" id="voice-orb"><div class="voice-orb-inner" id="voice-orb-label">Idle</div></div>
+        <div class="voice-status-row"><span class="sys-dot" id="voice-status-dot" style="color:var(--err);"></span><span id="voice-status-text">Not connected</span></div>
+
+        <div class="voice-controls">
+          <button class="voice-btn haptic-btn" id="btn-voice-join" title="Join Call">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          </button>
+          <button class="voice-btn haptic-btn muted" id="btn-voice-mute" title="Toggle Mute" style="display:none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+          </button>
+          <button class="voice-btn danger haptic-btn" id="btn-voice-leave" title="End Call" style="display:none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+          </button>
+        </div>
+        <audio id="voice-remote-audio" autoplay playsinline style="display:none;"></audio>
+      </div>
+    </section>
   </main>
 
-  <!-- MODALS -->
+  <div id="pin-modal" class="modal-overlay">
+    <div style="display:flex; flex-direction:column; align-items:center;">
+      <h2 style="font-family:var(--font-display); font-size:20px; margin-bottom:24px;">Enter Passcode</h2>
+      <div class="pin-dots" id="pin-dots">
+        <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+      </div>
+      <div class="numpad">
+        <button class="num-btn haptic-btn" data-num="1">1</button>
+        <button class="num-btn haptic-btn" data-num="2">2</button>
+        <button class="num-btn haptic-btn" data-num="3">3</button>
+        <button class="num-btn haptic-btn" data-num="4">4</button>
+        <button class="num-btn haptic-btn" data-num="5">5</button>
+        <button class="num-btn haptic-btn" data-num="6">6</button>
+        <button class="num-btn haptic-btn" data-num="7">7</button>
+        <button class="num-btn haptic-btn" data-num="8">8</button>
+        <button class="num-btn haptic-btn" data-num="9">9</button>
+        <button class="num-btn haptic-btn" style="visibility:hidden;">*</button>
+        <button class="num-btn haptic-btn" data-num="0">0</button>
+        <button class="num-btn haptic-btn" id="btn-pin-delete">⌫</button>
+      </div>
+      <button class="btn-secondary haptic-btn" style="margin-top:40px; border:none; background:transparent;" onclick="document.getElementById('pin-modal').classList.remove('active')">Cancel</button>
+    </div>
+  </div>
+  
+  <div id="photo-lightbox" class="modal-overlay">
+    <div class="card" style="max-width:90%; text-align:center; padding:20px;">
+      <img id="lightbox-img" src="" style="max-width:100%; max-height:70vh; border-radius:var(--radius-sm); margin-bottom:18px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; gap: 12px;">
+        <button id="btn-delete-vault-photo" class="haptic-btn" style="color:var(--err); font-size:13px; font-weight:600; flex:1; text-align:left;">Delete from Vault</button>
+        <button class="btn-secondary haptic-btn" onclick="document.getElementById('photo-lightbox').classList.remove('active')">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div id="vw-dossier-modal" class="modal-overlay">
     <div class="card" style="width:100%; max-width:700px; max-height:85vh; display:flex; flex-direction:column; padding:30px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; border-bottom:var(--glass-border); padding-bottom:12px;">
@@ -403,6 +636,17 @@
                 <textarea id="po-email-draft" rows="6" style="width:100%; font-family:var(--font-mono); font-size:12px; line-height:1.5; resize:vertical;"></textarea>
             </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm-modal" class="modal-overlay">
+    <div class="card" style="max-width:360px; text-align:center; padding:26px;">
+      <h3 id="confirm-title" style="font-family:var(--font-display); font-size:18px; margin-bottom:8px;">Are you sure?</h3>
+      <p id="confirm-msg" style="font-size:13px; color:var(--ink-soft); margin-bottom:20px;">This action cannot be undone.</p>
+      <div style="display:flex; gap:10px;">
+        <button id="btn-confirm-cancel" class="btn-secondary haptic-btn" style="flex:1;">Cancel</button>
+        <button id="btn-confirm-ok" class="btn-primary haptic-btn" style="flex:1; background:var(--err); color:#fff;">Confirm</button>
       </div>
     </div>
   </div>
