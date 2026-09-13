@@ -153,12 +153,19 @@ app.post('/api/fridge/log', verifyToken, async (req, res) => {
 
         await sheets.spreadsheets.values.append({
             spreadsheetId: FRIDGE_SHEET_ID,
-            range: "'Check-ins'!A:E", 
+            range: "'Check-ins'!A:E",
             valueInputOption: 'USER_ENTERED',
             requestBody: { values: [rowData] }
         });
 
-      const uploadMagnet = multer({ dest: path.join(__dirname, 'uploads') });
+        res.json({ success: true });
+    } catch(e) {
+        console.error('[Lair OS] Fridge Log Error:', e.message);
+        res.status(500).json({ error: 'Failed to log to Google Sheets' });
+    }
+});
+
+const uploadMagnet = multer({ dest: path.join(__dirname, 'uploads') });
 
 app.post('/api/fridge/save-magnet', verifyToken, uploadMagnet.single('magnet_image'), async (req, res) => {
     try {
@@ -189,13 +196,6 @@ app.post('/api/fridge/save-magnet', verifyToken, uploadMagnet.single('magnet_ima
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
         console.error('[Lair OS] Magnet Drive Error:', e.message);
         res.status(500).json({ error: 'Failed to upload to Google Drive' });
-    }
-});
-
-        res.json({ success: true });
-    } catch(e) { 
-        console.error('[Lair OS] Fridge Log Error:', e.message);
-        res.status(500).json({ error: 'Failed to log to Google Sheets' }); 
     }
 });
 
