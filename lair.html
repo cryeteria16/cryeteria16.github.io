@@ -134,7 +134,7 @@
   .vault-thumb-card { aspect-ratio: 1; border-radius: var(--radius-sm); cursor: pointer; border: var(--glass-border); box-shadow: inset 0 1px 1px rgba(255,255,255,0.1), 0 10px 20px rgba(0,0,0,0.2); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
   .vault-thumb-card:hover { transform: scale(1.05); }
 
-  .storage-gauge-wrapper { position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; border-radius: 50%; background: conic-gradient(var(--con) calc(var(--pct) * 1%), var(--glass-bg) 0); box-shadow: 0 0 50px -10px var(--con), inset 0 0 20px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); }
+  .storage-gauge-wrapper { position: relative; width: 150px; height: 150px; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; border-radius: 50%; background: conic-gradient(var(--con) calc(var(--pct) * 1%), var(--glass-bg) 0); box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
   .storage-gauge-inner { width: 126px; height: 126px; background: var(--bg); backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
   .view-container { display: none; opacity: 0; } 
@@ -192,12 +192,6 @@
   .toggle-switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: 0.3s; box-shadow:0 2px 5px rgba(0,0,0,0.3);}
   .toggle-switch:checked { background: var(--accent); }
   .toggle-switch:checked::after { transform: translateX(16px); }
-
-  /* Fridge Magnet CSS */
-  #fridge-magnet { position:fixed; top:120px; right:40px; width:300px; height:360px; background:rgba(14,15,20,0.85); backdrop-filter:var(--glass-blur); border:var(--glass-border); border-radius:var(--radius-sm); z-index:800; display:flex; flex-direction:column; box-shadow:var(--glass-glow); overflow:hidden; }
-  #magnet-header { padding:12px 16px; border-bottom:var(--glass-border); display:flex; justify-content:space-between; align-items:center; cursor:move; background:rgba(255,255,255,0.02); }
-  #magnet-canvas { flex:1; width:100%; cursor:crosshair; background:transparent; display:block; touch-action:none; }
-  #magnet-resize { position:absolute; bottom:0; right:0; width:20px; height:20px; cursor:se-resize; z-index:10; }
 </style>
 </head>
 <body data-theme="dark">
@@ -205,16 +199,6 @@
   <div class="os-wallpaper" id="diurnal-wallpaper"></div>
   <div id="broadcast-banner"></div>
   <div id="toast-container"></div>
-
-  <!-- FRIDGE MAGNET WIDGET -->
-  <div id="fridge-magnet" style="display:none;">
-     <div id="magnet-header">
-         <span style="font-family:var(--font-mono); font-size:10px; text-transform:uppercase; color:var(--ink-soft); display:flex; align-items:center; gap:6px;"><span class="sys-dot pulse" style="color:var(--con);"></span>Fridge Magnet</span>
-         <button id="btn-clear-magnet" class="haptic-btn" style="color:var(--err); font-size:10px; font-weight:600; text-transform:uppercase;">Clear</button>
-     </div>
-     <canvas id="magnet-canvas"></canvas>
-     <div id="magnet-resize"></div>
-  </div>
 
   <nav class="os-menubar" id="top-nav">
     <div style="display:flex; gap:14px; align-items:center;">
@@ -244,7 +228,7 @@
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
   </div>
 
-  <main>
+  <main id="swipe-zone">
     <section id="view-dashboard" class="view-container active">
       <div class="card stagger-1" style="padding:22px; display:flex; justify-content:space-around; align-items:center; margin-bottom:20px;">
           <div style="text-align:center;">
@@ -288,7 +272,7 @@
             </div>
         </div>
 
-        <div class="card stagger-3" id="fridge-card" style="padding:22px; display:flex; flex-direction:column;">
+<div class="card stagger-3" id="fridge-card" style="padding:22px; display:flex; flex-direction:column;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
               <h2 style="font-size:13px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft);">The Fridge Door</h2>
               <div style="display:flex; gap:10px; align-items:center;">
@@ -296,7 +280,6 @@
                   <span id="fridge-status" style="font-size:11px; font-family:var(--font-mono); color:var(--ink-soft);">Synced</span>
               </div>
           </div>
-          <!-- TEXT PADDING FIXED HERE -->
           <textarea id="fridge-door-text" placeholder="Write a shared note here..." spellcheck="false" style="flex:1; min-height:140px; resize:none; font-family:var(--font-body); font-size:14px; line-height:1.6; background:transparent; padding:16px !important; border:none;"></textarea>
         </div>
 
@@ -474,48 +457,10 @@
           </div>
       </div>
 
-      <!-- UPGRADED FACILITY OPS PDF ASSEMBLY ENGINE -->
       <div id="work-facility" class="work-module stagger-2" style="display:none;">
-          <div class="card" style="padding: 24px; min-height: 400px; display:flex; flex-direction:column;">
-              <div class="card-head" style="margin-bottom:20px;">
-                  <h2 style="display:flex; align-items:center; gap:8px;">PDF Assembly Engine <span style="font-family:var(--font-mono); font-size:9px; background:rgba(112,148,122,0.15); border:1px solid rgba(112,148,122,0.4); padding:4px 8px; border-radius:12px; color:var(--con); text-transform:uppercase;">Cloud Injector Active</span></h2>
-              </div>
-              
-              <div id="pdf-dropzone" style="background:var(--input-bg); border:1px dashed rgba(255,255,255,0.2); border-radius:var(--radius-sm); padding:40px 20px; text-align:center; cursor:pointer; margin-bottom: 20px; transition: 0.2s;" onclick="document.getElementById('pdf-file-input').click()">
-                  <input type="file" id="pdf-file-input" accept="application/pdf" style="display:none;" multiple>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--con)" stroke-width="2" style="margin-bottom:12px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
-                  <p style="font-size:14px; font-weight:500; color:var(--ink);">Drop PDFs here or click to browse</p>
-                  <p style="font-size:12px; color:var(--ink-soft); margin-top:8px;">Drag and drop the rows to reorder them before merging</p>
-              </div>
-
-              <div id="pdf-queue-container" style="display:none; flex-direction:column; gap:8px; margin-bottom:24px;">
-                  <div style="display:flex; justify-content:space-between; align-items:center;">
-                      <h3 style="font-family:var(--font-mono); font-size:11px; color:var(--ink-soft); text-transform:uppercase;">Assembly Queue (<span id="pdf-queue-count">0</span>)</h3>
-                      <button id="btn-clear-pdf-queue" class="haptic-btn" style="font-size:10px; color:var(--err); text-transform:uppercase; font-weight:600;">Clear All</button>
-                  </div>
-                  <div id="pdf-sortable-list" style="display:flex; flex-direction:column; gap:6px;"></div>
-              </div>
-
-              <div id="pdf-dispatch-config" style="display:none; flex-direction:column; gap:16px; border-top:var(--glass-border); padding-top:20px;">
-                  <div>
-                      <label class="field-label">Dispatch Method</label>
-                      <div style="display:flex; gap:14px; margin-bottom:16px;">
-                          <label style="font-size:13px; display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio" name="pdf_dispatch_mode" value="eml" checked> Download .eml</label>
-                          <label style="font-size:13px; display:flex; align-items:center; gap:6px; cursor:pointer;"><input type="radio" name="pdf_dispatch_mode" value="gmail"> Push to Cloud Drafts</label>
-                      </div>
-                  </div>
-                  <div>
-                      <label class="field-label">Email Subject Line</label>
-                      <input type="text" id="pdf-subject-input" placeholder="e.g. Variable Works Documentation - [Building Name]" style="margin-bottom:0;">
-                  </div>
-                  <div>
-                      <label class="field-label">Target Cloud Draft Email</label>
-                      <div style="display:flex; gap:10px;">
-                          <input type="text" id="pdf-email-input" placeholder="manager.name@al-ghurair.com" style="flex:1; margin-bottom:0;">
-                          <button id="btn-assemble-push" class="btn-primary haptic-btn" style="white-space:nowrap; background:var(--con); color:#000;">Assemble & Push</button>
-                      </div>
-                  </div>
-              </div>
+          <div class="card" style="padding: 24px; text-align:center; min-height: 400px; display:flex; flex-direction:column; justify-content:center;">
+              <h3 style="font-family:var(--font-display); margin-bottom:12px;">Facility Ops Smart Slots</h3>
+              <p style="font-size:13px; color:var(--ink-soft);">Module currently loading. Preparing automated PDF assembly line...</p>
           </div>
       </div>
 
@@ -530,15 +475,12 @@
     <section id="view-drop" class="view-container">
       <section class="card stagger-1" style="margin-bottom:24px; text-align:center;">
         <div class="card-head" style="justify-content:center; margin-bottom:14px;"><h2>Lair Cloud Drive</h2></div>
-        
-        <!-- UPGRADED NEON GAUGE -->
         <div class="storage-gauge-wrapper" id="drop-gauge" style="--pct: 0;">
           <div class="storage-gauge-inner">
             <span id="drop-usage-text" style="font-family:var(--font-mono); font-size:22px; font-weight:600;">0GB</span>
             <span style="font-size:11px; color:var(--ink-soft);">of 100GB Limit</span>
           </div>
         </div>
-        
         <div style="background:var(--input-bg); border:1px dashed rgba(128,128,128,0.4); border-radius:var(--radius-sm); padding:20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
           <input type="file" id="vault-photo-input" accept="image/*,video/*,application/pdf" style="display:none;" multiple>
           <input type="file" id="vault-camera-input" accept="image/*" capture="environment" style="display:none;">
@@ -610,9 +552,9 @@
           </section>
         </div>
 
-        <section class="card stagger-3" style="display:flex; flex-direction:column; height:600px; max-height:70vh; padding:22px; position:sticky; top:100px;">
+        <section class="card stagger-3" style="display:flex; flex-direction:column; min-height:420px; padding:22px;">
           <h2 style="font-family:var(--font-display); font-size:19px; margin-bottom:18px;">Live Chat</h2>
-          <div id="chat-window" style="flex:1; overflow-y:auto; margin-bottom:14px; font-size:14px; display:flex; flex-direction:column; gap:8px; padding-right:6px;"></div>
+          <div id="chat-window" style="flex:1; overflow-y:auto; margin-bottom:14px; font-size:14px; display:flex; flex-direction:column; gap:8px;"></div>
           <div style="display:flex; gap:8px;">
             <input type="text" id="chat-input" placeholder="Write message...">
             <button class="btn-primary haptic-btn" id="btn-send-chat">&rarr;</button>
@@ -669,17 +611,6 @@
     </div>
   </div>
   
-  <div id="confirm-modal" class="modal-overlay">
-    <div class="card" style="max-width:360px; text-align:center; padding:32px;">
-      <h2 id="confirm-title" style="font-family:var(--font-display); font-size:20px; margin-bottom:12px;">Are you sure?</h2>
-      <p id="confirm-msg" style="font-size:13px; color:var(--ink-soft); margin-bottom:24px;"></p>
-      <div style="display:flex; gap:12px;">
-        <button id="btn-confirm-cancel" class="btn-secondary haptic-btn" style="flex:1;">Cancel</button>
-        <button id="btn-confirm-ok" class="btn-primary haptic-btn" style="flex:1; background:rgba(217,83,79,0.85); color:#fff;">Confirm</button>
-      </div>
-    </div>
-  </div>
-
   <div id="photo-lightbox" class="modal-overlay">
     <div class="card" style="max-width:90%; text-align:center; padding:20px;">
       <img id="lightbox-img" src="" style="max-width:100%; max-height:70vh; border-radius:var(--radius-sm); margin-bottom:18px;">
@@ -742,7 +673,18 @@
     </div>
   </div>
 
+  <div id="confirm-modal" class="modal-overlay">
+    <div class="card" style="max-width:360px; text-align:center; padding:26px;">
+      <h3 id="confirm-title" style="font-family:var(--font-display); font-size:18px; margin-bottom:8px;">Are you sure?</h3>
+      <p id="confirm-msg" style="font-size:13px; color:var(--ink-soft); margin-bottom:20px;">This action cannot be undone.</p>
+      <div style="display:flex; gap:10px;">
+        <button id="btn-confirm-cancel" class="btn-secondary haptic-btn" style="flex:1;">Cancel</button>
+        <button id="btn-confirm-ok" class="btn-primary haptic-btn" style="flex:1; background:var(--err); color:#fff;">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/artplayer/dist/artplayer.js"></script>
-  <script type="module" src="lair.js"></script>
+  <script type="module" src="lair.js?v=3"></script>
 </body>
 </html>

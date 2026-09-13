@@ -93,6 +93,28 @@ const triggerHaptic = () => {
 };
 document.querySelectorAll('.haptic-btn').forEach(b => b.addEventListener('click', triggerHaptic));
 
+let touchStartX = 0; let touchStartY = 0;
+const swipeZone = document.getElementById('swipe-zone');
+
+swipeZone.addEventListener('touchstart', e => { 
+    touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY;
+}, {passive: true});
+
+swipeZone.addEventListener('touchend', e => {
+    if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, .os-dock, input, textarea, .artplayer-app, .ledger-scroll-wrapper, table, #auditor-queue-container, #fridge-magnet')) return;
+    const diffX = touchStartX - e.changedTouches[0].screenX; const diffY = touchStartY - e.changedTouches[0].screenY;
+    if (Math.abs(diffY) > Math.abs(diffX)) return;
+
+    const views = ['dashboard', 'work', 'drop', 'theater', 'voice'];
+    const activeIdx = views.findIndex(v => document.getElementById(`view-${v}`).classList.contains('active'));
+    
+    if (diffX > 80 && activeIdx < views.length - 1) { 
+        triggerHaptic(); document.querySelector(`.dock-app[data-target="${views[activeIdx+1]}"]`).click();
+    } else if (diffX < -80 && activeIdx > 0) {
+        triggerHaptic(); document.querySelector(`.dock-app[data-target="${views[activeIdx-1]}"]`).click();
+    }
+}, {passive: true});
+
 function syncEnvironment() {
     try {
         const now = new Date();
@@ -186,6 +208,7 @@ document.querySelectorAll('[data-workseg]').forEach(btn => {
         document.querySelectorAll('.work-module').forEach(t => t.style.display = 'none');
         const targetSeg = e.currentTarget.getAttribute('data-workseg');
         document.getElementById(`work-${targetSeg}`).style.display = 'block';
+       
     });
 });
 
@@ -437,6 +460,7 @@ function initPODropzone() {
     });
 }
 
+// Outlook EML Trigger
 const triggerEMLDownload = async (type, crmRef, building, prNumber, rfNumber, isUrgent) => {
     triggerHaptic();
     window.showToast(`Generating ${type} draft...`, 'info');
@@ -473,6 +497,7 @@ function initVWTracker() {
     if (!tableBody) return;
     let allVWRows = [];
     
+    // Dynamic Column Toggler State
     const colMenu = document.getElementById('col-menu');
     const colToggleBtn = document.getElementById('btn-col-toggle');
     const tableHead = document.querySelector('#vw-dynamic-headers');
@@ -573,6 +598,7 @@ function initVWTracker() {
                     }
                 });
 
+                // Safeguard against undefined headers
                 const prIdx = item.rawHeaders.findIndex(h => String(h).toLowerCase().includes('pr'));
                 const rfIdx = item.rawHeaders.findIndex(h => String(h).toLowerCase().includes('rf'));
                 const prVal = prIdx !== -1 ? item.rawValues[prIdx] : '';
@@ -604,7 +630,7 @@ function initVWTracker() {
                 document.getElementById('btn-eml-mgr').onclick = () => triggerEMLDownload('manager', item.crmRef, item.building, prVal, rfVal, isUrgent);
                 document.getElementById('btn-eml-proc').onclick = () => triggerEMLDownload('procurement', item.crmRef, item.building, prVal, rfVal, isUrgent);
                 
-                const cloudAlert = () => { triggerHaptic(); window.showToast('Push to Gmail Drafts Requires Service Account Delegation', 'warn'); };
+                const cloudAlert = () => { triggerHaptic(); window.showToast('Cloud Push API pending Batch 3 wiring', 'warn'); };
                 document.getElementById('btn-cloud-mgr').onclick = cloudAlert;
                 document.getElementById('btn-cloud-proc').onclick = cloudAlert;
 
@@ -689,6 +715,7 @@ function initVWTracker() {
     };
     loadVWData();
 
+    // The Interactive KPI Filter Engine
     const applyFilter = (filterFn) => {
         triggerHaptic();
         if(searchInput) searchInput.value = '';
@@ -752,294 +779,6 @@ window.loadVWBriefing = async function() {
     } catch (e) { textEl.textContent = "Unable to generate AI briefing at this moment."; }
 };
 
-// ==== PDF ASSEMBLY ENGINE ====
-function initPDFEngine() {
-    const dropzone = document.getElementById('pdf-dropzone');
-    const fileInput = document.getElementById('pdf-file-input');
-    const queueContainer = document.getElementById('pdf-queue-container');
-    const sortableList = document.getElementById('pdf-sortable-list');
-    const dispatchConfig = document.getElementById('pdf-dispatch-config');
-    const queueCount = document.getElementById('pdf-queue-count');
-    const btnClear = document.getElementById('btn-clear-pdf-queue');
-    const btnAssemble = document.getElementById('btn-assemble-push');
-    
-    if (!dropzone || !fileInput || !btnAssemble) return;
-
-    let pdfQueue = [];
-    let dragStartIndex = -1;
-
-    const renderQueue = () => {
-        sortableList.innerHTML = '';
-        queueCount.textContent = pdfQueue.length;
-        
-        if (pdfQueue.length === 0) {
-            queueContainer.style.display = 'none';
-            dispatchConfig.style.display = 'none';
-            return;
-        }
-
-        queueContainer.style.display = 'flex';
-        dispatchConfig.style.display = 'flex';
-
-        pdfQueue.forEach((file, index) => {
-            const row = document.createElement('div');
-            row.draggable = true;
-            row.dataset.index = index;
-            row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--glass-bg); border:var(--glass-border); border-radius:12px; cursor:grab; transition:0.2s;';
-            
-            row.innerHTML = `
-                <div style="display:flex; align-items:center; gap:12px; overflow:hidden;">
-                    <span style="color:var(--ink-soft); cursor:grab;">☰</span>
-                    <span style="font-size:12px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500;">
-                        <span style="color:var(--con); font-family:var(--font-mono); margin-right:8px;">${index + 1}.</span>${file.name}
-                    </span>
-                </div>
-                <button class="haptic-btn remove-pdf-btn" data-index="${index}" style="color:var(--err); font-size:14px; padding:0 8px;">✖</button>
-            `;
-
-            row.addEventListener('dragstart', (e) => {
-                dragStartIndex = index;
-                e.currentTarget.style.opacity = '0.4';
-                e.dataTransfer.effectAllowed = 'move';
-            });
-            row.addEventListener('dragover', (e) => {
-                e.preventDefault(); 
-                e.currentTarget.style.borderTop = '2px solid var(--con)';
-            });
-            row.addEventListener('dragleave', (e) => {
-                e.currentTarget.style.borderTop = 'var(--glass-border)';
-            });
-            row.addEventListener('dragend', (e) => {
-                e.currentTarget.style.opacity = '1';
-                renderQueue(); 
-            });
-            row.addEventListener('drop', (e) => {
-                e.preventDefault();
-                const dragEndIndex = index;
-                if (dragStartIndex !== dragEndIndex) {
-                    const item = pdfQueue.splice(dragStartIndex, 1)[0];
-                    pdfQueue.splice(dragEndIndex, 0, item);
-                }
-                renderQueue();
-                triggerHaptic();
-            });
-
-            row.querySelector('.remove-pdf-btn').addEventListener('click', (e) => {
-                e.stopPropagation();
-                triggerHaptic();
-                pdfQueue.splice(index, 1);
-                renderQueue();
-            });
-
-            sortableList.appendChild(row);
-        });
-    };
-
-    const processFiles = (files) => {
-        const newFiles = Array.from(files).filter(f => f.type === 'application/pdf');
-        if (newFiles.length === 0) return window.showToast('Only PDF files are supported', 'warn');
-        pdfQueue = [...pdfQueue, ...newFiles];
-        renderQueue();
-        fileInput.value = ''; 
-    };
-
-    fileInput.addEventListener('change', (e) => processFiles(e.target.files));
-    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--con)'; });
-    dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; });
-    dropzone.addEventListener('drop', (e) => { 
-        e.preventDefault(); dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; 
-        if (e.dataTransfer.files) processFiles(e.dataTransfer.files); 
-    });
-
-    btnClear.addEventListener('click', () => { triggerHaptic(); pdfQueue = []; renderQueue(); });
-
-    btnAssemble.addEventListener('click', async () => {
-        triggerHaptic();
-        const subject = document.getElementById('pdf-subject-input').value.trim();
-        const email = document.getElementById('pdf-email-input').value.trim();
-        
-        if (pdfQueue.length < 2) return window.showToast('Please add at least 2 PDFs to merge', 'warn');
-        if (!email || !subject) return window.showToast('Subject and Target Email are required', 'warn');
-
-        btnAssemble.textContent = "Forging PDF & Injecting...";
-        const formData = new FormData();
-        formData.append('subject', subject);
-        formData.append('email', email);
-        formData.append('mode', 'gmail');
-        // Field name must match multer's uploadPDF.array('pdf_files', ...) on
-        // the server — it was previously sent as 'pdfs' and multer silently
-        // dropped every file, so req.files was always empty.
-        pdfQueue.forEach(file => formData.append('pdf_files', file));
-
-        try {
-            const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/assemble`, {
-                method: 'POST',
-                body: formData
-            });
-            const data = await res.json();
-            if(res.ok && data.success) {
-                window.showToast('Package assembled and pushed to Cloud Drafts!', 'success');
-                pdfQueue = [];
-                renderQueue();
-                document.getElementById('pdf-subject-input').value = '';
-            } else {
-                throw new Error(data.error || 'Server rejected forge attempt');
-            }
-        } catch(e) {
-            window.showToast('Failed to assemble. Verify backend and Gmail API connection.', 'error');
-        } finally {
-            btnAssemble.textContent = "Assemble & Push";
-        }
-    });
-}
-
-// NOTE: this function was being *called* by initOS() below but was missing
-// from the file entirely — that threw "initVault is not defined" the
-// instant initOS() ran, which silently aborted every init call that was
-// queued after it (theater chat, watchlist, config/features, radar feed,
-// voice room, the invoice auditor, the VW tracker, the PO dropzone, the
-// admin PIN pad, the fridge magnet, and the PDF engine). Restoring this
-// function is what makes the rest of the app work again.
-function initVault() {
-  const photoInput = document.getElementById('vault-photo-input');
-  const cameraInput = document.getElementById('vault-camera-input');
-  const statusEl = document.getElementById('vault-status');
-  const gaugeEl = document.getElementById('drop-gauge');
-  const usageText = document.getElementById('drop-usage-text');
-  const lightbox = document.getElementById('photo-lightbox');
-  const lightboxImg = document.getElementById('lightbox-img');
-  const btnDelete = document.getElementById('btn-delete-vault-photo');
-
-  if (!photoInput || !gaugeEl || !lightbox) return;
-
-  const grids = {
-    photos: document.querySelector('#timeline-photos > div'),
-    videos: document.querySelector('#timeline-videos > div'),
-    docs: document.querySelector('#timeline-docs > div')
-  };
-
-  const IMAGE_EXT = /\.(jpg|jpeg|png|webp|heic|gif)$/i;
-  const VIDEO_EXT = /\.(mp4|mov|m4v)$/i;
-  const bucketFor = (filename) => IMAGE_EXT.test(filename) ? 'photos' : VIDEO_EXT.test(filename) ? 'videos' : 'docs';
-  const formatBytes = (bytes) => `${((bytes || 0) / (1024 ** 3)).toFixed(1)}GB`;
-
-  const refreshStorage = async () => {
-    try {
-      const res = await fetchWithAuth(`${TUNNEL_URL}/api/storage`);
-      if (!res.ok) throw new Error();
-      const data = await res.json();
-      const pct = Math.min(100, (data.totalBytes / data.maxBytes) * 100);
-      gaugeEl.style.setProperty('--pct', pct.toFixed(1));
-      usageText.textContent = formatBytes(data.totalBytes);
-    } catch (e) { /* leave last-known values in place */ }
-  };
-
-  const openLightbox = (photo) => {
-    activeLightboxFile = photo.filename;
-    lightboxImg.src = photo.url;
-    lightbox.classList.add('active');
-  };
-
-  const renderGrid = (photos) => {
-    Object.values(grids).forEach(g => { if (g) g.innerHTML = ''; });
-
-    photos.forEach(photo => {
-      const bucket = bucketFor(photo.filename);
-      const grid = grids[bucket];
-      if (!grid) return;
-
-      const card = document.createElement('div');
-      card.className = 'haptic-btn';
-      card.style.cssText = 'aspect-ratio:1; border-radius:14px; overflow:hidden; background:var(--input-bg); cursor:pointer; position:relative;';
-
-      if (bucket === 'docs') {
-        card.innerHTML = `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:28px;">📄</div>`;
-        card.addEventListener('click', () => { triggerHaptic(); window.open(photo.url, '_blank'); });
-      } else if (bucket === 'videos') {
-        card.innerHTML = `<img src="${photo.thumbUrl}" loading="lazy" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'"><div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:22px; pointer-events:none;">▶</div>`;
-        card.addEventListener('click', () => { triggerHaptic(); window.open(photo.url, '_blank'); });
-      } else {
-        card.innerHTML = `<img src="${photo.thumbUrl}" loading="lazy" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='${photo.url}'">`;
-        card.addEventListener('click', () => { triggerHaptic(); openLightbox(photo); });
-      }
-      grid.appendChild(card);
-    });
-
-    Object.values(grids).forEach(grid => {
-      if (grid && !grid.children.length) {
-        grid.innerHTML = `<p style="font-size:12px; color:var(--ink-soft);">Nothing here yet.</p>`;
-      }
-    });
-  };
-
-  const loadVault = async () => {
-    try {
-      const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos`);
-      if (!res.ok) throw new Error();
-      renderGrid(await res.json());
-    } catch (e) {
-      window.showToast('Could not reach Vault storage.', 'error');
-    }
-    refreshStorage();
-  };
-
-  document.querySelectorAll('.seg-btn[data-seg]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      triggerHaptic();
-      document.querySelectorAll('.seg-btn[data-seg]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      Object.entries(grids).forEach(([key, grid]) => {
-        const timeline = grid ? grid.closest('.vault-timeline') : null;
-        if (timeline) timeline.classList.toggle('active', key === btn.dataset.seg);
-      });
-    });
-  });
-
-  const uploadFiles = async (files) => {
-    if (!files || !files.length) return;
-    statusEl.style.display = 'block';
-    let done = 0;
-    for (const file of Array.from(files)) {
-      done++;
-      statusEl.textContent = `Uploading ${file.name} (${done}/${files.length})...`;
-      const fd = new FormData();
-      fd.append('photo', file);
-      try {
-        const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd });
-        if (!res.ok) throw new Error();
-      } catch (e) {
-        window.showToast(`Failed to upload ${file.name}`, 'error');
-      }
-    }
-    statusEl.textContent = 'Upload complete.';
-    setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
-    loadVault();
-  };
-
-  photoInput.addEventListener('change', (e) => { uploadFiles(e.target.files); photoInput.value = ''; });
-  if (cameraInput) cameraInput.addEventListener('change', (e) => { uploadFiles(e.target.files); cameraInput.value = ''; });
-
-  if (btnDelete) {
-    btnDelete.addEventListener('click', async () => {
-      if (!activeLightboxFile) return;
-      triggerHaptic();
-      const filename = activeLightboxFile;
-      try {
-        const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/delete/${encodeURIComponent(filename)}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error();
-        window.showToast('Deleted from Vault.', 'success');
-        lightbox.classList.remove('active');
-        activeLightboxFile = null;
-        loadVault();
-      } catch (e) {
-        window.showToast('Failed to delete file.', 'error');
-      }
-    });
-  }
-
-  loadVault();
-}
-
 function initOS() {
   setupAdaptivePolling();
 
@@ -1061,6 +800,7 @@ function initOS() {
      });
   });
 
+  // ==== GLOBAL THEME SYSTEM ====
   const themeBtn = document.getElementById('btn-theme-toggle');
   themeBtn.addEventListener('click', () => {
       const newTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
@@ -1100,6 +840,7 @@ function initOS() {
       }, 500); 
   });
   
+  // ==== FRIDGE DOOR: GOOGLE SHEETS LOGGING ====
   fridgeText.addEventListener('blur', () => { 
       isTyping = false; 
       fetchWithAuth(`${TUNNEL_URL}/api/fridge/log`, {
@@ -1108,7 +849,7 @@ function initOS() {
       }).catch(e => console.log('Silently failed to log to Sheets', e));
   });
 
-  initWatchParty(); initVault(); initTheaterChat(); initWatchlist(); initConfigAndFeatures(); initRadarFeed(); initVoiceRoom(); initAuditor(); initVWTracker(); initPODropzone(); initAdminPinPad(); initFridgeMagnet(); initPDFEngine();
+  initWatchParty(); initVault(); initTheaterChat(); initWatchlist(); initConfigAndFeatures(); initRadarFeed(); initVoiceRoom(); initAuditor(); initVWTracker(); initPODropzone(); initAdminPinPad(); initFridgeMagnet();
 
   document.getElementById('btn-open-po-modal').addEventListener('click', () => { triggerHaptic(); document.getElementById('po-extractor-modal').classList.add('active'); });
 }
@@ -1574,3 +1315,176 @@ function initWatchParty() {
         setTimeout(() => { ignoreNextSync = false; }, 500);
     });
 }
+
+document.querySelectorAll('.seg-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active')); e.currentTarget.classList.add('active');
+        document.querySelectorAll('.vault-timeline').forEach(t => t.classList.remove('active'));
+        document.getElementById(`timeline-${e.currentTarget.getAttribute('data-seg')}`).classList.add('active');
+    });
+});
+
+async function initVault() {
+  const cameraInput = document.getElementById('vault-camera-input');
+  const quickCaptureFab = document.getElementById('btn-quick-capture');
+
+  if (quickCaptureFab) {
+      quickCaptureFab.onclick = () => {
+          triggerHaptic();
+          const activeTarget = document.querySelector('.dock-app.active')?.getAttribute('data-target');
+          if (activeTarget === 'drop' || activeTarget === 'work') cameraInput.click();
+      };
+  }
+
+  if (cameraInput && !cameraInput.__hasListener) {
+      cameraInput.__hasListener = true;
+      cameraInput.addEventListener('change', async (e) => {
+          const file = e.target.files[0]; if (!file) return;
+          window.showToast('Streaming direct to Home PC...', 'info');
+          const fd = new FormData(); fd.append('photo', file);
+
+          try {
+              const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd });
+              if (res.ok) { window.showToast('Safely stored in PC Vault ✔', 'success'); initVault(); } else { throw new Error(); }
+          } catch (err) { window.showToast('Upload failed: Home PC unreachable', 'error'); } finally { cameraInput.value = ''; }
+      });
+  }
+
+  try {
+    const [storageRes, filesRes] = await Promise.all([ fetchWithAuth(`${TUNNEL_URL}/api/storage`), fetchWithAuth(`${TUNNEL_URL}/api/photos`) ]);
+    if(storageRes.ok) {
+        const s = await storageRes.json();
+        const gbUsage = (s.totalBytes / (1024*1024*1024)).toFixed(1);
+        document.getElementById('drop-usage-text').textContent = `${gbUsage}GB`;
+        document.getElementById('drop-gauge').style.setProperty('--pct', Math.min(100, Math.round((s.totalBytes / s.maxBytes) * 100)));
+    }
+    if(filesRes.ok) {
+        const allFiles = await filesRes.json();
+        
+        const observer = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const el = entry.target;
+                    el.style.backgroundImage = `url('${el.getAttribute('data-bg')}')`;
+                    obs.unobserve(el);
+                }
+            });
+        }, { rootMargin: '300px' }); 
+
+        const renderGrid = (list, containerId) => {
+            const container = document.querySelector(`#${containerId} > div`);
+            if(!list.length) { container.innerHTML = '<p style="color:var(--ink-soft); font-size:13px; text-align:center;">Empty directory.</p>'; return; }
+            
+            const grouped = {}; 
+            list.forEach(p => { if(!grouped[p.dateFormatted]) grouped[p.dateFormatted] = []; grouped[p.dateFormatted].push(p); });
+            container.innerHTML = '';
+            
+            for(const [dateStr, items] of Object.entries(grouped)) {
+              let gridHtml = `<div style="grid-column: 1 / -1;"><h3 style="font-family:var(--font-mono); font-size:12px; text-transform:uppercase; color:var(--ink-soft); margin-bottom:12px; margin-top:10px;">${dateStr}</h3></div>`;
+              
+              items.forEach(p => { 
+                const isPdf = p.filename.toLowerCase().endsWith('.pdf');
+                const bgImage = isPdf ? 'https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg' : (p.thumbUrl || p.url);
+                const extraStyle = isPdf ? `background-size:contain; background-repeat:no-repeat; background-color: var(--glass-bg);` : `background-size:cover; background-position:center;`;
+                
+                gridHtml += `<div class="vault-thumb-card media-card haptic-btn lazy-bg" data-bg="${bgImage}" data-url="${p.url}" data-filename="${p.filename}" data-date="${p.dateFormatted}" style="${extraStyle}"></div>`; 
+              });
+              container.innerHTML += gridHtml;
+            }
+        };
+
+        renderGrid(allFiles.filter(f => /\.(jpg|jpeg|png|webp|heic|gif)$/i.test(f.filename)), 'timeline-photos');
+        renderGrid(allFiles.filter(f => /\.(mp4|mov|m4v)$/i.test(f.filename)), 'timeline-videos');
+        renderGrid(allFiles.filter(f => /\.(pdf)$/i.test(f.filename)), 'timeline-docs');
+
+        document.querySelectorAll('.lazy-bg').forEach(card => observer.observe(card));
+
+        document.querySelectorAll('.media-card').forEach(card => {
+          card.addEventListener('click', async () => {
+            triggerHaptic(); 
+            activeLightboxFile = card.getAttribute('data-filename');
+            
+            if (activeLightboxFile.toLowerCase().endsWith('.pdf')) {
+                window.open(card.getAttribute('data-url'), '_blank');
+            } else {
+                document.getElementById('lightbox-img').src = card.getAttribute('data-url'); 
+                document.getElementById('photo-lightbox').classList.add('active');
+
+                let toggleBtn = document.getElementById('btn-toggle-public');
+                if (!toggleBtn) {
+                    toggleBtn = document.createElement('button');
+                    toggleBtn.id = 'btn-toggle-public';
+                    toggleBtn.className = 'btn-secondary haptic-btn';
+                    toggleBtn.style.cssText = 'padding:10px 14px; font-size:12px; font-weight:600; margin-right:10px; background:rgba(255,255,255,0.06); border:var(--glass-border);';
+                    const lightboxControls = document.getElementById('btn-delete-vault-photo').parentElement;
+                    lightboxControls.insertBefore(toggleBtn, lightboxControls.firstChild);
+                }
+
+                toggleBtn.textContent = "Checking status...";
+                toggleBtn.style.color = "var(--ink-soft)";
+                
+                const publicRef = doc(db, 'public_photos', activeLightboxFile);
+                const snap = await getDoc(publicRef);
+                
+                if (snap.exists()) {
+                    toggleBtn.innerHTML = "★ Remove from Exhibition";
+                    toggleBtn.style.color = "var(--warn)";
+                } else {
+                    toggleBtn.innerHTML = "☆ Send to Exhibition";
+                    toggleBtn.style.color = "var(--ink)";
+                }
+
+                toggleBtn.onclick = async () => {
+                    triggerHaptic();
+                    toggleBtn.textContent = "Syncing...";
+                    const checkSnap = await getDoc(publicRef);
+                    if (checkSnap.exists()) {
+                        await deleteDoc(publicRef);
+                        toggleBtn.innerHTML = "☆ Send to Exhibition";
+                        toggleBtn.style.color = "var(--ink)";
+                        window.showToast('Removed from public exhibition', 'info');
+                    } else {
+                        await setDoc(publicRef, { 
+                            filename: activeLightboxFile,
+                            url: `${TUNNEL_URL}/api/public/cloud/${encodeURIComponent(activeLightboxFile)}`,
+                            dateFormatted: card.getAttribute('data-date') || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        });
+                        toggleBtn.innerHTML = "★ Remove from Exhibition";
+                        toggleBtn.style.color = "var(--warn)";
+                        window.showToast('Added to spatial cloud!', 'success');
+                    }
+                };
+            }
+          });
+        });
+    }
+  } catch(err) {}
+}
+
+document.getElementById('btn-delete-vault-photo').addEventListener('click', async () => {
+    if (!activeLightboxFile) return;
+    const ok = await window.showConfirm('Delete Item', `Permanently remove ${activeLightboxFile} from local storage?`);
+    if (!ok) return;
+    try {
+        const res = await fetchWithAuth(`${TUNNEL_URL}/api/photos/delete/${encodeURIComponent(activeLightboxFile)}`, { method: 'DELETE' });
+        if(res.ok) { 
+          document.getElementById('photo-lightbox').classList.remove('active'); 
+          await deleteDoc(doc(db, 'public_photos', activeLightboxFile));
+          initVault(); 
+          window.showToast('Item deleted successfully', 'success');
+        }
+    } catch(e) { window.showToast('Delete failed', 'error'); }
+});
+
+document.getElementById('vault-photo-input').addEventListener('change', async (e) => {
+  const files = e.target.files; if(!files.length) return;
+  const status = document.getElementById('vault-status'); status.style.display = 'block';
+  for(let i=0; i<files.length; i++) {
+      status.textContent = `Uploading ${i+1}/${files.length}: ${files[i].name}...`;
+      const fd = new FormData(); fd.append('photo', files[i]);
+      try { await fetchWithAuth(`${TUNNEL_URL}/api/photos/upload`, { method: 'POST', body: fd }); } catch(err) {}
+  }
+  status.textContent = 'Upload Complete ✔'; setTimeout(() => status.style.display = 'none', 3000); 
+  window.showToast('Media uploaded to Vault', 'success');
+  initVault(); e.target.value = '';
+});
