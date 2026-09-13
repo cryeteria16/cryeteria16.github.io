@@ -1537,21 +1537,28 @@ function startDrawing(e) {
     if (!canvas) return;
     isDrawing = true;
     const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
     const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
     const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
-    lastX = clientX - rect.left;
-    lastY = clientY - rect.top;
+    
+    lastX = (clientX - rect.left) * scaleX;
+    lastY = (clientY - rect.top) * scaleY;
 }
 
 function draw(e) {
     if (!isDrawing || !canvas || !ctx) return;
     e.preventDefault();
     const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    
     const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
     const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
     
-    const currentX = clientX - rect.left;
-    const currentY = clientY - rect.top;
+    const currentX = (clientX - rect.left) * scaleX;
+    const currentY = (clientY - rect.top) * scaleY;
 
     ctx.strokeStyle = colorPicker ? colorPicker.value : '#70947A';
     ctx.lineWidth = 3;
