@@ -35,6 +35,7 @@ function getGoogleAuthClient(scopes) {
 
 const SPREADSHEET_ID = '1uX2OOd4HE3c_-Vl-PkeQhZicY2cFh3qFxASG7yl_uEo'; // Your private Auditor Ledger
 const VW_SPREADSHEET_ID = '16xMK8-wOZsysB2g28uwzN0BL3iZg3jet-_Nv_M9jxB4'; // The Manager's New Sheet (READ ONLY)
+const FRIDGE_SHEET_ID = '10H85OiEHj9XV7I3cp5qHsCY00aPHxfoTmYYKZ5Utze8'; // Fridge Sheet ID
 const TUNNEL_URL = 'https://vault.ibadhasan.com';
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const STREAM_SECRET = process.env.STREAM_TOKEN_SECRET;
