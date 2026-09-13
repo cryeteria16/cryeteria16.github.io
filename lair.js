@@ -450,21 +450,13 @@ function initPODropzone() {
             document.getElementById('po-res-supplier').textContent = data.supplier_name || '—';
             document.getElementById('po-res-building').textContent = data.building || 'General';
             document.getElementById('po-res-total').textContent = Number(data.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
-            document.getElementById('po-match-ref').value = data.project_name || '';
-
+            
             const buildingKey = Object.keys(supervisorMap).find(k => (data.building || '').toLowerCase().includes(k)) || 'umm hurair';
             const supervisor = supervisorMap[buildingKey];
 
             const draftText = `Subject: New PO Issued: ${extractedPoNumber} — ${data.building || 'Project Site'}\n\nHi ${supervisor.name},\n\nA new Purchase Order has been raised and confirmed for your site execution and tracking:\n\n- PO Number: ${extractedPoNumber}\n- Supplier: ${data.supplier_name}\n- Building / Location: ${data.building || 'General'}\n- Project: ${data.project_name || 'VAR-TFM DD'}\n- Grand Total: AED ${Number(data.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} (Incl. VAT)\n\nScope Summary:\n${(data.line_items || []).map(li => `• ${li.item} (Qty: ${li.qty})`).join('\n')}\n\nPlease coordinate with the team accordingly.\n\nBest regards,\nLair OS`;
 
             document.getElementById('po-email-draft').value = draftText;
-            
-            const mailtoBtn = document.getElementById('btn-mail-outlook');
-            if (mailtoBtn) {
-                const mailSubject = `New PO Issued: ${extractedPoNumber} — ${data.building || 'Project Site'}`;
-                mailtoBtn.href = `mailto:${supervisor.email}?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(draftText)}`;
-            }
-
             resultContainer.style.display = 'flex';
             window.showToast('PO successfully extracted & email drafted ✔', 'success');
         } catch (err) { window.showToast('Failed to parse PO PDF', 'error'); } finally { fileInput.value = ''; }
@@ -480,16 +472,84 @@ function initPODropzone() {
     });
 }
 
+// Outlook EML Trigger
+const triggerEMLDownload = async (type, crmRef, building, prNumber, rfNumber, isUrgent) => {
+    triggerHaptic();
+    window.showToast(`Generating ${type} draft...`, 'info');
+    try {
+        const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/draft-eml`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, crmRef, building, prNumber, rfNumber, isUrgent })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error();
+        
+        const blob = new Blob([data.eml], { type: 'message/rfc822' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = data.filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+        window.showToast('Draft ready for Outlook', 'success');
+    } catch(e) {
+        window.showToast('Failed to generate EML', 'error');
+    }
+};
+
 function initVWTracker() {
     const tableBody = document.getElementById('vw-table-body');
     const searchInput = document.getElementById('vw-search-input');
     const refreshBtn = document.getElementById('vw-refresh-btn');
+    const clearFiltersBtn = document.getElementById('btn-clear-filters');
     const dossierModal = document.getElementById('vw-dossier-modal');
     const dossierContent = document.getElementById('vw-dossier-content');
     const dossierTitle = document.getElementById('vw-dossier-title');
 
     if (!tableBody) return;
     let allVWRows = [];
+    
+    // Dynamic Column Toggler State
+    const colMenu = document.getElementById('col-menu');
+    const colToggleBtn = document.getElementById('btn-col-toggle');
+    const tableHead = document.querySelector('#vw-dynamic-headers');
+    const cols = ['Job Identity', 'Work Status', 'Tijori Sync', 'WASL LPO', 'WCR Status', 'SAP Sync', 'Financials'];
+    let colState = [true, true, true, true, true, true, true];
+
+    if(colMenu && !colMenu.hasChildNodes()) {
+        cols.forEach((c, i) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-family:var(--font-mono); font-size:11px; color:var(--ink);';
+            row.innerHTML = `<span>${c}</span><input type="checkbox" checked class="toggle-switch">`;
+            const cb = row.querySelector('input');
+            cb.addEventListener('change', () => {
+                colState[i] = cb.checked;
+                triggerHaptic();
+                applyColumnState();
+            });
+            colMenu.appendChild(row);
+        });
+    }
+
+    if(colToggleBtn) {
+        colToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            colMenu.style.display = colMenu.style.display === 'none' ? 'block' : 'none';
+        });
+    }
+    document.addEventListener('click', () => { if(colMenu) colMenu.style.display = 'none'; });
+    if(colMenu) colMenu.addEventListener('click', (e) => e.stopPropagation());
+
+    const applyColumnState = () => {
+        if(!tableHead) return;
+        const ths = tableHead.querySelectorAll('th');
+        ths.forEach((th, i) => { if(th) th.style.display = colState[i] ? '' : 'none'; });
+        const trs = tableBody.querySelectorAll('tr');
+        trs.forEach(tr => {
+            const tds = tr.querySelectorAll('td');
+            tds.forEach((td, i) => { if(td) td.style.display = colState[i] ? '' : 'none'; });
+        });
+    };
 
     const getPill = (val, type) => {
         const text = String(val).trim().toLowerCase();
@@ -549,10 +609,49 @@ function initVWTracker() {
                         dossierContent.appendChild(box);
                     }
                 });
+
+                const prIdx = item.rawHeaders.findIndex(h => h.toLowerCase().includes('pr'));
+                const rfIdx = item.rawHeaders.findIndex(h => h.toLowerCase().includes('rf'));
+                const prVal = prIdx !== -1 ? item.rawValues[prIdx] : '';
+                const rfVal = rfIdx !== -1 ? item.rawValues[rfIdx] : '';
+                const isUrgent = item.urgencyScore >= 2; 
+
+                const actionBox = document.createElement('div');
+                actionBox.style.cssText = 'grid-column: 1 / -1; margin-top:10px; padding-top:20px; border-top:var(--glass-border); display:flex; flex-direction:column; gap:16px;';
+                
+                actionBox.innerHTML = `
+                   <div>
+                       <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:8px;">Dispatch Engine (Windows / Outlook)</p>
+                       <div style="display:flex; gap:12px;">
+                           <button class="btn-primary haptic-btn" style="flex:1;" id="btn-eml-mgr">Draft Manager Review (.eml)</button>
+                           <button class="btn-primary haptic-btn" style="flex:1; background:rgba(229,169,60,0.2); color:var(--warn);" id="btn-eml-proc">${isUrgent ? 'URGENT: Chase Procurement' : 'Draft Procurement Chase (.eml)'}</button>
+                       </div>
+                   </div>
+                   <div style="padding-top:10px; border-top:1px dashed rgba(255,255,255,0.1);">
+                       <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:8px;">Cloud Engine (Mac / Gmail / Apple Mail)</p>
+                       <div style="display:flex; gap:12px;">
+                           <button class="btn-secondary haptic-btn" style="flex:1;" id="btn-cloud-mgr">Push to Cloud Drafts</button>
+                           <button class="btn-secondary haptic-btn" style="flex:1;" id="btn-cloud-proc">Push to Cloud Drafts</button>
+                       </div>
+                   </div>
+                `;
+
+                dossierContent.appendChild(actionBox);
+
+                // Wire up the buttons
+                document.getElementById('btn-eml-mgr').onclick = () => triggerEMLDownload('manager', item.crmRef, item.building, prVal, rfVal, isUrgent);
+                document.getElementById('btn-eml-proc').onclick = () => triggerEMLDownload('procurement', item.crmRef, item.building, prVal, rfVal, isUrgent);
+                
+                const cloudAlert = () => { triggerHaptic(); window.showToast('Cloud Push API pending Batch 3 wiring', 'warn'); };
+                document.getElementById('btn-cloud-mgr').onclick = cloudAlert;
+                document.getElementById('btn-cloud-proc').onclick = cloudAlert;
+
                 dossierModal.classList.add('active');
             });
             tableBody.appendChild(tr);
         });
+        
+        applyColumnState();
     };
 
     const loadVWData = async () => {
@@ -628,10 +727,36 @@ function initVWTracker() {
     };
     loadVWData();
 
+    // Clickable KPI Filters Logic
+    const applyFilter = (filterFn) => {
+        triggerHaptic();
+        if(searchInput) searchInput.value = '';
+        if(clearFiltersBtn) clearFiltersBtn.style.display = 'block';
+        renderTable(allVWRows.filter(filterFn));
+        window.scrollBy({ top: 300, behavior: 'smooth' });
+    };
+
+    if(document.getElementById('kpi-revenue')) {
+        document.getElementById('kpi-revenue').onclick = () => applyFilter(r => r.urgencyScore > 0);
+        document.getElementById('kpi-po-blockers').onclick = () => applyFilter(r => r.worksStatus.toLowerCase().includes('approved') && !r.waslPo);
+        document.getElementById('kpi-missing-wcrs').onclick = () => applyFilter(r => r.urgencyScore >= 3 && (!r.wcrSync || !String(r.wcrSync).toLowerCase().includes('yes')));
+        document.getElementById('kpi-sap-missing').onclick = () => applyFilter(r => r.urgencyScore >= 4 && String(r.wcrSync).toLowerCase().includes('yes') && (!r.sapSync || !String(r.sapSync).toLowerCase().includes('yes')));
+    }
+
+    if(clearFiltersBtn) {
+        clearFiltersBtn.addEventListener('click', () => {
+            triggerHaptic();
+            if(searchInput) searchInput.value = '';
+            clearFiltersBtn.style.display = 'none';
+            renderTable(allVWRows);
+        });
+    }
+
     if (refreshBtn) refreshBtn.addEventListener('click', () => { triggerHaptic(); loadVWData(); window.showToast('Pulling live updates...', 'info'); });
     
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
+            if(clearFiltersBtn) clearFiltersBtn.style.display = e.target.value.trim() ? 'block' : 'none';
             const queryStr = e.target.value.toLowerCase().trim();
             if (!queryStr) { renderTable(allVWRows); return; }
             const filtered = allVWRows.filter(item => 
