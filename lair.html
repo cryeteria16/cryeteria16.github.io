@@ -272,12 +272,15 @@
             </div>
         </div>
 
-        <div class="card stagger-3" id="fridge-card" style="padding:22px; display:flex; flex-direction:column;">
+<div class="card stagger-3" id="fridge-card" style="padding:22px; display:flex; flex-direction:column;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
               <h2 style="font-size:13px; font-family:var(--font-mono); text-transform:uppercase; color:var(--ink-soft);">The Fridge Door</h2>
-              <span id="fridge-status" style="font-size:11px; font-family:var(--font-mono); color:var(--ink-soft);">Synced</span>
+              <div style="display:flex; gap:10px; align-items:center;">
+                  <button id="btn-toggle-magnet" class="btn-secondary haptic-btn" style="padding:4px 8px; font-size:10px;">Draw</button>
+                  <span id="fridge-status" style="font-size:11px; font-family:var(--font-mono); color:var(--ink-soft);">Synced</span>
+              </div>
           </div>
-          <textarea id="fridge-door-text" placeholder="Write a shared note here..." spellcheck="false" style="flex:1; min-height:140px; resize:none; font-family:var(--font-body); font-size:14px; line-height:1.6; background:transparent; padding:0; border:none;"></textarea>
+          <textarea id="fridge-door-text" placeholder="Write a shared note here..." spellcheck="false" style="flex:1; min-height:140px; resize:none; font-family:var(--font-body); font-size:14px; line-height:1.6; background:transparent; padding:16px !important; border:none;"></textarea>
         </div>
 
         <div class="card stagger-4" style="padding:22px; display:flex; flex-direction:column;">
