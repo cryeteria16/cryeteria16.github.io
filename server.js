@@ -158,6 +158,40 @@ app.post('/api/fridge/log', verifyToken, async (req, res) => {
             requestBody: { values: [rowData] }
         });
 
+      const uploadMagnet = multer({ dest: path.join(__dirname, 'uploads') });
+
+app.post('/api/fridge/save-magnet', verifyToken, uploadMagnet.single('magnet_image'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No image file provided' });
+
+        const authClient = getGoogleAuthClient(['https://www.googleapis.com/auth/drive.file']);
+        const drive = google.drive({ version: 'v3', auth: authClient });
+
+        const fileMetadata = {
+            name: `Fridge_Magnet_${new Date().toISOString().replace(/:/g, '-')}.png`,
+            parents: [process.env.DRIVE_FOLDER_ID]
+        };
+
+        const media = {
+            mimeType: 'image/png',
+            body: fs.createReadStream(req.file.path)
+        };
+
+        await drive.files.create({
+            resource: fileMetadata,
+            media: media,
+            fields: 'id'
+        });
+
+        fs.unlinkSync(req.file.path);
+        res.json({ success: true });
+    } catch(e) {
+        if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+        console.error('[Lair OS] Magnet Drive Error:', e.message);
+        res.status(500).json({ error: 'Failed to upload to Google Drive' });
+    }
+});
+
         res.json({ success: true });
     } catch(e) { 
         console.error('[Lair OS] Fridge Log Error:', e.message);
