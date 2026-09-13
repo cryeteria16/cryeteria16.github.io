@@ -15,6 +15,7 @@ const { getFirestore } = require('firebase-admin/firestore');
 const { getAuth } = require('firebase-admin/auth');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { google } = require('googleapis');
+const pdftk = require('node-pdftk');
 
 let sharp;
 try { sharp = require('sharp'); } 
@@ -29,8 +30,10 @@ initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
 const app = express();
 
-const SPREADSHEET_ID = '1uX2OOd4HE3c_-Vl-PkeQhZicY2cFh3qFxASG7yl_uEo'; // Your private Auditor Ledger
-const VW_SPREADSHEET_ID = '16xMK8-wOZsysB2g28uwzN0BL3iZg3jet-_Nv_M9jxB4'; // The Manager's New Sheet (READ ONLY)
+const SPREADSHEET_ID = '1uX2OOd4HE3c_-Vl-PkeQhZicY2cFh3qFxASG7yl_uEo'; 
+const VW_SPREADSHEET_ID = '16xMK8-wOZsysB2g28uwzN0BL3iZg3jet-_Nv_M9jxB4'; 
+const FRIDGE_SHEET_ID = '10H85OiEHj9XV7I3cp5qHsCY00aPHxfoTmYYKZ5Utze8';
+
 const TUNNEL_URL = 'https://vault.ibadhasan.com';
 const TMDB_API_KEY = process.env.TMDB_API_KEY;
 const STREAM_SECRET = process.env.STREAM_TOKEN_SECRET;
@@ -112,11 +115,13 @@ const moviesDir = path.join(__dirname, 'Movies');
 const photosDir = path.join(__dirname, 'Photography');
 const thumbsDir = path.join(photosDir, '.thumbs');
 const invoicesDir = path.join(__dirname, 'Invoices');
+const tempPdfDir = path.join(__dirname, 'TempPDFs');
 
 if (!fs.existsSync(moviesDir)) fs.mkdirSync(moviesDir);
 if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir);
 if (!fs.existsSync(thumbsDir)) fs.mkdirSync(thumbsDir, { recursive: true });
 if (!fs.existsSync(invoicesDir)) fs.mkdirSync(invoicesDir);
+if (!fs.existsSync(tempPdfDir)) fs.mkdirSync(tempPdfDir);
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, photosDir),
@@ -128,12 +133,116 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 const uploadInvoice = multer({ dest: invoicesDir });
 const uploadPO = multer({ dest: invoicesDir });
+const uploadPDF = multer({ dest: tempPdfDir });
 
 const API_KEYS = [
     process.env.GEMINI_KEY_1,
     process.env.GEMINI_KEY_2,
     process.env.GEMINI_KEY_3
 ].filter(Boolean);
+
+// ==== UPGRADED FRIDGE DOOR GOOGLE SHEETS LOGGER ====
+app.post('/api/fridge/log', verifyToken, async (req, res) => {
+    try {
+        const { text, user } = req.body;
+        if (!text || text.trim() === '') return res.json({ success: true, skipped: true });
+
+        const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets'] });
+        const sheets = google.sheets({ version: 'v4', auth: authClient });
+
+        const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Dubai', hour12: false });
+        
+        // Exact 5-column format
+        const rowData = [timestamp, user, "Fridge", "Updated Note", text];
+
+        await sheets.spreadsheets.values.append({
+            spreadsheetId: FRIDGE_SHEET_ID,
+            range: "'Check-ins'!A:E", 
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [rowData] }
+        });
+
+        res.json({ success: true });
+    } catch(e) { 
+        console.error('[Lair OS] Fridge Log Error:', e.message);
+        res.status(500).json({ error: 'Failed to log to Google Sheets' }); 
+    }
+});
+
+// ==== PDF ASSEMBLY ENGINE (PDFtk + GMAIL API) ====
+app.post('/api/work/assemble', verifyToken, uploadPDF.array('pdf_files', 15), async (req, res) => {
+    try {
+        const { subject, email, mode } = req.body;
+        const files = req.files;
+        if (!files || files.length < 2) return res.status(400).json({ error: 'Requires at least 2 PDFs' });
+
+        const filePaths = files.map(f => f.path);
+        
+        // Merge PDFs using the industrial PDFtk Engine
+        const mergedPdfBuffer = await pdftk.input(filePaths).cat().output();
+
+        // Cleanup temp files immediately
+        filePaths.forEach(fp => { if(fs.existsSync(fp)) fs.unlinkSync(fp); });
+
+        const attachmentBase64 = mergedPdfBuffer.toString('base64');
+        const boundary = "----=_NextPart_000_0001";
+        
+        const emlBody = [
+            `To: ${email}`,
+            `Subject: ${subject}`,
+            `X-Unsent: 1`,
+            `MIME-Version: 1.0`,
+            `Content-Type: multipart/mixed; boundary="${boundary}"`,
+            ``,
+            `--${boundary}`,
+            `Content-Type: text/plain; charset=utf-8`,
+            ``,
+            `Please find the assembled PDF documentation attached.`,
+            ``,
+            `--${boundary}`,
+            `Content-Type: application/pdf; name="Assembled_Document.pdf"`,
+            `Content-Transfer-Encoding: base64`,
+            `Content-Disposition: attachment; filename="Assembled_Document.pdf"`,
+            ``,
+            attachmentBase64,
+            ``,
+            `--${boundary}--`
+        ].join('\r\n');
+
+        if (mode === 'eml') {
+            res.setHeader('Content-Type', 'message/rfc822');
+            res.setHeader('Content-Disposition', `attachment; filename="Draft.eml"`);
+            return res.send(emlBody);
+        } else if (mode === 'gmail') {
+            // Push directly to Google Workspace Gmail Drafts
+            const authClient = new google.auth.GoogleAuth({
+                keyFile: './serviceAccountKey.json',
+                scopes: ['https://www.googleapis.com/auth/gmail.compose']
+            });
+            
+            // Requires Domain-Wide Delegation to impersonate your admin email
+            // (If not set up, this will throw an error telling you to configure it)
+            authClient.subject = req.user.email || 'manager@al-ghurair.com'; 
+            
+            const gmail = google.gmail({ version: 'v1', auth: authClient });
+            const encodedEmail = Buffer.from(emlBody).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+            
+            try {
+                await gmail.users.drafts.create({
+                    userId: 'me',
+                    requestBody: { message: { raw: encodedEmail } }
+                });
+                return res.json({ success: true });
+            } catch (gmailErr) {
+                console.error("[Lair OS] Gmail API Error. Requires Domain-Wide Delegation:", gmailErr.message);
+                throw new Error('Gmail API requires Google Workspace Domain-Wide Delegation.');
+            }
+        }
+    } catch(e) {
+        console.error(e);
+        res.status(500).json({ error: 'Assembly failed', details: e.message });
+    }
+});
 
 app.get('/api/public/cloud/:filename', async (req, res) => {
     try {
@@ -213,9 +322,6 @@ app.post('/api/work/extract-po', verifyToken, uploadPO.single('po_file'), async 
     }
 });
 
-// REMOVED: /api/work/sync-po-to-sheet
-// ENFORCING STRICT READ-ONLY POLICY ON MANAGER'S SHEET
-
 app.post('/api/work/sync', verifyToken, async (req, res) => {
     try {
         const rows = Array.isArray(req.body.rows) ? req.body.rows : [];
@@ -248,6 +354,32 @@ app.post('/api/work/sync', verifyToken, async (req, res) => {
     } catch(e) { res.status(500).json({ error: 'Failed to sync' }); }
 });
 
+app.post('/api/work/draft-eml', verifyToken, (req, res) => {
+    const { type, crmRef, building, prNumber, rfNumber, isUrgent } = req.body;
+    
+    const safeRef = crmRef || 'Pending';
+    const safeBuilding = building || 'General Site';
+    
+    let to = "";
+    let cc = "";
+    let subject = "";
+    let body = "";
+
+    if (type === 'manager') {
+        to = "manager.name@al-ghurair.com"; 
+        subject = `Approval Required: Variable Work - ${safeRef} - ${safeBuilding}`;
+        body = `Hi Manager,\n\nPlease find the attached quotation and breakdown report for the variable work at ${safeBuilding}. The original vendor quotation is also attached for your final review prior to the Dynamics submission.\n\nCRM Reference: ${safeRef}\n\nBest regards,\nIbad`;
+    } else if (type === 'procurement') {
+        to = "procurement.team@al-ghurair.com"; 
+        subject = `${isUrgent ? 'URGENT: ' : 'Action Required: '}Pending PO Release for PR ${prNumber || '[TBA]'} / RF ${rfNumber || '[TBA]'}`;
+        body = `Hi Procurement Team,\n\nWe are awaiting the PO release for the approved variable work at ${safeBuilding}. PR ${prNumber || '[PR Number]'} was raised against RF ${rfNumber || '[RF Number]'}. Please expedite as the site team is currently on standby to execute.\n\nBest regards,\nIbad`;
+        if (isUrgent) cc = "manager.name@al-ghurair.com";
+    }
+
+    const emlString = `To: ${to}\n${cc ? `Cc: ${cc}\n` : ''}Subject: ${subject}\nX-Unsent: 1\nContent-Type: text/plain; charset=utf-8\n\n${body}`;
+    res.json({ success: true, eml: emlString, filename: `${safeRef.replace(/[^a-zA-Z0-9]/g, '_')}_${type}_Draft.eml` });
+});
+
 app.get('/api/work/ledger', verifyToken, async (req, res) => {
     try {
         const authClient = new google.auth.GoogleAuth({ keyFile: './serviceAccountKey.json', scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] });
@@ -270,28 +402,79 @@ app.get('/api/work/ledger', verifyToken, async (req, res) => {
     } catch (error) { res.status(500).json({ error: 'Failed to load ledger.' }); }
 });
 
-// PASSIVE SYNC TO MANAGER'S SHEET - STRICT READ ONLY SCOPE
 app.get('/api/work/vw-tracker', verifyToken, async (req, res) => {
     try {
         const authClient = new google.auth.GoogleAuth({ 
             keyFile: './serviceAccountKey.json', 
-            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] // Impenetrable read-only wall
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
         });
         const sheets = google.sheets({ version: 'v4', auth: authClient });
 
         const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
-        // Target VW_Tracker tab explicitly, fallback to first tab if missing
         const targetSheet = meta.data.sheets.find(s => s.properties.title === 'VW_Tracker') || meta.data.sheets[0];
         const sheetName = targetSheet.properties.title;
         
         const response = await sheets.spreadsheets.values.get({ spreadsheetId: VW_SPREADSHEET_ID, range: `'${sheetName}'!A1:AZ` });
 
-        const rows = response.data.values || [];
-        // We pass the raw matrix directly to the frontend to allow the dashboard to parse and render it dynamically
-        res.json({ success: true, rows });
+        res.json({ success: true, rows: response.data.values || [] });
     } catch (error) { 
-        console.error('[Lair OS] VW Tracker Sync Error:', error.message);
         res.status(500).json({ error: 'Failed to load VW tracker from Google Cloud.' }); 
+    }
+});
+
+app.get('/api/work/vw-briefing', verifyToken, async (req, res) => {
+    try {
+        const authClient = new google.auth.GoogleAuth({ 
+            keyFile: './serviceAccountKey.json', 
+            scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'] 
+        });
+        const sheets = google.sheets({ version: 'v4', auth: authClient });
+
+        const meta = await sheets.spreadsheets.get({ spreadsheetId: VW_SPREADSHEET_ID });
+        const targetSheet = meta.data.sheets.find(s => s.properties.title === 'VW_Tracker') || meta.data.sheets[0];
+        const sheetName = targetSheet.properties.title;
+
+        const response = await sheets.spreadsheets.values.get({ spreadsheetId: VW_SPREADSHEET_ID, range: `'${sheetName}'!A1:AZ` });
+
+        const rows = response.data.values || [];
+        if (rows.length <= 1) return res.json({ summary: "No data available to analyze.", metrics: { completedWorks: 0, missingWcr: 0, missingSapUpload: 0, pendingWaslPo: 0 } });
+
+        const headers = rows[0].map(h => String(h).toLowerCase());
+        const dataRows = rows.slice(1);
+
+        const idxStatus = headers.findIndex(h => h.includes('status'));
+        const idxWaslPo = headers.findIndex(h => h.includes('purchase order') || h.includes('lpo'));
+        const idxWcr = headers.findIndex(h => h.includes('wcr prepared'));
+        const idxSap = headers.findIndex(h => h.includes('sap') && h.includes('uploaded'));
+
+        let metrics = { totalWorks: dataRows.length, completedWorks: 0, missingWcr: 0, missingSapUpload: 0, pendingWaslPo: 0 };
+
+        dataRows.forEach(row => {
+            const getVal = (idx) => idx !== -1 ? (row[idx] || '') : '';
+            const status = getVal(idxStatus).toLowerCase();
+            const isApproved = status.includes('completed') || status.includes('approved');
+
+            if (isApproved) {
+                metrics.completedWorks++;
+                if (!getVal(idxWcr).includes('yes')) metrics.missingWcr++;
+                if (getVal(idxWcr).includes('yes') && !getVal(idxSap).includes('yes')) metrics.missingSapUpload++;
+                if (!getVal(idxWaslPo)) metrics.pendingWaslPo++;
+            }
+        });
+
+        if (API_KEYS.length === 0) return res.status(503).json({ error: 'No AI config found.' });
+
+        const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
+        const genAI = new GoogleGenerativeAI(activeKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash" }); 
+
+        const prompt = `You are a Facility Operations Manager. Analyze these live KPI metrics: ${JSON.stringify(metrics)}. Provide a 3-sentence executive summary focusing strictly on the workflow blockers (Missing WCRs, Missing SAP uploads, Pending POs) and the urgency of resolving them. Do not use markdown or pleasantries.`;
+        
+        const aiResponse = await model.generateContent(prompt);
+        res.json({ metrics, summary: aiResponse.response.text().trim() });
+    } catch (error) { 
+        console.error('[Lair OS] VW Briefing Error:', error.message);
+        res.status(500).json({ error: 'AI Briefing failed.' }); 
     }
 });
 

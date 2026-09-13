@@ -3,11 +3,7 @@ const STATIC_ASSETS = [
   '/manifest.json',
   '/index.html',
   '/lair.html',
-  '/admin.html',
-  '/index.js',
-  '/lair.js',
-  '/admin.js',
-  '/firebase-config.js'
+  '/admin.html'
 ];
 
 self.addEventListener('install', (event) => {
@@ -31,6 +27,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
+  
+  // Only cache GET requests (bypassing APIs and POSTs)
+  if (req.method !== 'GET') return;
+
   if (req.mode === 'navigate' || req.destination === 'document') {
     event.respondWith(
       fetch(req)
