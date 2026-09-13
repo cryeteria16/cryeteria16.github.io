@@ -552,16 +552,14 @@
           </section>
         </div>
 
-        <section class="card stagger-3" style="display:flex; flex-direction:column; min-height:420px; padding:22px;">
-          <h2 style="font-family:var(--font-display); font-size:19px; margin-bottom:18px;">Live Chat</h2>
-          <div id="chat-window" style="flex:1; overflow-y:auto; margin-bottom:14px; font-size:14px; display:flex; flex-direction:column; gap:8px;"></div>
-          <div style="display:flex; gap:8px;">
-            <input type="text" id="chat-input" placeholder="Write message...">
-            <button class="btn-primary haptic-btn" id="btn-send-chat">&rarr;</button>
-          </div>
-        </section>
-      </div>
-    </section>
+        <section class="card stagger-3" style="display:flex; flex-direction:column; height:580px; max-height:75vh; padding:22px;">
+  <h2 style="font-family:var(--font-display); font-size:19px; margin-bottom:18px;">Live Chat</h2>
+  <div id="chat-window" style="flex:1; min-height:0; overflow-y:auto; margin-bottom:14px; font-size:14px; display:flex; flex-direction:column; gap:8px; padding-right:4px;"></div>
+  <div style="display:flex; gap:8px;">
+    <input type="text" id="chat-input" placeholder="Write message...">
+    <button class="btn-primary haptic-btn" id="btn-send-chat">&rarr;</button>
+  </div>
+</section>
 
     <section id="view-voice" class="view-container">
       <div class="card stagger-1" style="max-width:460px; margin:0 auto; padding:36px 28px; text-align:center;">
