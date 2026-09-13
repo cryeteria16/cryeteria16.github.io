@@ -1003,7 +1003,15 @@ function initTheaterChat() {
         const row = document.createElement('div');
         row.style.cssText = `align-self:${mine ? 'flex-end' : 'flex-start'}; max-width:80%; background:${mine ? 'var(--accent)' : 'var(--input-bg)'}; color:${mine ? '#000' : 'var(--ink)'}; padding:8px 14px; border-radius:16px; font-size:13px;`;
         
-        if (!mine) { const nameDiv = document.createElement('div'); nameDiv.style.cssText = 'font-family:var(--font-mono); font-size:10px; opacity:0.7; margin-bottom:2px;'; nameDiv.textContent = m.name; row.appendChild(nameDiv); }
+        // Format Firestore timestamp safely
+        const timeStr = m.timestamp?.toDate ? m.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '';
+
+        if (!mine || timeStr) { 
+            const metaDiv = document.createElement('div'); 
+            metaDiv.style.cssText = 'font-family:var(--font-mono); font-size:10px; opacity:0.7; margin-bottom:2px; display:flex; justify-content:space-between; gap:12px;';
+            metaDiv.innerHTML = `<span>${!mine ? m.name : ''}</span><span>${timeStr}</span>`;
+            row.appendChild(metaDiv); 
+        }
         row.appendChild(document.createTextNode(m.text)); return row;
     };
 
