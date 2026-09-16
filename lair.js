@@ -1251,38 +1251,60 @@ function initVoiceRoom() {
 }
 
 function initWatchParty() {
-    let currentSessionUrl = null; let isYt = false; let ytPlayer = null; let art = null; let ignoreNextSync = false; let wakeLock = null;
+    let currentSessionUrl = null; 
+    let isYt = false; 
+    let ytPlayer = null; 
+    let art = null; 
+    let isSyncing = false; // Strictly blocks the feedback loop
+    let wakeLock = null;
 
     const requestWakeLock = async () => { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
 
-    let ytApiReady = false; window.onYouTubeIframeAPIReady = function() { ytApiReady = true; };
+    let ytApiReady = false; 
+    window.onYouTubeIframeAPIReady = function() { ytApiReady = true; };
     const tag = document.createElement('script'); tag.src = "https://www.youtube.com/iframe_api";
     const firstScriptTag = document.getElementsByTagName('script')[0]; firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
     const joinOverlay = document.getElementById('theater-join-overlay');
-    document.getElementById('btn-join-party').addEventListener('click', () => { triggerHaptic(); joinOverlay.style.display = 'none'; document.getElementById('theater-player-slot').style.display = 'flex'; });
+    document.getElementById('btn-join-party').addEventListener('click', () => { 
+        triggerHaptic(); joinOverlay.style.display = 'none'; document.getElementById('theater-player-slot').style.display = 'flex'; 
+    });
 
     document.getElementById('btn-load-cowatch').addEventListener('click', async () => {
         const urlInput = document.getElementById('cowatch-url-input'); const url = urlInput.value.trim(); if (!url) return;
         triggerHaptic(); joinOverlay.style.display = 'none'; await mountMedia(url); pushState(true, 0); urlInput.value = '';
     });
 
-    const pushState = (isPlaying, time) => { if(!ignoreNextSync) setDoc(doc(db, 'system', 'watch_party'), { url: currentSessionUrl, isPlaying: isPlaying, timestamp: time, updatedAt: serverTimestamp(), updatedBy: currentUser.name }); };
+    const pushState = (isPlaying, time) => { 
+        if(isSyncing) return; // Prevent echoing remote commands back to Firebase
+        setDoc(doc(db, 'system', 'watch_party'), { url: currentSessionUrl, isPlaying: isPlaying, timestamp: time, updatedAt: serverTimestamp(), updatedBy: currentUser.name }); 
+    };
 
     const mountMedia = async (rawUrl) => {
-        currentSessionUrl = rawUrl; document.getElementById('theater-player-slot').style.display = 'none'; document.getElementById('yt-container').style.display = 'none';
+        currentSessionUrl = rawUrl; 
+        document.getElementById('theater-player-slot').style.display = 'none'; 
+        document.getElementById('yt-container').style.display = 'none';
 
         if (/(youtube\.com|youtu\.be)/.test(rawUrl)) {
             isYt = true; document.getElementById('yt-container').style.display = 'block';
             let videoId = ''; const match = rawUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/);
             if(match) videoId = match[1];
+            
             if(art) { art.destroy(); art = null; }
 
-            if (ytPlayer && ytPlayer.loadVideoById) { ytPlayer.loadVideoById(videoId); } else {
+            if (ytPlayer && ytPlayer.loadVideoById) { 
+                ytPlayer.loadVideoById(videoId); 
+            } else {
                 if (!ytApiReady || typeof YT === 'undefined' || !YT.Player) { setTimeout(() => mountMedia(rawUrl), 1000); return; }
                 ytPlayer = new YT.Player('yt-player-slot', {
                     videoId: videoId, playerVars: { 'autoplay': 1, 'controls': 1 },
-                    events: { 'onStateChange': (e) => { if (e.data === YT.PlayerState.PLAYING) pushState(true, ytPlayer.getCurrentTime()); if (e.data === YT.PlayerState.PAUSED) pushState(false, ytPlayer.getCurrentTime()); } }
+                    events: { 
+                        'onStateChange': (e) => { 
+                            if(isSyncing) return; 
+                            if (e.data === YT.PlayerState.PLAYING) pushState(true, ytPlayer.getCurrentTime()); 
+                            if (e.data === YT.PlayerState.PAUSED) pushState(false, ytPlayer.getCurrentTime()); 
+                        } 
+                    }
                 });
             }
         } else {
@@ -1299,9 +1321,10 @@ function initWatchParty() {
             }
 
             art = new Artplayer({ container: '#theater-player-slot', url: secureUrl, theme: '#70947A', fullscreen: true, setting: true, playbackRate: true, aspectRatio: true, fastForward: true, miniProgressBar: true, pip: true, playsInline: true, autoOrientation: true });
-            art.on('play', () => { requestWakeLock(); pushState(true, art.currentTime); });
-            art.on('pause', () => { if(wakeLock) { wakeLock.release(); wakeLock = null; } pushState(false, art.currentTime); });
-            art.on('seek', () => { pushState(art.playing, art.currentTime); });
+            
+            art.on('play', () => { requestWakeLock(); if(!isSyncing) pushState(true, art.currentTime); });
+            art.on('pause', () => { if(wakeLock) { wakeLock.release(); wakeLock = null; } if(!isSyncing) pushState(false, art.currentTime); });
+            art.on('seek', () => { if(!isSyncing) pushState(art.playing, art.currentTime); });
             art.on('fullscreen', (state) => { if (/iPhone/.test(navigator.userAgent) && state && art.video.webkitEnterFullscreen) { art.video.webkitEnterFullscreen(); art.fullscreen = false; } });
         }
     };
@@ -1310,22 +1333,28 @@ function initWatchParty() {
 
     onSnapshot(doc(db, 'system', 'watch_party'), (snap) => {
         if(!snap.exists()) return; const data = snap.data();
-        if(data.url && data.url !== currentSessionUrl) mountMedia(data.url);
+        
+        // Let a new video mount fully before attempting to sync times
+        if(data.url && data.url !== currentSessionUrl) { mountMedia(data.url); return; }
+        
         if(data.updatedBy === currentUser.name) return; 
 
         const expectedTime = data.timestamp + (data.updatedAt ? ((Date.now() - data.updatedAt.toMillis()) / 1000) : 0);
-        ignoreNextSync = true;
         
-        if (isYt && ytPlayer && ytPlayer.getPlayerState) {
+        isSyncing = true; // Lock out the event listeners temporarily
+        
+        if (isYt && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
             if (Math.abs(ytPlayer.getCurrentTime() - expectedTime) > 2.0) ytPlayer.seekTo(expectedTime, true);
             if (data.isPlaying && ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) ytPlayer.playVideo();
             if (!data.isPlaying && ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
-        } else if (!isYt && art) {
+        } else if (!isYt && art && art.video && art.video.readyState >= 1) { // Ensure MP4 metadata is loaded before seeking
             if (Math.abs(art.currentTime - expectedTime) > 2.0) art.currentTime = expectedTime;
-            if (data.isPlaying && !art.playing) art.play();
+            if (data.isPlaying && !art.playing) art.play().catch(()=>{});
             if (!data.isPlaying && art.playing) art.pause();
         }
-        setTimeout(() => { ignoreNextSync = false; }, 500);
+        
+        // Unblock after an 800ms delay to let asynchronous play/pause events safely pass without triggering a pushState
+        setTimeout(() => { isSyncing = false; }, 800);
     });
 }
 
