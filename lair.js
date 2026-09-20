@@ -854,119 +854,12 @@ function initOS() {
       }).catch(e => console.log('Silently failed to log to Sheets', e));
   });
 
-  initWatchParty(); initVault(); initTheaterChat(); initWatchlist(); initConfigAndFeatures(); initRadarFeed(); initVoiceRoom(); initAuditor(); initVWTracker(); initPODropzone(); initAdminPinPad(); initFridgeMagnet();
+  initWatchParty(); initVault(); initTheaterChat(); initWatchlist(); initConfigAndFeatures(); initRadarFeed(); initVoiceRoom(); initAuditor(); initVWTracker(); initPODropzone(); initAdminPinPad();
 
   document.getElementById('btn-open-po-modal').addEventListener('click', () => { triggerHaptic(); document.getElementById('po-extractor-modal').classList.add('active'); });
 }
 
 // ==== THE FRIDGE MAGNET (DRAWING BOARD) ====
-function initFridgeMagnet() {
-    const btnToggle = document.getElementById('btn-toggle-magnet');
-    const magnet = document.getElementById('fridge-magnet');
-    const canvas = document.getElementById('magnet-canvas');
-    const header = document.getElementById('magnet-header');
-    const resize = document.getElementById('magnet-resize');
-    const btnClear = document.getElementById('btn-clear-magnet');
-    if(!btnToggle || !magnet || !canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    let isDrawing = false; let x = 0; let y = 0;
-    
-    const resizeCanvas = () => {
-        const rect = canvas.getBoundingClientRect();
-        if(canvas.width !== rect.width || canvas.height !== rect.height) {
-            canvas.width = rect.width; canvas.height = rect.height;
-            ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = 'var(--accent)';
-        }
-    };
-
-    onSnapshot(doc(db, 'system', 'fridge_magnet'), (snap) => {
-        if(snap.exists()) {
-            const data = snap.data();
-            
-            if(!magnet.dataset.isDragging && data.style) {
-                magnet.style.left = data.style.left;
-                magnet.style.top = data.style.top;
-                magnet.style.width = data.style.width;
-                magnet.style.height = data.style.height;
-                resizeCanvas();
-            }
-
-            if(data.updatedBy !== currentUser.id && data.image) {
-                const img = new Image();
-                img.onload = () => { ctx.clearRect(0,0,canvas.width,canvas.height); ctx.drawImage(img,0,0); };
-                img.src = data.image;
-            } else if (!data.image) {
-                ctx.clearRect(0,0,canvas.width,canvas.height);
-            }
-        }
-    });
-
-    const saveStateToFirebase = async () => {
-        await setDoc(doc(db, 'system', 'fridge_magnet'), {
-            image: canvas.toDataURL(),
-            updatedBy: currentUser.id,
-            style: { left: magnet.style.left, top: magnet.style.top, width: magnet.style.width, height: magnet.style.height }
-        }, {merge: true});
-    };
-
-    btnToggle.addEventListener('click', () => {
-        magnet.style.display = magnet.style.display === 'none' ? 'flex' : 'none';
-        resizeCanvas();
-    });
-
-    btnClear.addEventListener('click', async () => {
-        triggerHaptic(); ctx.clearRect(0,0,canvas.width,canvas.height);
-        await setDoc(doc(db, 'system', 'fridge_magnet'), { image: null, updatedBy: currentUser.id }, {merge: true});
-    });
-
-    const startDrawing = (e) => {
-        isDrawing = true; resizeCanvas();
-        const rect = canvas.getBoundingClientRect();
-        x = (e.clientX || e.touches[0].clientX) - rect.left;
-        y = (e.clientY || e.touches[0].clientY) - rect.top;
-    };
-    const draw = (e) => {
-        if(!isDrawing) return; e.preventDefault();
-        const rect = canvas.getBoundingClientRect();
-        const newX = (e.clientX || e.touches[0].clientX) - rect.left;
-        const newY = (e.clientY || e.touches[0].clientY) - rect.top;
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(newX, newY); ctx.stroke(); ctx.closePath();
-        x = newX; y = newY;
-    };
-    const stopDrawing = () => { if(isDrawing) { isDrawing = false; saveStateToFirebase(); } };
-
-    canvas.addEventListener('mousedown', startDrawing); canvas.addEventListener('mousemove', draw);
-    canvas.addEventListener('mouseup', stopDrawing); canvas.addEventListener('mouseleave', stopDrawing);
-    canvas.addEventListener('touchstart', startDrawing); canvas.addEventListener('touchmove', draw); canvas.addEventListener('touchend', stopDrawing);
-
-    let isDragging = false; let dragX = 0; let dragY = 0;
-    header.addEventListener('mousedown', e => {
-        isDragging = true; magnet.dataset.isDragging = "true";
-        dragX = e.clientX - magnet.getBoundingClientRect().left;
-        dragY = e.clientY - magnet.getBoundingClientRect().top;
-    });
-    window.addEventListener('mousemove', e => {
-        if(!isDragging) return;
-        magnet.style.left = `${e.clientX - dragX}px`;
-        magnet.style.top = `${e.clientY - dragY}px`;
-    });
-    window.addEventListener('mouseup', () => {
-        if(isDragging) { isDragging = false; magnet.dataset.isDragging = ""; saveStateToFirebase(); }
-    });
-
-    let isResizing = false;
-    resize.addEventListener('mousedown', e => { isResizing = true; magnet.dataset.isDragging = "true"; e.stopPropagation(); });
-    window.addEventListener('mousemove', e => {
-        if(!isResizing) return;
-        const rect = magnet.getBoundingClientRect();
-        magnet.style.width = `${e.clientX - rect.left}px`;
-        magnet.style.height = `${e.clientY - rect.top}px`;
-    });
-    window.addEventListener('mouseup', () => {
-        if(isResizing) { isResizing = false; magnet.dataset.isDragging = ""; resizeCanvas(); saveStateToFirebase(); }
-    });
-}
 
 function initAdminPinPad() {
     const adminBtn = document.getElementById('dock-admin-link');
@@ -1531,15 +1424,16 @@ document.getElementById('vault-photo-input').addEventListener('change', async (e
   initVault(); e.target.value = '';
 });
 // ==== THE FRIDGE MAGNET (DRAWING BOARD & DRIVE AUTO-SAVE) ====
+// ==== THE FRIDGE MAGNET (DRAWING BOARD & DRIVE MANUAL SAVE) ====
 const canvas = document.getElementById('magnet-canvas');
 const ctx = canvas ? canvas.getContext('2d') : null;
 const colorPicker = document.getElementById('magnet-color');
 const clearBtn = document.getElementById('btn-clear-canvas');
+const saveBtn = document.getElementById('btn-save-magnet');
 
 let isDrawing = false;
 let lastX = 0;
 let lastY = 0;
-let saveTimeout;
 
 function resizeCanvas() {
     if (!canvas || !ctx) return;
@@ -1560,7 +1454,7 @@ function resizeCanvas() {
 }
 
 window.addEventListener('resize', resizeCanvas);
-setTimeout(resizeCanvas, 100);
+setTimeout(resizeCanvas, 150);
 
 function getCoords(e) {
     const rect = canvas.getBoundingClientRect();
@@ -1580,7 +1474,7 @@ function getCoords(e) {
 }
 
 function startDrawing(e) {
-    if (!canvas) return;
+    if (!canvas || !ctx) return;
     isDrawing = true;
     const pos = getCoords(e);
     lastX = pos.x;
@@ -1606,42 +1500,8 @@ function draw(e) {
     lastY = pos.y;
 }
 
-function queueMagnetSave() {
-    clearTimeout(saveTimeout);
-    const statusEl = document.getElementById('fridge-status');
-    if (statusEl) statusEl.textContent = 'Saving...';
-    
-    saveTimeout = setTimeout(() => {
-        if (!canvas) return;
-        canvas.toBlob(blob => {
-            const formData = new FormData();
-            formData.append('magnet_image', blob, `magnet_${Date.now()}.png`);
-
-            fetchWithAuth(`${TUNNEL_URL}/api/fridge/save-magnet`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (statusEl) {
-                    if (data.success) {
-                        statusEl.textContent = 'Synced to Drive';
-                    } else {
-                        statusEl.textContent = 'Sync Failed';
-                    }
-                }
-            })
-            .catch(() => {
-                if (statusEl) statusEl.textContent = 'Offline';
-            });
-        }, 'image/png');
-    }, 2000);
-}
-
 function stopDrawing() {
-    if (!isDrawing) return;
     isDrawing = false;
-    queueMagnetSave();
 }
 
 if (canvas) {
@@ -1658,8 +1518,50 @@ if (canvas) {
 if (clearBtn) {
     clearBtn.addEventListener('click', () => {
         if (canvas && ctx) {
+            triggerHaptic();
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            queueMagnetSave();
         }
+    });
+}
+
+if (saveBtn) {
+    saveBtn.addEventListener('click', () => {
+        if (!canvas || !ctx) return;
+        triggerHaptic();
+
+        saveBtn.disabled = true;
+        const originalText = saveBtn.textContent;
+        saveBtn.textContent = 'Saving...';
+
+        canvas.toBlob(async (blob) => {
+            if (!blob) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('magnet_image', blob, `magnet_${Date.now()}.png`);
+
+            try {
+                const res = await fetchWithAuth(`${TUNNEL_URL}/api/fridge/save-magnet`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    window.showToast('Sketch saved to Google Drive! ✔', 'success');
+                } else {
+                    window.showToast(data.error || 'Failed to save sketch', 'error');
+                }
+            } catch (err) {
+                window.showToast('Server unreachable. Save failed.', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
+            }
+        }, 'image/png');
     });
 }
