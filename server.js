@@ -168,38 +168,27 @@ app.post('/api/fridge/log', verifyToken, async (req, res) => {
 // Uses native OS temp folder to permanently avoid missing directory crashes
 const uploadMagnet = multer({ dest: os.tmpdir() });
 
+const uploadMagnet = multer({ dest: os.tmpdir() });
+
 app.post('/api/fridge/save-magnet', verifyToken, uploadMagnet.single('magnet_image'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No image file provided' });
         
-        // Failsafe check to ensure your .env actually has the target folder loaded
-        if (!process.env.DRIVE_FOLDER_ID) throw new Error("DRIVE_FOLDER_ID is missing from .env");
-
-        const authClient = getGoogleAuthClient(['https://www.googleapis.com/auth/drive.file']);
-        const drive = google.drive({ version: 'v3', auth: authClient });
-
-        const fileMetadata = {
-            name: `Fridge_Magnet_${new Date().toISOString().replace(/:/g, '-')}.png`,
-            parents: [process.env.DRIVE_FOLDER_ID]
-        };
-
-        const media = {
-            mimeType: 'image/png',
-            body: fs.createReadStream(req.file.path)
-        };
-
-        await drive.files.create({
-            resource: fileMetadata,
-            media: media,
-            fields: 'id'
-        });
-
-        fs.unlinkSync(req.file.path);
+        // Route the sketch directly to your local Windows 'Photography' folder
+        const finalName = `Fridge_Magnet_${Date.now()}.png`;
+        const finalPath = path.join(photosDir, finalName);
+        
+        fs.copyFileSync(req.file.path, finalPath);
+        fs.unlinkSync(req.file.path); // Clean up the OS temp file
+        
+        // Automatically generate a web-optimized thumbnail for your Lair Gallery
+        await generateThumbnail(finalName);
+        
         res.json({ success: true });
     } catch(e) {
         if (req.file && fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-        console.error('[Lair OS] Magnet Drive Error:', e.message);
-        res.status(500).json({ error: 'Failed to upload to Google Drive' });
+        console.error('[Lair OS] Magnet Local Save Error:', e.message);
+        res.status(500).json({ error: 'Failed to save to local Vault' });
     }
 });
 
