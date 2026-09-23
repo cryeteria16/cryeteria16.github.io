@@ -668,11 +668,13 @@ function initVWTracker() {
             const idxSap = headers.findIndex(h => h.includes('sap') && h.includes('uploaded'));
             const idxWaslCost = headers.findIndex(h => h.includes('total wasl cost') || (h.includes('wasl') && h.includes('cost')));
             const idxSupCost = headers.findIndex(h => h.includes('supplier cost') || (h.includes('supplier') && h.includes('cost')));
+            const idxQtnDate = headers.findIndex(h => h.includes('qtn email date') || h.includes('email date'));
 
             let pendingRevenue = 0;
             let poBlockers = 0;
             let missingWcrs = 0;
             let missingSap = 0;
+            let unsentQuotes = 0;
 
             allVWRows = dataRows.map((row) => {
                 const getVal = (idx) => idx !== -1 ? (row[idx] || '') : '';
