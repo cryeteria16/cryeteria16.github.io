@@ -693,12 +693,18 @@ function initVWTracker() {
                 if (isApproved && waslPo && !String(wcrSync).toLowerCase().includes('yes')) { missingWcrs++; urgencyScore += 3; }
                 if (isApproved && String(wcrSync).toLowerCase().includes('yes') && !String(sapSync).toLowerCase().includes('yes')) { missingSap++; urgencyScore += 4; }
                 
-                if (isApproved && (!String(wcrSync).toLowerCase().includes('yes') || !String(sapSync).toLowerCase().includes('yes'))) {
+               if (isApproved && (!String(wcrSync).toLowerCase().includes('yes') || !String(sapSync).toLowerCase().includes('yes'))) {
                     pendingRevenue += waslCost;
                 }
 
+                const qtnDate = getVal(idxQtnDate);
+                if (getVal(idxQtn) && !qtnDate) {
+                    unsentQuotes++;
+                    urgencyScore += 5;
+                }
+
                 return {
-                    crmRef, qtnRef: getVal(idxQtn), description: getVal(idxDesc), building: getVal(idxBuilding),
+                    crmRef, qtnRef: getVal(idxQtn), qtnDate, description: getVal(idxDesc), building: getVal(idxBuilding),
                     worksStatus: status, waslPo, tijoriSync: getVal(idxTijori), wcrSync, sapSync,
                     waslCost, supplierCost: Number(String(getVal(idxSupCost)).replace(/,/g, '')) || 0,
                     urgencyScore, rawHeaders: data.rows[0], rawValues: row
@@ -709,6 +715,7 @@ function initVWTracker() {
             if(document.getElementById('vw-stat-po-blockers')) document.getElementById('vw-stat-po-blockers').textContent = poBlockers;
             if(document.getElementById('vw-stat-missing-wcrs')) document.getElementById('vw-stat-missing-wcrs').textContent = missingWcrs;
             if(document.getElementById('vw-stat-sap-missing')) document.getElementById('vw-stat-sap-missing').textContent = missingSap;
+            if(document.getElementById('vw-stat-unsent-quotes')) document.getElementById('vw-stat-unsent-quotes').textContent = unsentQuotes;
 
             renderTable(allVWRows);
         } catch (e) { 
@@ -731,6 +738,7 @@ function initVWTracker() {
         document.getElementById('kpi-po-blockers').onclick = () => applyFilter(r => r.worksStatus.toLowerCase().includes('approved') && !r.waslPo);
         document.getElementById('kpi-missing-wcrs').onclick = () => applyFilter(r => r.urgencyScore >= 3 && (!r.wcrSync || !String(r.wcrSync).toLowerCase().includes('yes')));
         document.getElementById('kpi-sap-missing').onclick = () => applyFilter(r => r.urgencyScore >= 4 && String(r.wcrSync).toLowerCase().includes('yes') && (!r.sapSync || !String(r.sapSync).toLowerCase().includes('yes')));
+        if(document.getElementById('kpi-unsent-quotes')) document.getElementById('kpi-unsent-quotes').onclick = () => applyFilter(r => r.qtnRef && !r.qtnDate);
     }
 
     if(clearFiltersBtn) {
