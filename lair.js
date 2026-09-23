@@ -668,7 +668,15 @@ function initVWTracker() {
             const idxSap = headers.findIndex(h => h.includes('sap') && h.includes('uploaded'));
             const idxWaslCost = headers.findIndex(h => h.includes('total wasl cost') || (h.includes('wasl') && h.includes('cost')));
             const idxSupCost = headers.findIndex(h => h.includes('supplier cost') || (h.includes('supplier') && h.includes('cost')));
-            const idxQtnDate = headers.findIndex(h => h.includes('qtn email date') || h.includes('email date'));
+           // Strictly locked to the Email Date column to avoid grabbing the creation date
+            const idxQtnDate = headers.findIndex(h => h.includes('email date') || (h.includes('wasl email') && h.includes('date')));
+            
+            // Smart Logic Columns for Deduction
+            const idxWorksStatus = headers.findIndex(h => h.includes('works status') || h.includes('agfs works'));
+            const idxWaslPo = headers.findIndex(h => h.includes('wasl order') || h.includes('wasl po'));
+            const idxQuoteApproved = headers.findIndex(h => h.includes('quote approved'));
+
+            let pendingRevenue = 0;
 
             let pendingRevenue = 0;
             let poBlockers = 0;
