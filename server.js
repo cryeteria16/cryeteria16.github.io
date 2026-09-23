@@ -165,11 +165,15 @@ app.post('/api/fridge/log', verifyToken, async (req, res) => {
     }
 });
 
-const uploadMagnet = multer({ dest: path.join(__dirname, 'uploads') });
+// Uses native OS temp folder to permanently avoid missing directory crashes
+const uploadMagnet = multer({ dest: os.tmpdir() });
 
 app.post('/api/fridge/save-magnet', verifyToken, uploadMagnet.single('magnet_image'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No image file provided' });
+        
+        // Failsafe check to ensure your .env actually has the target folder loaded
+        if (!process.env.DRIVE_FOLDER_ID) throw new Error("DRIVE_FOLDER_ID is missing from .env");
 
         const authClient = getGoogleAuthClient(['https://www.googleapis.com/auth/drive.file']);
         const drive = google.drive({ version: 'v3', auth: authClient });
