@@ -705,9 +705,13 @@ function initVWTracker() {
                     pendingRevenue += waslCost;
                 }
 
-                // 1. Base Check: Does it have a quote but no date?
+            // --- SAFE INLINE COLUMN SEARCH ---
+        const safeIdxDate = headers.findIndex(h => h.includes('email date') || (h.includes('wasl email') && h.includes('date')));
+        const safeIdxAppr = headers.findIndex(h => h.includes('quote approved'));
+
+        // 1. Base Check: Does it have a quote but no date?
         const rawQtn = String(getVal(idxQtn)).trim().toLowerCase();
-        const rawDate = String(getVal(idxQtnDate)).trim().toLowerCase();
+        const rawDate = String(getVal(safeIdxDate)).trim().toLowerCase();
         const hasQuote = rawQtn !== '' && rawQtn !== '-' && rawQtn !== 'n/a' && rawQtn !== 'undefined';
         const dateIsBlank = rawDate === '' || rawDate === '-' || rawDate === 'n/a' || rawDate === 'undefined' || rawDate.includes('pending') || rawDate.includes('tba');
         
@@ -717,8 +721,7 @@ function initVWTracker() {
         
         // 3. Ghost evidence check (Using your 'waslPo' variable from line 692)
         const rawWaslPo = String(waslPo).trim().toLowerCase();
-        const idxQuoteApproved = headers.findIndex(h => h.includes('quote approved')); // Safe inline grab
-        const rawApproved = idxQuoteApproved !== -1 ? String(getVal(idxQuoteApproved)).trim().toLowerCase() : '';
+        const rawApproved = safeIdxAppr !== -1 ? String(getVal(safeIdxAppr)).trim().toLowerCase() : '';
         
         const hasPO = rawWaslPo !== '' && rawWaslPo !== '-' && rawWaslPo !== 'n/a' && rawWaslPo !== 'undefined';
         const isApprovedQuote = rawApproved === 'yes';
@@ -734,12 +737,11 @@ function initVWTracker() {
         }
 
         return {
-            crmRef, qtnRef: getVal(idxQtn), qtnDate: getVal(idxQtnDate), isUnsentQuote, description: getVal(idxDesc), building: getVal(idxBuilding),
-                    worksStatus: status, waslPo, tijoriSync: getVal(idxTijori), wcrSync, sapSync,
-                    waslCost, supplierCost: Number(String(getVal(idxSupCost)).replace(/,/g, '')) || 0,
-                    urgencyScore, rawHeaders: data.rows[0], rawValues: row
-                };
-            });
+            crmRef, qtnRef: getVal(idxQtn), qtnDate: getVal(safeIdxDate), isUnsentQuote, description: getVal(idxDesc), building: getVal(idxBuilding),
+            worksStatus: status, waslPo, tijoriSync: getVal(idxTijori), wcrSync, sapSync,
+            waslCost, supplierCost: Number(String(getVal(idxSupCost)).replace(/,/g, '')) || 0,
+            urgencyScore, rawHeaders: data.rows[0], rawValues: row
+        };
 
             if(document.getElementById('vw-stat-revenue')) document.getElementById('vw-stat-revenue').textContent = pendingRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 });
             if(document.getElementById('vw-stat-po-blockers')) document.getElementById('vw-stat-po-blockers').textContent = poBlockers;
