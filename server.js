@@ -166,7 +166,6 @@ app.post('/api/fridge/log', verifyToken, async (req, res) => {
 });
 
 // Uses native OS temp folder to permanently avoid missing directory crashes
-const uploadMagnet = multer({ dest: os.tmpdir() });
 
 const uploadMagnet = multer({ dest: os.tmpdir() });
 
