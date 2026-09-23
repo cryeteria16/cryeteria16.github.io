@@ -705,14 +705,36 @@ function initVWTracker() {
                     pendingRevenue += waslCost;
                 }
 
-                const qtnDate = getVal(idxQtnDate);
-                if (getVal(idxQtn) && !qtnDate) {
-                    unsentQuotes++;
-                    urgencyScore += 5;
-                }
+                // 1. Base Check: Does it have a quote but no date?
+        const rawQtn = String(getVal(idxQtn)).trim().toLowerCase();
+        const rawDate = String(getVal(idxQtnDate)).trim().toLowerCase();
+        const hasQuote = rawQtn !== '' && rawQtn !== '-' && rawQtn !== 'n/a' && rawQtn !== 'undefined';
+        const dateIsBlank = rawDate === '' || rawDate === '-' || rawDate === 'n/a' || rawDate === 'undefined' || rawDate.includes('pending') || rawDate.includes('tba');
+        
+        // 2. Is the job totally dead? (Using your 'status' variable from line 691)
+        const rawStatus = String(status).trim().toLowerCase();
+        const isDead = rawStatus === 'cancelled' || rawStatus === 'on hold';
+        
+        // 3. Ghost evidence check (Using your 'waslPo' variable from line 692)
+        const rawWaslPo = String(waslPo).trim().toLowerCase();
+        const idxQuoteApproved = headers.findIndex(h => h.includes('quote approved')); // Safe inline grab
+        const rawApproved = idxQuoteApproved !== -1 ? String(getVal(idxQuoteApproved)).trim().toLowerCase() : '';
+        
+        const hasPO = rawWaslPo !== '' && rawWaslPo !== '-' && rawWaslPo !== 'n/a' && rawWaslPo !== 'undefined';
+        const isApprovedQuote = rawApproved === 'yes';
+        const isActive = rawStatus === 'completed' || rawStatus === 'work scheduled' || rawStatus === 'work in progress' || rawStatus.includes('awaiting client po');
+        const evidenceSent = hasPO || isApprovedQuote || isActive;
+        
+        // 4. The True Limbo (Has Quote, No Date, Not Dead, No Evidence of Sent)
+        const isUnsentQuote = hasQuote && dateIsBlank && !isDead && !evidenceSent;
 
-                return {
-                    crmRef, qtnRef: getVal(idxQtn), qtnDate, description: getVal(idxDesc), building: getVal(idxBuilding),
+        if (isUnsentQuote) {
+            unsentQuotes++;
+            urgencyScore += 5; // Pushes these to the top of the urgency list
+        }
+
+        return {
+            crmRef, qtnRef: getVal(idxQtn), qtnDate: getVal(idxQtnDate), isUnsentQuote, description: getVal(idxDesc), building: getVal(idxBuilding),
                     worksStatus: status, waslPo, tijoriSync: getVal(idxTijori), wcrSync, sapSync,
                     waslCost, supplierCost: Number(String(getVal(idxSupCost)).replace(/,/g, '')) || 0,
                     urgencyScore, rawHeaders: data.rows[0], rawValues: row
