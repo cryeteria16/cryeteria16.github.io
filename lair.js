@@ -642,7 +642,7 @@ function initVWTracker() {
         applyColumnState();
     };
 
-    const loadVWData = async () => {
+const loadVWData = async () => {
         try {
             tableBody.innerHTML = `<tr><td colspan="7" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Establishing read-only link to Google Cloud...</td></tr>`;
             const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/vw-tracker`);
@@ -662,19 +662,14 @@ function initVWTracker() {
             const idxDesc = headers.findIndex(h => h.includes('description'));
             const idxBuilding = headers.findIndex(h => h.includes('building'));
             const idxStatus = headers.findIndex(h => h.includes('status'));
-            const idxWaslPo = headers.findIndex(h => h.includes('purchase order') || h.includes('lpo'));
+            const idxWaslPo = headers.findIndex(h => h.includes('purchase order') || h.includes('lpo') || h.includes('wasl order') || h.includes('wasl po'));
             const idxTijori = headers.findIndex(h => h.includes('tijori'));
             const idxWcr = headers.findIndex(h => h.includes('wcr prepared'));
             const idxSap = headers.findIndex(h => h.includes('sap') && h.includes('uploaded'));
             const idxWaslCost = headers.findIndex(h => h.includes('total wasl cost') || (h.includes('wasl') && h.includes('cost')));
             const idxSupCost = headers.findIndex(h => h.includes('supplier cost') || (h.includes('supplier') && h.includes('cost')));
-           // Strictly locked to the Email Date column to avoid grabbing the creation date
-            const idxQtnDate = headers.findIndex(h => h.includes('email date') || (h.includes('wasl email') && h.includes('date')));
-            
-            // Smart Logic Columns for Deduction
-            const idxWorksStatus = headers.findIndex(h => h.includes('works status') || h.includes('agfs works'));
-            const idxWaslPo = headers.findIndex(h => h.includes('wasl order') || h.includes('wasl po'));
-            const idxQuoteApproved = headers.findIndex(h => h.includes('quote approved'));
+            const safeIdxDate = headers.findIndex(h => h.includes('email date') || (h.includes('wasl email') && h.includes('date')));
+            const safeIdxAppr = headers.findIndex(h => h.includes('quote approved'));
 
             let pendingRevenue = 0;
             let poBlockers = 0;
@@ -699,47 +694,44 @@ function initVWTracker() {
                 if (isApproved && waslPo && !String(wcrSync).toLowerCase().includes('yes')) { missingWcrs++; urgencyScore += 3; }
                 if (isApproved && String(wcrSync).toLowerCase().includes('yes') && !String(sapSync).toLowerCase().includes('yes')) { missingSap++; urgencyScore += 4; }
                 
-               if (isApproved && (!String(wcrSync).toLowerCase().includes('yes') || !String(sapSync).toLowerCase().includes('yes'))) {
+                if (isApproved && (!String(wcrSync).toLowerCase().includes('yes') || !String(sapSync).toLowerCase().includes('yes'))) {
                     pendingRevenue += waslCost;
                 }
 
-            // --- SAFE INLINE COLUMN SEARCH ---
-        const safeIdxDate = headers.findIndex(h => h.includes('email date') || (h.includes('wasl email') && h.includes('date')));
-        const safeIdxAppr = headers.findIndex(h => h.includes('quote approved'));
+                // 1. Base Check: Does it have a quote but no date?
+                const rawQtn = String(getVal(idxQtn)).trim().toLowerCase();
+                const rawDate = String(getVal(safeIdxDate)).trim().toLowerCase();
+                const hasQuote = rawQtn !== '' && rawQtn !== '-' && rawQtn !== 'n/a' && rawQtn !== 'undefined';
+                const dateIsBlank = rawDate === '' || rawDate === '-' || rawDate === 'n/a' || rawDate === 'undefined' || rawDate.includes('pending') || rawDate.includes('tba');
+                
+                // 2. Is the job totally dead?
+                const rawStatus = String(status).trim().toLowerCase();
+                const isDead = rawStatus === 'cancelled' || rawStatus === 'on hold';
+                
+                // 3. Ghost evidence check
+                const rawWaslPo = String(waslPo).trim().toLowerCase();
+                const rawApproved = safeIdxAppr !== -1 ? String(getVal(safeIdxAppr)).trim().toLowerCase() : '';
+                
+                const hasPO = rawWaslPo !== '' && rawWaslPo !== '-' && rawWaslPo !== 'n/a' && rawWaslPo !== 'undefined';
+                const isApprovedQuote = rawApproved === 'yes';
+                const isActive = rawStatus === 'completed' || rawStatus === 'work scheduled' || rawStatus === 'work in progress' || rawStatus.includes('awaiting client po');
+                const evidenceSent = hasPO || isApprovedQuote || isActive;
+                
+                // 4. The True Limbo (Has Quote, No Date, Not Dead, No Evidence of Sent)
+                const isUnsentQuote = hasQuote && dateIsBlank && !isDead && !evidenceSent;
 
-        // 1. Base Check: Does it have a quote but no date?
-        const rawQtn = String(getVal(idxQtn)).trim().toLowerCase();
-        const rawDate = String(getVal(safeIdxDate)).trim().toLowerCase();
-        const hasQuote = rawQtn !== '' && rawQtn !== '-' && rawQtn !== 'n/a' && rawQtn !== 'undefined';
-        const dateIsBlank = rawDate === '' || rawDate === '-' || rawDate === 'n/a' || rawDate === 'undefined' || rawDate.includes('pending') || rawDate.includes('tba');
-        
-        // 2. Is the job totally dead? (Using your 'status' variable from line 691)
-        const rawStatus = String(status).trim().toLowerCase();
-        const isDead = rawStatus === 'cancelled' || rawStatus === 'on hold';
-        
-        // 3. Ghost evidence check (Using your 'waslPo' variable from line 692)
-        const rawWaslPo = String(waslPo).trim().toLowerCase();
-        const rawApproved = safeIdxAppr !== -1 ? String(getVal(safeIdxAppr)).trim().toLowerCase() : '';
-        
-        const hasPO = rawWaslPo !== '' && rawWaslPo !== '-' && rawWaslPo !== 'n/a' && rawWaslPo !== 'undefined';
-        const isApprovedQuote = rawApproved === 'yes';
-        const isActive = rawStatus === 'completed' || rawStatus === 'work scheduled' || rawStatus === 'work in progress' || rawStatus.includes('awaiting client po');
-        const evidenceSent = hasPO || isApprovedQuote || isActive;
-        
-        // 4. The True Limbo (Has Quote, No Date, Not Dead, No Evidence of Sent)
-        const isUnsentQuote = hasQuote && dateIsBlank && !isDead && !evidenceSent;
+                if (isUnsentQuote) {
+                    unsentQuotes++;
+                    urgencyScore += 5;
+                }
 
-        if (isUnsentQuote) {
-            unsentQuotes++;
-            urgencyScore += 5; // Pushes these to the top of the urgency list
-        }
-
-        return {
-            crmRef, qtnRef: getVal(idxQtn), qtnDate: getVal(safeIdxDate), isUnsentQuote, description: getVal(idxDesc), building: getVal(idxBuilding),
-            worksStatus: status, waslPo, tijoriSync: getVal(idxTijori), wcrSync, sapSync,
-            waslCost, supplierCost: Number(String(getVal(idxSupCost)).replace(/,/g, '')) || 0,
-            urgencyScore, rawHeaders: data.rows[0], rawValues: row
-        };
+                return {
+                    crmRef, qtnRef: getVal(idxQtn), qtnDate: getVal(safeIdxDate), isUnsentQuote, description: getVal(idxDesc), building: getVal(idxBuilding),
+                    worksStatus: status, waslPo, tijoriSync: getVal(idxTijori), wcrSync, sapSync,
+                    waslCost, supplierCost: Number(String(getVal(idxSupCost)).replace(/,/g, '')) || 0,
+                    urgencyScore, rawHeaders: data.rows[0], rawValues: row
+                };
+            });
 
             if(document.getElementById('vw-stat-revenue')) document.getElementById('vw-stat-revenue').textContent = pendingRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 });
             if(document.getElementById('vw-stat-po-blockers')) document.getElementById('vw-stat-po-blockers').textContent = poBlockers;
