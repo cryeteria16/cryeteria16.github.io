@@ -677,8 +677,6 @@ function initVWTracker() {
             const idxQuoteApproved = headers.findIndex(h => h.includes('quote approved'));
 
             let pendingRevenue = 0;
-
-            let pendingRevenue = 0;
             let poBlockers = 0;
             let missingWcrs = 0;
             let missingSap = 0;
