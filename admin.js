@@ -5,13 +5,17 @@ import { auth, db } from "./firebase-config.js";
 let currentUser = null;
 
 onAuthStateChanged(auth, (user) => { 
-  if (!user) window.location.replace("index.html"); 
+  if (!user) {
+      window.location.replace("index.html");
+      return;
+  }
   
   currentUser = { id: user.uid };
   
   onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
-      if(!snap.exists() || snap.data().role !== 'admin') {
-          alert('Unauthorized: Admin privileges required.');
+      // 🔥 SECURITY FIX: Requires both admin role AND an active local PIN session
+      if(!snap.exists() || snap.data().role !== 'admin' || sessionStorage.getItem('lair_admin_unlocked') !== 'true') {
+          alert('Unauthorized: Admin PIN validation required.');
           window.location.replace("lair.html");
           return;
       }
