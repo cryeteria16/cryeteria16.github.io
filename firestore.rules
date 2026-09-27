@@ -10,6 +10,13 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+    
+    // 🔥 SECURITY FIX: Allowing public reads for the Spatial Exhibition
+    match /public_photos/{document} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /system/profile {
       allow read: if true;
       allow write: if isAdmin();
