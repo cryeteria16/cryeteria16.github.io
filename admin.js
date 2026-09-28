@@ -16,7 +16,7 @@ onAuthStateChanged(auth, (user) => {
       // 🔥 SECURITY FIX: Requires both admin role AND an active local PIN session
       if(!snap.exists() || snap.data().role !== 'admin' || sessionStorage.getItem('lair_admin_unlocked') !== 'true') {
           alert('Unauthorized: Admin PIN validation required.');
-          window.location.replace("lair.html");
+          window.location.replace("lair");
           return;
       }
       if(snap.data().theme) { document.body.setAttribute('data-theme', snap.data().theme); }
