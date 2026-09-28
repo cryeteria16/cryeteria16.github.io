@@ -197,4 +197,4 @@ async function performLogin() {
 document.getElementById('btn-do-login').addEventListener('click', performLogin);
 document.getElementById('login-password').addEventListener('keydown', (e) => { if(e.key === 'Enter') performLogin(); });
 
-onAuthStateChanged(auth, (user) => { if (user) window.location.replace("lair"); });
+onAuthStateChanged(auth, (user) => { if (user) window.location.replace("/lair"); });
