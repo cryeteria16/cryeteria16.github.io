@@ -530,5 +530,152 @@ app.get('/api/tmdb/search', verifyToken, async (req, res) => {
     } catch (e) { res.status(502).json({ error: 'TMDB lookup failed.' }); }
 });
 
+// =====================================================================
+// SHOWCASE: AI SMART DRAFT & HTML-TO-PDF GENERATOR (PUPPETEER)
+// =====================================================================
+const puppeteer = require('puppeteer-core');
+const fs = require('fs');
+
+// Helper to find the local Windows browser
+const getBrowserPath = () => {
+    const paths = [
+        'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
+    ];
+    for (let p of paths) {
+        if (fs.existsSync(p)) return p;
+    }
+    throw new Error('No Chromium browser found on this system.');
+};
+
+// 1. AI Auto-Fill Route
+app.post('/api/showcase/ai-draft', async (req, res) => {
+    try {
+        const { prompt } = req.body;
+        if (!prompt) return res.status(400).json({ error: 'Prompt required' });
+
+        const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
+        const genAI = new GoogleGenerativeAI(activeKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json" }});
+
+        const systemPrompt = `You are a Senior Facility Operations Engineer at Al Ghurair Facility Services (AGFS).
+        Expand the following rough notes into a formal corporate breakdown report.
+        Return ONLY a raw JSON object with exactly these keys: "title", "location", "description", "cause", "containment", "scope".`;
+
+        const result = await model.generateContent(`${systemPrompt}\n\nRough Notes: ${prompt}`);
+        res.json(extractCleanJSON(result.response.text()));
+    } catch (error) {
+        console.error('[Showcase] AI Draft Error:', error);
+        res.status(500).json({ error: 'Failed to generate AI draft' });
+    }
+});
+
+// 2. PDF Generation Route (HTML to PDF)
+const showcaseUpload = multer({ storage: multer.memoryStorage(), limits: UPLOAD_LIMITS });
+
+app.post('/api/showcase/generate-breakdown', showcaseUpload.array('photos', 10), async (req, res) => {
+    try {
+        // Build the dynamic CSS photo grid
+        let photoGridHtml = '';
+        if (req.files && req.files.length > 0) {
+            req.files.forEach((file, index) => {
+                const base64 = file.buffer.toString('base64');
+                photoGridHtml += `
+                    <div class="photo-cell">
+                        <img src="data:${file.mimetype};base64,${base64}" alt="Observation ${index + 1}" />
+                        <div class="caption">Observation ${index + 1}</div>
+                    </div>
+                `;
+            });
+        } else {
+            photoGridHtml = '<p style="color:#666; font-style:italic;">No observation photos attached.</p>';
+        }
+
+        // The AGFS Branded HTML Template
+        const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 40px; color: #333; }
+                .header { background-color: #1B365D; color: white; padding: 24px; text-align: center; font-size: 22px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+                .section { margin-top: 24px; page-break-inside: avoid; }
+                .section-title { font-size: 14px; font-weight: bold; color: #1B365D; border-bottom: 2px solid #1B365D; padding-bottom: 6px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+                .content-box { background: #f8f9fa; padding: 16px; border: 1px solid #e9ecef; border-radius: 4px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
+                .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+                .photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+                .photo-cell { border: 1px solid #dee2e6; padding: 12px; background: #fff; text-align: center; border-radius: 6px; page-break-inside: avoid; }
+                .photo-cell img { width: 100%; height: 260px; object-fit: cover; border-radius: 4px; }
+                .caption { margin-top: 10px; font-size: 12px; font-weight: 600; color: #495057; }
+            </style>
+        </head>
+        <body>
+            <div class="header">Equipment Breakdown & Observation Report</div>
+            
+            <div class="grid-2">
+                <div class="section" style="margin-top:30px;">
+                    <div class="section-title">Incident Title</div>
+                    <div class="content-box">${req.body.title || 'N/A'}</div>
+                </div>
+                <div class="section" style="margin-top:30px;">
+                    <div class="section-title">Building / Location</div>
+                    <div class="content-box">${req.body.location || 'N/A'}</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Detailed Description</div>
+                <div class="content-box">${req.body.description || 'N/A'}</div>
+            </div>
+
+            <div class="grid-2">
+                <div class="section">
+                    <div class="section-title">Root Cause Analysis</div>
+                    <div class="content-box">${req.body.cause || 'N/A'}</div>
+                </div>
+                <div class="section">
+                    <div class="section-title">Containment Actions</div>
+                    <div class="content-box">${req.body.containment || 'N/A'}</div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Scope of Repair</div>
+                <div class="content-box">${req.body.scope || 'N/A'}</div>
+            </div>
+
+            <div class="section" style="page-break-before: auto;">
+                <div class="section-title">Photographic Evidence</div>
+                <div class="photo-grid">
+                    ${photoGridHtml}
+                </div>
+            </div>
+        </body>
+        </html>
+        `;
+
+        // Launch browser and print PDF
+        const browser = await puppeteer.launch({ executablePath: getBrowserPath(), headless: true });
+        const page = await browser.newPage();
+        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
+        
+        const pdfBuffer = await page.pdf({
+            format: 'A4',
+            printBackground: true,
+            margin: { top: '40px', right: '40px', bottom: '40px', left: '40px' }
+        });
+
+        await browser.close();
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="AGFS_Breakdown_${Date.now()}.pdf"`);
+        res.send(pdfBuffer);
+
+    } catch (error) {
+        console.error('[Showcase] PDF Gen Error:', error);
+        res.status(500).json({ error: 'Failed to generate PDF' });
+    }
+});
+
 const PORT = 3005;
 app.listen(PORT, () => console.log(`[Lair OS] Engine running securely on port ${PORT}`));
