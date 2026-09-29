@@ -536,10 +536,12 @@ app.get('/api/tmdb/search', verifyToken, async (req, res) => {
 const puppeteer = require('puppeteer-core');
 const fs = require('fs');
 
-// Helper to find the local Windows browser
+// Helper to find the local Windows browser (Now supports Brave)
 const getBrowserPath = () => {
     const paths = [
+        'C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
         'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+        'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
         'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'
     ];
     for (let p of paths) {
@@ -556,7 +558,9 @@ app.post('/api/showcase/ai-draft', async (req, res) => {
 
         const activeKey = API_KEYS[Math.floor(Math.random() * API_KEYS.length)];
         const genAI = new GoogleGenerativeAI(activeKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", generationConfig: { responseMimeType: "application/json" }});
+        
+        // Locked to your requested 3.8 model
+        const model = genAI.getGenerativeModel({ model: "gemini-3.8-flash", generationConfig: { responseMimeType: "application/json" }});
 
         const systemPrompt = `You are a Senior Facility Operations Engineer at Al Ghurair Facility Services (AGFS).
         Expand the following rough notes into a formal corporate breakdown report.
@@ -571,6 +575,7 @@ app.post('/api/showcase/ai-draft', async (req, res) => {
 });
 
 // 2. PDF Generation Route (HTML to PDF)
+const UPLOAD_LIMITS = { fileSize: 35 * 1024 * 1024 }; // Establishes a 35MB safety limit
 const showcaseUpload = multer({ storage: multer.memoryStorage(), limits: UPLOAD_LIMITS });
 
 app.post('/api/showcase/generate-breakdown', showcaseUpload.array('photos', 10), async (req, res) => {
