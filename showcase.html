@@ -206,7 +206,8 @@
             <span id="gen-btn-text">Generate Official PDF</span>
         </button>
     </div>
-
+    
+ <script>
 // 1. Photo Counting Logic
 const photoInput = document.getElementById('photo-input');
 const photoCountTxt = document.getElementById('photo-preview-count');
@@ -219,7 +220,6 @@ photoInput.addEventListener('change', (e) => {
     }
 });
 
-    <script>
 // 2. Gemini AI Auto-Fill Engine
 document.getElementById('btn-ai-fill').addEventListener('click', async () => {
     const btnText = document.getElementById('ai-btn-text');
