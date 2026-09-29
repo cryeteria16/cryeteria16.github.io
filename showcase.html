@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AGFS Report Generator | Showcase</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        :root {
+            --bg: #0A0A0A;
+            --glass-bg: rgba(20, 20, 25, 0.6);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.08);
+            --input-bg: rgba(0, 0, 0, 0.5);
+            --ink: #FFFFFF;
+            --ink-soft: #888888;
+            --con: #70947A; /* Your signature Lair OS green */
+            --con-dim: rgba(112, 148, 122, 0.2);
+            --err: #D9534F;
+            --font-display: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --radius-sm: 12px;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--ink);
+            font-family: var(--font-display);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: var(--glass-border);
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 800px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        h2 { 
+            font-weight: 500; 
+            margin-top: 0; 
+            border-bottom: var(--glass-border); 
+            padding-bottom: 16px; 
+            margin-bottom: 24px; 
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .field-label {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--ink-soft);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input, textarea {
+            width: 100%;
+            background: var(--input-bg);
+            border: var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            color: var(--ink);
+            font-family: var(--font-display);
+            font-size: 14px;
+            box-sizing: border-box;
+            margin-bottom: 16px;
+            outline: none;
+            transition: 0.2s;
+        }
+
+        input:focus, textarea:focus { border-color: var(--con); }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 16px;
+        }
+
+        .full-width { grid-column: 1 / -1; }
+
+        .btn-primary {
+            background: var(--ink);
+            color: #000;
+            border: none;
+            padding: 14px 24px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .btn-primary:hover { opacity: 0.8; }
+
+        .btn-ai {
+            background: var(--con-dim);
+            color: var(--con);
+            border: 1px solid var(--con);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            margin-bottom: 24px;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-ai:hover { background: var(--con); color: #000; }
+
+        .dropzone {
+            background: var(--input-bg);
+            border: 1px dashed rgba(255,255,255,0.2);
+            border-radius: var(--radius-sm);
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 24px;
+            transition: 0.2s;
+        }
+        .dropzone:hover { border-color: var(--con); }
+        
+        .spin {
+            width: 16px; height: 16px;
+            border: 2px solid rgba(0,0,0,0.3);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: rot 0.8s linear infinite;
+            display: none;
+        }
+        @keyframes rot { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>
+            <span>Breakdown Report Engine</span>
+            <span style="font-family: var(--font-mono); font-size: 10px; background: var(--con-dim); color: var(--con); padding: 4px 8px; border-radius: 12px;">AGFS PROTOTYPE</span>
+        </h2>
+
+        <!-- The AI Assist Block -->
+        <label class="field-label" style="color: var(--con);">✨ Smart Draft (Optional)</label>
+        <textarea id="ai-prompt" rows="2" placeholder="Type a rough, messy summary of the breakdown here..."></textarea>
+        <button id="btn-ai-fill" class="btn-ai">
+            <span class="spin" id="ai-spin" style="border-top-color: var(--con);"></span>
+            <span id="ai-btn-text">Auto-Fill Corporate Report via Gemini</span>
+        </button>
+
+        <!-- The Manual Grid -->
+        <div class="form-grid">
+            <div>
+                <label class="field-label">Title</label>
+                <input type="text" id="rep-title" placeholder="e.g., Swimming Pool tiles damaged">
+            </div>
+            <div>
+                <label class="field-label">Building & Location</label>
+                <input type="text" id="rep-loc" placeholder="e.g., DD140 - Al Murooj">
+            </div>
+
+            <div class="full-width">
+                <label class="field-label">Detailed Breakdown Description</label>
+                <textarea id="rep-desc" rows="3" placeholder="Describe the failure..."></textarea>
+            </div>
+
+            <div>
+                <label class="field-label">Root Cause</label>
+                <textarea id="rep-cause" rows="3"></textarea>
+            </div>
+            <div>
+                <label class="field-label">Containment Actions</label>
+                <textarea id="rep-containment" rows="3"></textarea>
+            </div>
+
+            <div class="full-width">
+                <label class="field-label">Scope Summary (Repair Estimates)</label>
+                <textarea id="rep-scope" rows="3"></textarea>
+            </div>
+        </div>
+
+        <!-- The Photo Dropzone -->
+        <label class="field-label">Observation Photos</label>
+        <div id="photo-dropzone" class="dropzone" onclick="document.getElementById('photo-input').click()">
+            <input type="file" id="photo-input" accept="image/*" multiple style="display: none;">
+            <p style="margin: 0; color: var(--ink); font-weight: 500;">Drop photos here or click to browse</p>
+            <p style="margin: 6px 0 0 0; font-size: 11px; color: var(--ink-soft);">Images will be automatically gridded into the Word/PDF document</p>
+            <div id="photo-preview-count" style="margin-top: 12px; font-family: var(--font-mono); font-size: 12px; color: var(--con);"></div>
+        </div>
+
+        <button id="btn-generate" class="btn-primary">
+            <span class="spin" id="gen-spin"></span>
+            <span id="gen-btn-text">Generate Official PDF</span>
+        </button>
+    </div>
+
+    <script>
+        // 1. Photo Counting Logic
+        const photoInput = document.getElementById('photo-input');
+        const photoCountTxt = document.getElementById('photo-preview-count');
+        let selectedFiles = [];
+
+        photoInput.addEventListener('change', (e) => {
+            selectedFiles = Array.from(e.target.files);
+            if (selectedFiles.length > 0) {
+                photoCountTxt.textContent = `${selectedFiles.length} photo(s) selected ready for grid alignment.`;
+            }
+        });
+
+        // 2. Placeholder for AI Auto-Fill Button
+        document.getElementById('btn-ai-fill').addEventListener('click', () => {
+            const btnText = document.getElementById('ai-btn-text');
+            const spinner = document.getElementById('ai-spin');
+            
+            btnText.textContent = "Connecting to Gemini Engine...";
+            spinner.style.display = "inline-block";
+            
+            // We will wire this to your server.js /api/gemini endpoint in the next step!
+            setTimeout(() => { 
+                btnText.textContent = "Auto-Fill Corporate Report via Gemini"; 
+                spinner.style.display = "none";
+            }, 2000);
+        });
+
+        // 3. Placeholder for PDF Generation Button
+        document.getElementById('btn-generate').addEventListener('click', () => {
+            const btn = document.getElementById('btn-generate');
+            const btnText = document.getElementById('gen-btn-text');
+            const spinner = document.getElementById('gen-spin');
+
+            btn.style.background = "var(--con)";
+            btnText.textContent = "Compiling Template & Converting to PDF...";
+            spinner.style.display = "inline-block";
+            
+            // We will wire this to your server.js /api/generate-breakdown endpoint in the next step!
+        });
+    </script>
+</body>
+</html>
