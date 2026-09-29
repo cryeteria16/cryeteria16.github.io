@@ -660,14 +660,16 @@ app.post('/api/showcase/generate-breakdown', showcaseUpload.array('photos', 10),
         `;
 
         // Launch browser and print PDF
-        const browser = await puppeteer.launch({ executablePath: getBrowserPath(), headless: true });
-        const page = await browser.newPage();
-        await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
-        
-        const pdfBuffer = await page.pdf({
-            format: 'A4',
-            printBackground: true,
-            margin: { top: '40px', right: '40px', bottom: '40px', left: '40px' }
+       // Launch browser and print PDF (With Brave Sandbox Bypasses)
+        const browser = await puppeteer.launch({ 
+            executablePath: getBrowserPath(), 
+            headless: true,
+            args: [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox', 
+                '--disable-gpu', 
+                '--disable-software-rasterizer'
+            ]
         });
 
         await browser.close();
