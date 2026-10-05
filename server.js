@@ -534,7 +534,6 @@ app.get('/api/tmdb/search', verifyToken, async (req, res) => {
 // SHOWCASE: AI SMART DRAFT & HTML-TO-PDF GENERATOR (PUPPETEER)
 // =====================================================================
 const puppeteer = require('puppeteer-core');
-const fs = require('fs');
 
 // Helper to find the local Windows browser (Now supports Brave)
 const getBrowserPath = () => {
