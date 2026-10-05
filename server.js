@@ -76,8 +76,13 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
-app.use(express.static(__dirname, { extensions: ['html'] }));
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } })); // allows ibadhasan.com to load your images/video
+app.use(express.json({ limit: '1mb' }));
+app.use(rateLimit({ windowMs: 60_000, max: 300 }));
+const strictLimiter = rateLimit({ windowMs: 60_000, max: 10 });
 
 async function verifyToken(req, res, next) {
   const streamToken = req.query.stream_token;
@@ -577,23 +582,48 @@ app.post('/api/showcase/ai-draft', async (req, res) => {
 const UPLOAD_LIMITS = { fileSize: 35 * 1024 * 1024 }; // Establishes a 35MB safety limit
 const showcaseUpload = multer({ storage: multer.memoryStorage(), limits: UPLOAD_LIMITS });
 
+app.post('/api/showcase/ai-draft', strictLimiter, verifyToken, requireAdmin, async (req, res) => {
+  
+// BEFORE
 app.post('/api/showcase/generate-breakdown', showcaseUpload.array('photos', 10), async (req, res) => {
-    try {
-        // Build the dynamic CSS photo grid
-        let photoGridHtml = '';
-        if (req.files && req.files.length > 0) {
-            req.files.forEach((file, index) => {
-                const base64 = file.buffer.toString('base64');
-                photoGridHtml += `
-                    <div class="photo-cell">
-                        <img src="data:${file.mimetype};base64,${base64}" alt="Observation ${index + 1}" />
-                        <div class="caption">Observation ${index + 1}</div>
-                    </div>
-                `;
-            });
-        } else {
-            photoGridHtml = '<p style="color:#666; font-style:italic;">No observation photos attached.</p>';
+...
+    const base64 = file.buffer.toString('base64');
+    photoGridHtml += `... <img src="data:${file.mimetype};base64,${base64}" ...
+...
+<div class="content-box">${req.body.title || 'N/A'}</div>      (and location, description, cause, containment, scope)
+...
+        const browser = await puppeteer.launch({ ... });
+
+        await browser.close();
+
+        res.setHeader('Content-Type', 'application/pdf');
+        ...
+        res.send(pdfBuffer);
+
+// AFTER
+app.post('/api/showcase/generate-breakdown', strictLimiter, verifyToken, requireAdmin, showcaseUpload.array('photos', 10), async (req, res) => {
+...
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)) return;   // inside the forEach, before building the cell
+...
+<div class="content-box">${esc(req.body.title)}</div>             (do the same for the 5 other fields)
+...
+        const browser = await puppeteer.launch({ ...same options... });
+        let pdfBuffer;
+        try {
+            const page = await browser.newPage();
+            await page.setJavaScriptEnabled(false);
+            await page.setRequestInterception(true);
+            page.on('request', r => (r.url().startsWith('data:') || r.url() === 'about:blank') ? r.continue() : r.abort()); // blocks file:// and network
+            await page.setContent(htmlContent, { waitUntil: 'load' });
+            pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '10mm', bottom: '10mm', left: '8mm', right: '8mm' } });
+        } finally {
+            await browser.close();
         }
+
+        res.setHeader('Content-Type', 'application/pdf');
+        ...
+        res.send(pdfBuffer);
+        
 
         // The AGFS Branded HTML Template
         const htmlContent = `
