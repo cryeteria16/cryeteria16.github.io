@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Admin Dashboard</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Admin Dashboard">
+<meta name="application-name" content="Admin Dashboard">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#2A1240" id="themeColor">
+<meta name="robots" content="noindex,nofollow">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-512.png">
+<style>
+  /* Full-screen launcher for the Admin Dashboard hub (Google Apps Script web app).
+     The hub link is NOT in this file (this repository is public). It is taken from the address you open once:
+        .../admin-dashboard/#<hub id>     and remembered on this device. */
+  html, body { margin:0; height:100%; background:#2A1240; overflow:hidden; overscroll-behavior:none; -webkit-text-size-adjust:100%; }
+  #top, #bot { position:fixed; left:0; right:0; background:#2A1240; z-index:2; }
+  #top { top:0; height:env(safe-area-inset-top, 0px); }
+  #bot { bottom:0; height:env(safe-area-inset-bottom, 0px); }
+  #hub { position:fixed; left:env(safe-area-inset-left, 0px); right:env(safe-area-inset-right, 0px);
+         top:env(safe-area-inset-top, 0px); bottom:env(safe-area-inset-bottom, 0px);
+         width:calc(100% - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px));
+         height:calc(100% - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+         border:0; background:#2A1240; }
+  #msg { position:fixed; inset:0; display:none; align-items:center; justify-content:center; padding:24px; text-align:center;
+         color:#EEEAF7; font:16px/1.5 -apple-system, system-ui, sans-serif; }
+  #msg b { display:block; font-size:20px; margin-bottom:8px; }
+</style>
+</head>
+<body>
+<div id="top"></div>
+<iframe id="hub" title="Admin Dashboard" allow="camera *; microphone *; geolocation *; clipboard-write *; clipboard-read *; fullscreen *; downloads *"></iframe>
+<div id="bot"></div>
+<div id="msg"><div><b>Admin Dashboard</b>Open this page once with your hub link at the end of the address, then add it to your home screen from there.</div></div>
+<script>
+(function () {
+  'use strict';
+  var KEY = 'adminHubId';
+  var id = '';
+  try { var h = (location.hash || '').replace(/^#/, ''); if (/^[A-Za-z0-9_-]{20,200}$/.test(h)) { id = h; try { localStorage.setItem(KEY, id); } catch (e) {} } } catch (e) {}
+  if (!id) { try { id = localStorage.getItem(KEY) || ''; } catch (e) {} }
+  var frame = document.getElementById('hub');
+  if (!/^[A-Za-z0-9_-]{20,200}$/.test(id)) { document.getElementById('msg').style.display = 'flex'; frame.style.display = 'none'; return; }
+  frame.src = 'https://script.google.com/macros/s/' + id + '/exec';
+
+  // The hub tells us its top-bar and tab-bar colours (and re-sends them when the theme or palette changes),
+  // so the strips behind the Dynamic Island and the home bar always match the app, in light and dark.
+  function ok(c) { return typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c); }
+  window.addEventListener('message', function (e) {
+    var d = e.data;
+    if (!d || d.type !== 'vw-chrome') return;
+    if (!/^https:\/\/([a-z0-9-]+\.)*(googleusercontent\.com|google\.com)$/.test(e.origin)) return;
+    if (ok(d.top)) { document.getElementById('top').style.background = d.top; document.getElementById('themeColor').setAttribute('content', d.top); document.documentElement.style.background = d.top; document.body.style.background = d.top; }
+    if (ok(d.bottom)) document.getElementById('bot').style.background = d.bottom;
+  });
+})();
+</script>
+</body>
+</html>
