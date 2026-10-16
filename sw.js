@@ -1,4 +1,4 @@
-const CACHE_NAME = 'lair-os-v6';
+const CACHE_NAME = 'lair-os-v7';
 const STATIC_ASSETS = [
   '/manifest.json',
   '/index.html',

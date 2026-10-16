@@ -1,5 +1,7 @@
 // server.js
-require('dotenv').config({ path: __dirname + '/.env' });
+// Repo root: .env, serviceAccountKey.json and the media folders live there, not in server/
+const ROOT = require('path').join(__dirname, '..');
+require('dotenv').config({ path: ROOT + '/.env' });
 
 const express = require('express');
 const cors = require('cors');
@@ -24,7 +26,7 @@ let heicConvert;
 try { heicConvert = require('heic-convert'); } 
 catch (e) { console.warn('[Lair OS] heic-convert module unavailable. iPhone photos will not convert.'); }
 
-const serviceAccount = require('./serviceAccountKey.json');
+const serviceAccount = require(ROOT + '/serviceAccountKey.json');
 initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore();
 const app = express();
@@ -118,10 +120,10 @@ app.post('/api/stream-token', verifyToken, (req, res) => {
   catch (e) { res.status(503).json({ error: 'Streaming unavailable.' }); }
 });
 
-const moviesDir = path.join(__dirname, 'Movies');
-const photosDir = path.join(__dirname, 'Photography');
+const moviesDir = path.join(ROOT, 'Movies');
+const photosDir = path.join(ROOT, 'Photography');
 const thumbsDir = path.join(photosDir, '.thumbs');
-const invoicesDir = path.join(__dirname, 'Invoices');
+const invoicesDir = path.join(ROOT, 'Invoices');
 
 if (!fs.existsSync(moviesDir)) fs.mkdirSync(moviesDir);
 if (!fs.existsSync(photosDir)) fs.mkdirSync(photosDir);
@@ -403,7 +405,7 @@ app.post('/api/terminal', verifyToken, (req, res) => {
     const cmd = (req.body.command || '').trim().toLowerCase();
     const whitelist = { 'ping': 'ping -n 3 8.8.8.8', 'ip': 'ipconfig', 'uptime': 'net statistics workstation', 'ver': 'ver', 'git pull': 'git pull' };
     if (!whitelist[cmd]) return res.json({ output: `Command '${cmd}' not permitted.` });
-    exec(whitelist[cmd], { timeout: 12000, windowsHide: true }, (error, stdout, stderr) => { res.json({ output: stdout || stderr || 'Executed.' }); });
+    exec(whitelist[cmd], { cwd: ROOT, timeout: 12000, windowsHide: true }, (error, stdout, stderr) => { res.json({ output: stdout || stderr || 'Executed.' }); });
 });
 
 app.get('/api/storage', verifyToken, (req, res) => {

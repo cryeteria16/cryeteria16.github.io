@@ -1,0 +1,19 @@
+# Secrets — never commit these (this repo is public)
+.env
+.env.*
+serviceAccountKey.json
+*serviceAccount*.json
+
+# Dependencies
+node_modules/
+
+# Local media and documents served by the Lair server
+Movies/
+Photography/
+Invoices/
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
