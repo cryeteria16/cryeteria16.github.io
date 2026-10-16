@@ -42,7 +42,6 @@ onAuthStateChanged(auth, (user) => {
       if(d.broadcast) document.getElementById('edit-broadcast').value = d.broadcast;
       if(d.features) {
           document.getElementById('toggle-dashboard').checked = d.features.dashboard !== false;
-          document.getElementById('toggle-work').checked = d.features.work !== false;
           document.getElementById('toggle-drop').checked = d.features.drop !== false;
           document.getElementById('toggle-theater').checked = d.features.theater !== false;
           document.getElementById('toggle-voice').checked = d.features.voice !== false;
@@ -77,7 +76,6 @@ document.getElementById('btn-save-os').addEventListener('click', async () => {
   const broadcast = document.getElementById('edit-broadcast').value;
   const features = { 
     dashboard: document.getElementById('toggle-dashboard').checked,
-    work: document.getElementById('toggle-work').checked,
     drop: document.getElementById('toggle-drop').checked,
     theater: document.getElementById('toggle-theater').checked,
     voice: document.getElementById('toggle-voice').checked, 

@@ -104,11 +104,11 @@ swipeZone.addEventListener('touchstart', e => {
 }, {passive: true});
 
 swipeZone.addEventListener('touchend', e => {
-    if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, .os-dock, input, textarea, .artplayer-app, .ledger-scroll-wrapper, table, #auditor-queue-container, #fridge-magnet')) return;
+    if (e.target.closest('#command-bay-grid, #tmdb-results, #shared-watchlist, .os-dock, input, textarea, .artplayer-app, table, #fridge-magnet')) return;
     const diffX = touchStartX - e.changedTouches[0].screenX; const diffY = touchStartY - e.changedTouches[0].screenY;
     if (Math.abs(diffY) > Math.abs(diffX)) return;
 
-    const views = ['dashboard', 'work', 'drop', 'theater', 'voice'];
+    const views = ['dashboard', 'drop', 'theater', 'voice'];
     const activeIdx = views.findIndex(v => document.getElementById(`view-${v}`).classList.contains('active'));
     
     if (diffX > 80 && activeIdx < views.length - 1) { 
@@ -203,18 +203,6 @@ onAuthStateChanged(auth, (user) => {
 
 document.getElementById('btn-signout').addEventListener('click', () => { signOut(auth); window.location.replace("index.html"); });
 
-document.querySelectorAll('[data-workseg]').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        triggerHaptic();
-        document.querySelectorAll('[data-workseg]').forEach(b => b.classList.remove('active')); 
-        e.currentTarget.classList.add('active');
-        document.querySelectorAll('.work-module').forEach(t => t.style.display = 'none');
-        const targetSeg = e.currentTarget.getAttribute('data-workseg');
-        document.getElementById(`work-${targetSeg}`).style.display = 'block';
-       
-    });
-});
-
 document.querySelectorAll('.app-link').forEach(link => {
   link.addEventListener('click', (e) => {
     document.querySelectorAll('.dock-app').forEach(d => d.classList.remove('active')); 
@@ -225,594 +213,11 @@ document.querySelectorAll('.app-link').forEach(link => {
     document.getElementById(`view-${target}`).classList.add('active'); 
     
     const fab = document.getElementById('btn-quick-capture');
-    if (fab) fab.style.display = (target === 'work' || target === 'drop') ? 'flex' : 'none';
+    if (fab) fab.style.display = target === 'drop' ? 'flex' : 'none';
 
     window.scrollTo(0,0);
   });
 });
-
-function initAuditor() {
-    const dropzone = document.getElementById('auditor-dropzone');
-    const fileInput = document.getElementById('batch-upload-input');
-    const queueContainer = document.getElementById('auditor-queue-container');
-    const fileList = document.getElementById('auditor-file-list');
-    const tableBody = document.getElementById('auditor-table-body');
-    const emptyRow = document.getElementById('auditor-empty-row');
-    const exportBtn = document.getElementById('auditor-export-btn');
-    const settingsBtn = document.getElementById('btn-auditor-settings');
-    const taskIdInput = document.getElementById('work-task-id');
-
-    if (!dropzone || !fileInput) return;
-
-    let csvRows = [["Task ID", "Subcontractor", "Invoice Number", "Date", "TRN", "Net", "VAT", "Total", "Status"]];
-
-    const savedTaskId = localStorage.getItem('lair_default_task_id');
-    if (savedTaskId && taskIdInput) taskIdInput.value = savedTaskId;
-
-    if (settingsBtn && taskIdInput) {
-        settingsBtn.addEventListener('click', () => {
-            triggerHaptic();
-            const newDefault = prompt("Set Default Global Task ID (e.g. FM-2026-901):", taskIdInput.value);
-            if (newDefault !== null) {
-                taskIdInput.value = newDefault.trim();
-                localStorage.setItem('lair_default_task_id', newDefault.trim());
-                window.showToast('Default Task ID saved to device memory.', 'success');
-            }
-        });
-    }
-
-    const updateMetricsUI = (c, net, vat, gross) => {
-        document.getElementById('auditor-count').textContent = c;
-        document.getElementById('auditor-net').textContent = Number(net).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        document.getElementById('auditor-vat').textContent = Number(vat).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        document.getElementById('auditor-gross').textContent = Number(gross).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    };
-
-    window.handleCellEdit = async function(element, sheetRow, colIdx, originalValue) {
-        const newValue = element.innerText.trim();
-        if (newValue === originalValue) return;
-
-        element.style.color = 'var(--warn)';
-        try {
-            const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/update-cell`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ row: sheetRow, col: colIdx, value: newValue })
-            });
-
-            if (res.ok) {
-                element.style.color = 'var(--con)';
-                setTimeout(() => { element.style.color = 'inherit'; }, 1500);
-                element.setAttribute('onblur', `handleCellEdit(this, ${sheetRow}, ${colIdx}, '${newValue.replace(/'/g, "\\'")}')`);
-                window.showToast('Cell updated in Google Sheets', 'success');
-            } else { throw new Error(); }
-        } catch (err) {
-            window.showToast('Failed to update Sheet', 'error');
-            element.innerText = originalValue;
-            element.style.color = 'inherit';
-        }
-    };
-
-    const appendLedgerRow = (row, sheetRowIndex, prepend = true) => {
-        if (emptyRow) emptyRow.style.display = 'none';
-
-        const net = Number(row[5]) || 0;
-        const vat = Number(row[6]) || 0;
-        const total = Number(row[7]) || 0;
-        const isValid = Math.abs((net + vat) - total) < 0.05;
-
-        const tr = document.createElement('tr');
-        tr.style.cssText = isValid ? '' : 'background:rgba(217,83,79,0.08); border-left:3px solid var(--err);';
-
-        const editableCell = (val, colIdx, align = 'left', bold = false) => `
-            <td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:${align}; ${bold ? 'font-weight:600;' : ''}">
-                <div contenteditable="true" style="outline:none; min-width:20px; -webkit-user-select:text; user-select:text;" onblur="handleCellEdit(this, ${sheetRowIndex}, ${colIdx}, '${String(val).replace(/'/g, "\\'")}')">${val}</div>
-            </td>`;
-
-        tr.innerHTML = `
-            <td style="padding:12px 16px; border-bottom:var(--glass-border); text-align:center; color:${isValid ? 'var(--con)' : 'var(--err)'};">${isValid ? '✔' : '⚠'}</td>
-            ${editableCell(row[0], 0)} ${editableCell(row[1], 1)} ${editableCell(row[2], 2, 'left', true)} ${editableCell(row[3], 3)}
-            ${editableCell(row[4], 4)} ${editableCell(net.toFixed(2), 5, 'right')} ${editableCell(vat.toFixed(2), 6, 'right')}
-            ${editableCell(total.toFixed(2), 7, 'right', true)}
-        `;
-
-        if (prepend) tableBody.insertBefore(tr, tableBody.firstChild); else tableBody.appendChild(tr);
-        csvRows.push([...row, isValid ? "Valid" : "Mismatch"]);
-    };
-
-    const loadLiveLedger = async () => {
-        try {
-            const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/ledger`);
-            if (!res.ok) {
-                if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--err); font-size:13px;">Error connecting to Google Sheets. Check server terminal.</td>';
-                return;
-            }
-
-            const data = await res.json();
-            updateMetricsUI(data.count, data.net, data.vat, data.gross);
-
-            if (data.rows && data.rows.length > 0) {
-                tableBody.innerHTML = '';
-                data.rows.forEach(item => {
-                    appendLedgerRow([item.taskId, item.subcontractor, item.invoiceNumber, item.date, item.trn, item.net, item.vat, item.total], item.sheetRow, false);
-                });
-            } else { if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Ledger is empty. Drop an invoice to begin.</td>'; }
-        } catch (e) {
-            if (emptyRow) emptyRow.innerHTML = '<td colspan="9" style="padding:50px 20px; text-align:center; color:var(--err); font-size:13px;">Server offline or tunnel disconnected.</td>';
-        }
-    };
-    loadLiveLedger();
-
-    const processFiles = async (files) => {
-        if (!files.length) return;
-        const taskId = (taskIdInput && taskIdInput.value.trim()) || 'UNASSIGNED';
-        
-        queueContainer.style.display = 'flex';
-        document.getElementById('auditor-queue-count').textContent = files.length;
-        fileList.innerHTML = '';
-
-        Array.from(files).forEach((file, index) => {
-            fileList.innerHTML += `
-                <div id="file-card-${index}" style="display:flex; justify-content:space-between; padding:10px 14px; background:var(--glass-bg); border:var(--glass-border); border-radius:12px;">
-                    <span style="font-size:12px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">${file.name}</span>
-                    <span id="file-status-${index}" style="font-size:12px; color:var(--warn);">Processing...</span>
-                </div>`;
-        });
-
-        const CONCURRENCY_LIMIT = 3;
-        let active = 0; let queueIndex = 0;
-
-        const runNext = async () => {
-            if (queueIndex >= files.length) return;
-            const i = queueIndex++; active++;
-            
-            const fd = new FormData(); fd.append('invoice', files[i]);
-            const statusEl = document.getElementById(`file-status-${i}`);
-            const cardEl = document.getElementById(`file-card-${i}`);
-
-            try {
-                const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/extract`, { method: 'POST', body: fd });
-                if (!res.ok) throw new Error('Parse failed');
-                const data = await res.json();
-
-                const row = [ taskId, data.subcontractor_name || '', data.invoice_number || '', data.invoice_date || '', data.trn || '', Number(data.net_amount) || 0, Number(data.vat_amount) || 0, Number(data.total_amount) || 0 ];
-
-                const syncRes = await fetchWithAuth(`${TUNNEL_URL}/api/work/sync`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rows: [row] }) });
-                const syncData = await syncRes.json();
-
-                if (!syncRes.ok || !syncData.success) throw new Error(syncData.error || 'Sync failed');
-                if (syncData.skipped && syncData.skipped.includes(data.invoice_number)) throw new Error('Duplicate');
-
-                appendLedgerRow(row, syncData.rowIndex, true); loadLiveLedger();
-                
-                statusEl.textContent = '✔ Done'; statusEl.style.color = 'var(--con)'; cardEl.style.borderColor = 'rgba(112,148,122,0.4)';
-            } catch (e) {
-                statusEl.textContent = `✖ ${e.message}`; statusEl.style.color = 'var(--err)'; cardEl.style.borderColor = 'rgba(217,83,79,0.4)';
-            } finally {
-                active--; runNext();
-                if (active === 0 && queueIndex >= files.length) setTimeout(() => { queueContainer.style.display = 'none'; }, 4000);
-            }
-        };
-
-        for (let i = 0; i < CONCURRENCY_LIMIT; i++) runNext();
-        fileInput.value = '';
-    };
-
-    fileInput.addEventListener('change', (e) => processFiles(e.target.files));
-    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--con)'; });
-    dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; });
-    dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; if (e.dataTransfer.files) processFiles(e.dataTransfer.files); });
-
-    if (exportBtn) {
-        exportBtn.addEventListener('click', () => {
-            if (csvRows.length <= 1) { window.showToast('No data to export yet.'); return; }
-            const csv = csvRows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `auditor_pro_session_${new Date().toISOString().split('T')[0]}.csv`; a.click();
-        });
-    }
-}
-
-function initPODropzone() {
-    const dropzone = document.getElementById('po-dropzone');
-    const fileInput = document.getElementById('po-file-input');
-    const resultContainer = document.getElementById('po-result-container');
-    if (!dropzone || !fileInput) return;
-
-    const supervisorMap = {
-        'umm hurair': { name: 'Jan Melvin Jimenez', email: 'jan.melvin@al-ghurair.com' },
-        'al murooj': { name: 'Supervisor Team A', email: 'supervisor.a@al-ghurair.com' },
-        'boutique villas': { name: 'Supervisor Team B', email: 'supervisor.b@al-ghurair.com' }
-    };
-
-    let extractedPoNumber = '';
-
-    const processPOFile = async (file) => {
-        if (!file) return;
-        window.showToast('Extracting PO details with Gemini...', 'info');
-        const fd = new FormData(); fd.append('po_file', file);
-
-        try {
-            const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/extract-po`, { method: 'POST', body: fd });
-            if (!res.ok) throw new Error('Extraction failed');
-            const data = await res.json();
-
-            extractedPoNumber = data.po_number || '';
-            document.getElementById('po-res-num').textContent = extractedPoNumber || '—';
-            document.getElementById('po-res-supplier').textContent = data.supplier_name || '—';
-            document.getElementById('po-res-building').textContent = data.building || 'General';
-            document.getElementById('po-res-total').textContent = Number(data.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
-            
-            const buildingKey = Object.keys(supervisorMap).find(k => (data.building || '').toLowerCase().includes(k)) || 'umm hurair';
-            const supervisor = supervisorMap[buildingKey];
-
-            const draftText = `Subject: New PO Issued: ${extractedPoNumber} — ${data.building || 'Project Site'}\n\nHi ${supervisor.name},\n\nA new Purchase Order has been raised and confirmed for your site execution and tracking:\n\n- PO Number: ${extractedPoNumber}\n- Supplier: ${data.supplier_name}\n- Building / Location: ${data.building || 'General'}\n- Project: ${data.project_name || 'VAR-TFM DD'}\n- Grand Total: AED ${Number(data.total_amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2 })} (Incl. VAT)\n\nScope Summary:\n${(data.line_items || []).map(li => `• ${li.item} (Qty: ${li.qty})`).join('\n')}\n\nPlease coordinate with the team accordingly.\n\nBest regards,\nLair OS`;
-
-            document.getElementById('po-email-draft').value = draftText;
-            resultContainer.style.display = 'flex';
-            window.showToast('PO successfully extracted & email drafted ✔', 'success');
-        } catch (err) { window.showToast('Failed to parse PO PDF', 'error'); } finally { fileInput.value = ''; }
-    };
-
-    fileInput.addEventListener('change', (e) => processPOFile(e.target.files[0]));
-    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.style.borderColor = 'var(--con)'; });
-    dropzone.addEventListener('dragleave', () => { dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; });
-    dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.style.borderColor = 'rgba(255,255,255,0.2)'; if (e.dataTransfer.files[0]) processPOFile(e.dataTransfer.files[0]); });
-
-    document.getElementById('btn-copy-email').addEventListener('click', () => {
-        const textarea = document.getElementById('po-email-draft'); textarea.select(); navigator.clipboard.writeText(textarea.value); triggerHaptic(); window.showToast('Email draft copied to clipboard!', 'success');
-    });
-}
-
-// Outlook EML Trigger
-const triggerEMLDownload = async (type, crmRef, building, prNumber, rfNumber, isUrgent) => {
-    triggerHaptic();
-    window.showToast(`Generating ${type} draft...`, 'info');
-    try {
-        const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/draft-eml`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type, crmRef, building, prNumber, rfNumber, isUrgent })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error();
-        
-        const blob = new Blob([data.eml], { type: 'message/rfc822' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = data.filename;
-        a.click();
-        URL.revokeObjectURL(a.href);
-        window.showToast('Draft ready for Outlook', 'success');
-    } catch(e) {
-        window.showToast('Failed to generate EML', 'error');
-    }
-};
-
-function initVWTracker() {
-    const tableBody = document.getElementById('vw-table-body');
-    const searchInput = document.getElementById('vw-search-input');
-    const refreshBtn = document.getElementById('vw-refresh-btn');
-    const clearFiltersBtn = document.getElementById('btn-clear-filters');
-    const dossierModal = document.getElementById('vw-dossier-modal');
-    const dossierContent = document.getElementById('vw-dossier-content');
-    const dossierTitle = document.getElementById('vw-dossier-title');
-
-    if (!tableBody) return;
-    let allVWRows = [];
-    
-    // Dynamic Column Toggler State
-    const colMenu = document.getElementById('col-menu');
-    const colToggleBtn = document.getElementById('btn-col-toggle');
-    const tableHead = document.querySelector('#vw-dynamic-headers');
-    const cols = ['Job Identity', 'Work Status', 'Tijori Sync', 'WASL LPO', 'WCR Status', 'SAP Sync', 'Financials'];
-    let colState = [true, true, true, true, true, true, true];
-
-    if(colMenu && !colMenu.hasChildNodes()) {
-        cols.forEach((c, i) => {
-            const row = document.createElement('div');
-            row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; font-family:var(--font-mono); font-size:11px; color:var(--ink);';
-            row.innerHTML = `<span>${c}</span><input type="checkbox" checked class="toggle-switch">`;
-            const cb = row.querySelector('input');
-            cb.addEventListener('change', () => {
-                colState[i] = cb.checked;
-                triggerHaptic();
-                applyColumnState();
-            });
-            colMenu.appendChild(row);
-        });
-    }
-
-    if(colToggleBtn) {
-        colToggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            colMenu.style.display = colMenu.style.display === 'none' ? 'block' : 'none';
-        });
-    }
-    document.addEventListener('click', () => { if(colMenu) colMenu.style.display = 'none'; });
-    if(colMenu) colMenu.addEventListener('click', (e) => e.stopPropagation());
-
-    const applyColumnState = () => {
-        if(!tableHead) return;
-        const ths = tableHead.querySelectorAll('th');
-        ths.forEach((th, i) => { if(th) th.style.display = colState[i] ? '' : 'none'; });
-        const trs = tableBody.querySelectorAll('tr');
-        trs.forEach(tr => {
-            const tds = tr.querySelectorAll('td');
-            tds.forEach((td, i) => { if(td) td.style.display = colState[i] ? '' : 'none'; });
-        });
-    };
-
-    const getPill = (val, type) => {
-        const text = String(val).trim().toLowerCase();
-        if (text === '' || text === 'na' || text === 'n/a' || text === 'no') return `<span class="sync-icon no">✖</span>`;
-        if (text.includes('yes') || text.includes('uploaded')) return `<span class="sync-icon yes">✔</span>`;
-        return `<span class="vw-pill warn" style="font-size:8px;">Pending</span>`;
-    };
-
-    const getStatusPill = (status) => {
-        const s = String(status).trim().toLowerCase();
-        if (s.includes('completed') || s.includes('approved')) return `<span class="vw-pill success">${status}</span>`;
-        if (s.includes('pending') || s.includes('progress') || s.includes('ongoing')) return `<span class="vw-pill warn">${status}</span>`;
-        if (s.includes('rejected') || s.includes('cancelled')) return `<span class="vw-pill danger">${status}</span>`;
-        return `<span class="vw-pill neutral">${status || 'Unknown'}</span>`;
-    };
-
-    const renderTable = (rowsToRender) => {
-        if (!rowsToRender.length) { tableBody.innerHTML = `<tr><td colspan="7" style="padding:40px; text-align:center; color:var(--ink-soft);">No matching works found.</td></tr>`; return; }
-        tableBody.innerHTML = '';
-        
-        rowsToRender.sort((a, b) => (b.urgencyScore || 0) - (a.urgencyScore || 0));
-
-        rowsToRender.forEach(item => {
-            const tr = document.createElement('tr');
-            tr.style.cssText = `cursor:pointer; transition:background 0.2s; border-bottom:var(--glass-border); ${item.urgencyScore > 0 ? 'background:rgba(229,169,60,0.02);' : ''}`;
-            tr.onmouseover = () => tr.style.background = 'rgba(255,255,255,0.05)'; 
-            tr.onmouseout = () => tr.style.background = item.urgencyScore > 0 ? 'rgba(229,169,60,0.02)' : 'transparent';
-
-            tr.innerHTML = `
-                <td style="padding:16px; border-right:var(--glass-border);">
-                    <div style="font-weight:600; font-family:var(--font-mono); font-size:12px; color:var(--ink);">${item.crmRef || '—'}</div>
-                    <div style="color:var(--ink-soft); font-size:11px; margin-top:4px;">${item.qtnRef || ''}</div>
-                </td>
-                <td style="padding:16px;">
-                    <div style="margin-bottom:8px;">${getStatusPill(item.worksStatus)}</div>
-                    <div style="font-weight:500; color:var(--ink); max-width:280px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${item.description}">${item.description || '—'}</div>
-                    <div style="color:var(--ink-soft); font-size:10px; margin-top:4px; text-transform:uppercase;">${item.building || 'General'}</div>
-                </td>
-                <td style="padding:16px; text-align:center;">${getPill(item.tijoriSync)}</td>
-                <td style="padding:16px; font-family:var(--font-mono); font-size:11px; color:${item.waslPo ? 'var(--con)' : 'var(--err)'};">${item.waslPo || 'PENDING'}</td>
-                <td style="padding:16px; text-align:center;">${getPill(item.wcrSync)}</td>
-                <td style="padding:16px; text-align:center;">${getPill(item.sapSync)}</td>
-                <td style="padding:16px; text-align:right; font-family:var(--font-mono); font-size:12px;">
-                    <div style="color:var(--con); font-weight:600;" title="WASL Cost">${item.waslCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
-                    <div style="color:var(--ink-soft); font-size:10px; margin-top:4px;" title="Supplier Cost">V: ${item.supplierCost.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
-                </td>
-            `;
-
-            tr.addEventListener('click', () => {
-                triggerHaptic(); dossierTitle.textContent = `CRM: ${item.crmRef || item.qtnRef || 'Work Details'}`; dossierContent.innerHTML = '';
-                item.rawHeaders.forEach((header, idx) => {
-                    const val = item.rawValues[idx];
-                    if (val !== undefined && val !== null && String(val).trim() !== '') {
-                        const box = document.createElement('div');
-                        box.style.cssText = 'background:var(--input-bg); padding:12px; border-radius:var(--radius-sm); border:var(--glass-border);';
-                        box.innerHTML = `<div style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:4px;">${header}</div><div style="color:var(--ink); font-weight:500; word-break:break-word;">${val}</div>`;
-                        dossierContent.appendChild(box);
-                    }
-                });
-
-                // Safeguard against undefined headers
-                const prIdx = item.rawHeaders.findIndex(h => String(h).toLowerCase().includes('pr'));
-                const rfIdx = item.rawHeaders.findIndex(h => String(h).toLowerCase().includes('rf'));
-                const prVal = prIdx !== -1 ? item.rawValues[prIdx] : '';
-                const rfVal = rfIdx !== -1 ? item.rawValues[rfIdx] : '';
-                const isUrgent = item.urgencyScore >= 2; 
-
-                const actionBox = document.createElement('div');
-                actionBox.style.cssText = 'grid-column: 1 / -1; margin-top:10px; padding-top:20px; border-top:var(--glass-border); display:flex; flex-direction:column; gap:16px;';
-                
-                actionBox.innerHTML = `
-                   <div>
-                       <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:8px;">Dispatch Engine (Windows / Outlook)</p>
-                       <div style="display:flex; gap:12px;">
-                           <button class="btn-primary haptic-btn" style="flex:1;" id="btn-eml-mgr">Draft Manager Review (.eml)</button>
-                           <button class="btn-primary haptic-btn" style="flex:1; background:rgba(229,169,60,0.2); color:var(--warn);" id="btn-eml-proc">${isUrgent ? 'URGENT: Chase Procurement' : 'Draft Procurement Chase (.eml)'}</button>
-                       </div>
-                   </div>
-                   <div style="padding-top:10px; border-top:1px dashed rgba(255,255,255,0.1);">
-                       <p style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); text-transform:uppercase; margin-bottom:8px;">Cloud Engine (Mac / Gmail / Apple Mail)</p>
-                       <div style="display:flex; gap:12px;">
-                           <button class="btn-secondary haptic-btn" style="flex:1;" id="btn-cloud-mgr">Push to Cloud Drafts</button>
-                           <button class="btn-secondary haptic-btn" style="flex:1;" id="btn-cloud-proc">Push to Cloud Drafts</button>
-                       </div>
-                   </div>
-                `;
-
-                dossierContent.appendChild(actionBox);
-
-                document.getElementById('btn-eml-mgr').onclick = () => triggerEMLDownload('manager', item.crmRef, item.building, prVal, rfVal, isUrgent);
-                document.getElementById('btn-eml-proc').onclick = () => triggerEMLDownload('procurement', item.crmRef, item.building, prVal, rfVal, isUrgent);
-                
-                const cloudAlert = () => { triggerHaptic(); window.showToast('Cloud Push API pending Batch 3 wiring', 'warn'); };
-                document.getElementById('btn-cloud-mgr').onclick = cloudAlert;
-                document.getElementById('btn-cloud-proc').onclick = cloudAlert;
-
-                dossierModal.classList.add('active');
-            });
-            tableBody.appendChild(tr);
-        });
-        
-        applyColumnState();
-    };
-
-const loadVWData = async () => {
-        try {
-            tableBody.innerHTML = `<tr><td colspan="7" style="padding:50px 20px; text-align:center; color:var(--ink-soft); font-size:13px;">Establishing read-only link to Google Cloud...</td></tr>`;
-            const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/vw-tracker`);
-            if (!res.ok) throw new Error('Failed to fetch VW tracker');
-            
-            const data = await res.json();
-            if(!data.rows || data.rows.length <= 1) {
-                tableBody.innerHTML = `<tr><td colspan="7" style="padding:50px 20px; text-align:center; color:var(--ink-soft);">Tracker sheet is empty or unavailable.</td></tr>`;
-                return;
-            }
-
-            const headers = data.rows[0].map(h => String(h).toLowerCase());
-            const dataRows = data.rows.slice(1);
-
-            const idxCrm = headers.findIndex(h => h.includes('crm ref'));
-            const idxQtn = headers.findIndex(h => h.includes('qtn ref'));
-            const idxDesc = headers.findIndex(h => h.includes('description'));
-            const idxBuilding = headers.findIndex(h => h.includes('building'));
-            const idxStatus = headers.findIndex(h => h.includes('status'));
-            const idxWaslPo = headers.findIndex(h => h.includes('purchase order') || h.includes('lpo') || h.includes('wasl order') || h.includes('wasl po'));
-            const idxTijori = headers.findIndex(h => h.includes('tijori'));
-            const idxWcr = headers.findIndex(h => h.includes('wcr prepared'));
-            const idxSap = headers.findIndex(h => h.includes('sap') && h.includes('uploaded'));
-            const idxWaslCost = headers.findIndex(h => h.includes('total wasl cost') || (h.includes('wasl') && h.includes('cost')));
-            const idxSupCost = headers.findIndex(h => h.includes('supplier cost') || (h.includes('supplier') && h.includes('cost')));
-            const safeIdxDate = headers.findIndex(h => h.includes('email date') || (h.includes('wasl email') && h.includes('date')));
-            const safeIdxAppr = headers.findIndex(h => h.includes('quote approved'));
-
-            let pendingRevenue = 0;
-            let poBlockers = 0;
-            let missingWcrs = 0;
-            let missingSap = 0;
-            let unsentQuotes = 0;
-
-            allVWRows = dataRows.map((row) => {
-                const getVal = (idx) => idx !== -1 ? (row[idx] || '') : '';
-                
-                const crmRef = getVal(idxCrm);
-                const status = getVal(idxStatus);
-                const waslPo = getVal(idxWaslPo);
-                const wcrSync = getVal(idxWcr);
-                const sapSync = getVal(idxSap);
-                const waslCost = Number(String(getVal(idxWaslCost)).replace(/,/g, '')) || 0;
-                
-                const isApproved = status.toLowerCase().includes('approved') || status.toLowerCase().includes('completed');
-                let urgencyScore = 0;
-
-                if (isApproved && !waslPo) { poBlockers++; urgencyScore += 2; }
-                if (isApproved && waslPo && !String(wcrSync).toLowerCase().includes('yes')) { missingWcrs++; urgencyScore += 3; }
-                if (isApproved && String(wcrSync).toLowerCase().includes('yes') && !String(sapSync).toLowerCase().includes('yes')) { missingSap++; urgencyScore += 4; }
-                
-                if (isApproved && (!String(wcrSync).toLowerCase().includes('yes') || !String(sapSync).toLowerCase().includes('yes'))) {
-                    pendingRevenue += waslCost;
-                }
-
-                // 1. Base Check: Does it have a quote but no date?
-                const rawQtn = String(getVal(idxQtn)).trim().toLowerCase();
-                const rawDate = String(getVal(safeIdxDate)).trim().toLowerCase();
-                const hasQuote = rawQtn !== '' && rawQtn !== '-' && rawQtn !== 'n/a' && rawQtn !== 'undefined';
-                const dateIsBlank = rawDate === '' || rawDate === '-' || rawDate === 'n/a' || rawDate === 'undefined' || rawDate.includes('pending') || rawDate.includes('tba');
-                
-                // 2. Is the job totally dead?
-                const rawStatus = String(status).trim().toLowerCase();
-                const isDead = rawStatus === 'cancelled' || rawStatus === 'on hold';
-                
-                // 3. Ghost evidence check
-                const rawWaslPo = String(waslPo).trim().toLowerCase();
-                const rawApproved = safeIdxAppr !== -1 ? String(getVal(safeIdxAppr)).trim().toLowerCase() : '';
-                
-                const hasPO = rawWaslPo !== '' && rawWaslPo !== '-' && rawWaslPo !== 'n/a' && rawWaslPo !== 'undefined';
-                const isApprovedQuote = rawApproved === 'yes';
-                const isActive = rawStatus === 'completed' || rawStatus === 'work scheduled' || rawStatus === 'work in progress' || rawStatus.includes('awaiting client po');
-                const evidenceSent = hasPO || isApprovedQuote || isActive;
-                
-                // 4. The True Limbo (Has Quote, No Date, Not Dead, No Evidence of Sent)
-                const isUnsentQuote = hasQuote && dateIsBlank && !isDead && !evidenceSent;
-
-                if (isUnsentQuote) {
-                    unsentQuotes++;
-                    urgencyScore += 5;
-                }
-
-                return {
-                    crmRef, qtnRef: getVal(idxQtn), qtnDate: getVal(safeIdxDate), isUnsentQuote, description: getVal(idxDesc), building: getVal(idxBuilding),
-                    worksStatus: status, waslPo, tijoriSync: getVal(idxTijori), wcrSync, sapSync,
-                    waslCost, supplierCost: Number(String(getVal(idxSupCost)).replace(/,/g, '')) || 0,
-                    urgencyScore, rawHeaders: data.rows[0], rawValues: row
-                };
-            });
-
-            if(document.getElementById('vw-stat-revenue')) document.getElementById('vw-stat-revenue').textContent = pendingRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 });
-            if(document.getElementById('vw-stat-po-blockers')) document.getElementById('vw-stat-po-blockers').textContent = poBlockers;
-            if(document.getElementById('vw-stat-missing-wcrs')) document.getElementById('vw-stat-missing-wcrs').textContent = missingWcrs;
-            if(document.getElementById('vw-stat-sap-missing')) document.getElementById('vw-stat-sap-missing').textContent = missingSap;
-            if(document.getElementById('vw-stat-unsent-quotes')) document.getElementById('vw-stat-unsent-quotes').textContent = unsentQuotes;
-
-            renderTable(allVWRows);
-        } catch (e) { 
-            tableBody.innerHTML = `<tr><td colspan="7" style="padding:50px 20px; text-align:center; color:var(--err);">Failed to read Google Sheet.</td></tr>`; 
-        }
-    };
-    loadVWData();
-
-    // The Interactive KPI Filter Engine
-    const applyFilter = (filterFn) => {
-        triggerHaptic();
-        if(searchInput) searchInput.value = '';
-        if(clearFiltersBtn) clearFiltersBtn.style.display = 'block';
-        renderTable(allVWRows.filter(filterFn));
-        window.scrollBy({ top: 300, behavior: 'smooth' });
-    };
-
-    if(document.getElementById('kpi-revenue')) {
-        document.getElementById('kpi-revenue').onclick = () => applyFilter(r => r.urgencyScore > 0);
-        document.getElementById('kpi-po-blockers').onclick = () => applyFilter(r => r.worksStatus.toLowerCase().includes('approved') && !r.waslPo);
-        document.getElementById('kpi-missing-wcrs').onclick = () => applyFilter(r => r.urgencyScore >= 3 && (!r.wcrSync || !String(r.wcrSync).toLowerCase().includes('yes')));
-        document.getElementById('kpi-sap-missing').onclick = () => applyFilter(r => r.urgencyScore >= 4 && String(r.wcrSync).toLowerCase().includes('yes') && (!r.sapSync || !String(r.sapSync).toLowerCase().includes('yes')));
-        if(document.getElementById('kpi-unsent-quotes')) document.getElementById('kpi-unsent-quotes').onclick = () => applyFilter(r => r.qtnRef && !r.qtnDate);
-    }
-
-    if(clearFiltersBtn) {
-        clearFiltersBtn.addEventListener('click', () => {
-            triggerHaptic();
-            if(searchInput) searchInput.value = '';
-            clearFiltersBtn.style.display = 'none';
-            renderTable(allVWRows);
-        });
-    }
-
-    if (refreshBtn) refreshBtn.addEventListener('click', () => { triggerHaptic(); loadVWData(); window.showToast('Pulling live updates...', 'info'); });
-    
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            if(clearFiltersBtn) clearFiltersBtn.style.display = e.target.value.trim() ? 'block' : 'none';
-            const queryStr = e.target.value.toLowerCase().trim();
-            if (!queryStr) { renderTable(allVWRows); return; }
-            const filtered = allVWRows.filter(item => 
-                String(item.crmRef).toLowerCase().includes(queryStr) || String(item.building).toLowerCase().includes(queryStr) ||
-                String(item.worksStatus).toLowerCase().includes(queryStr) || String(item.waslPo).toLowerCase().includes(queryStr)
-            );
-            renderTable(filtered);
-        });
-    }
-}
-
-window.loadVWBriefing = async function() {
-    const textEl = document.getElementById('vw-briefing-text');
-    const metricsEl = document.getElementById('vw-metrics-row');
-    if (!textEl) return;
-    textEl.textContent = "Analyzing compliance KPIs and generating executive briefing..."; metricsEl.innerHTML = "";
-
-    try {
-        const res = await fetchWithAuth(`${TUNNEL_URL}/api/work/vw-briefing`);
-        if (!res.ok) throw new Error('Failed to fetch briefing');
-        
-        const data = await res.json();
-        textEl.textContent = `"${data.summary}"`; textEl.style.fontStyle = 'normal'; textEl.style.color = 'var(--ink)';
-
-        const m = data.metrics;
-        metricsEl.innerHTML = `
-            <div style="background:var(--input-bg); padding:12px; border-radius:var(--radius-sm); border:var(--glass-border);"><span style="display:block; color:var(--ink-soft); font-size:10px; font-family:var(--font-mono); margin-bottom:4px; text-transform:uppercase;">Completed Works</span><span style="font-size:16px; font-weight:600; color:var(--ink);">${m.completedWorks}</span></div>
-            <div style="background:var(--input-bg); padding:12px; border-radius:var(--radius-sm); border:var(--glass-border);"><span style="display:block; color:var(--ink-soft); font-size:10px; font-family:var(--font-mono); margin-bottom:4px; text-transform:uppercase;">Missing WCRs</span><span style="font-size:16px; font-weight:600; color:var(--warn);">${m.missingWcr}</span></div>
-            <div style="background:var(--input-bg); padding:12px; border-radius:var(--radius-sm); border:var(--glass-border);"><span style="display:block; color:var(--ink-soft); font-size:10px; font-family:var(--font-mono); margin-bottom:4px; text-transform:uppercase;">Missing SAP Uploads</span><span style="font-size:16px; font-weight:600; color:var(--warn);">${m.missingSapUpload}</span></div>
-            <div style="background:var(--input-bg); padding:12px; border-radius:var(--radius-sm); border:var(--glass-border);"><span style="display:block; color:var(--ink-soft); font-size:10px; font-family:var(--font-mono); margin-bottom:4px; text-transform:uppercase;">Pending WASL POs</span><span style="font-size:16px; font-weight:600; color:var(--err);">${m.pendingWaslPo}</span></div>
-        `;
-    } catch (e) { textEl.textContent = "Unable to generate AI briefing at this moment."; }
-};
 
 function initOS() {
   setupAdaptivePolling();
@@ -844,8 +249,8 @@ function initOS() {
 
   const urlParams = new URLSearchParams(window.location.search);
   if(urlParams.get('share') === 'true') {
-      window.showToast('Work order media received from Share Sheet.', 'success');
-      document.querySelector('.dock-app[data-target="work"]').click();
+      window.showToast('Shared item received.', 'success');
+      document.querySelector('.dock-app[data-target="drop"]').click();
       window.history.replaceState({}, document.title, window.location.pathname);
   }
 
@@ -889,9 +294,8 @@ function initOS() {
       }).catch(e => console.log('Silently failed to log to Sheets', e));
   });
 
-  initWatchParty(); initVault(); initTheaterChat(); initWatchlist(); initConfigAndFeatures(); initRadarFeed(); initVoiceRoom(); initAuditor(); initVWTracker(); initPODropzone(); initAdminPinPad();
+  initWatchParty(); initVault(); initTheaterChat(); initWatchlist(); initConfigAndFeatures(); initRadarFeed(); initVoiceRoom(); initAdminPinPad();
 
-  document.getElementById('btn-open-po-modal').addEventListener('click', () => { triggerHaptic(); document.getElementById('po-extractor-modal').classList.add('active'); });
 }
 
 // ==== THE FRIDGE MAGNET (DRAWING BOARD) ====
@@ -1042,14 +446,13 @@ function initConfigAndFeatures() {
         }
         const f = d.features || {};
         document.getElementById('dock-dashboard-link').style.display = f.dashboard === false ? 'none' : 'block';
-        document.getElementById('dock-work-link').style.display = f.work === false ? 'none' : 'block';
         document.getElementById('dock-drop-link').style.display = f.drop === false ? 'none' : 'block';
         document.getElementById('dock-theater-link').style.display = f.theater === false ? 'none' : 'block';
         document.getElementById('dock-voice-link').style.display = f.voice === false ? 'none' : 'block';
         
         const radarCard = document.getElementById('radar-feed')?.closest('.card'); if (radarCard) radarCard.style.display = f.radar === false ? 'none' : 'flex';
         const activeTarget = document.querySelector('.dock-app.active')?.getAttribute('data-target');
-        if ((activeTarget === 'dashboard' && f.dashboard === false) || (activeTarget === 'work' && f.work === false) || (activeTarget === 'drop' && f.drop === false) || (activeTarget === 'theater' && f.theater === false) || (activeTarget === 'voice' && f.voice === false)) {
+        if ((activeTarget === 'dashboard' && f.dashboard === false) || (activeTarget === 'drop' && f.drop === false) || (activeTarget === 'theater' && f.theater === false) || (activeTarget === 'voice' && f.voice === false)) {
             const firstAvailable = document.querySelector('.dock-app[style*="display: block"], .dock-app:not([style*="display: none"])');
             if (firstAvailable) firstAvailable.click();
         }
@@ -1302,7 +705,7 @@ async function initVault() {
       quickCaptureFab.onclick = () => {
           triggerHaptic();
           const activeTarget = document.querySelector('.dock-app.active')?.getAttribute('data-target');
-          if (activeTarget === 'drop' || activeTarget === 'work') cameraInput.click();
+          if (activeTarget === 'drop') cameraInput.click();
       };
   }
 
