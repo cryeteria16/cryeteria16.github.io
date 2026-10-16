@@ -1,10 +1,10 @@
 {
-  "name": "The Lair OS",
+  "name": "The Lair",
   "short_name": "Lair",
-  "start_url": "/index.html",
+  "start_url": "/lair",
   "display": "standalone",
-  "background_color": "#0A0A0A",
-  "theme_color": "#0A0A0A",
+  "background_color": "#060709",
+  "theme_color": "#060709",
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -19,23 +19,6 @@
       "purpose": "any maskable"
     }
   ],
-  "share_target": {
-    "action": "/lair?share=true",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url",
-      "files": [
-        {
-          "name": "shared_file",
-          "accept": [
-            "image/*",
-            "application/pdf"
-          ]
-        }
-      ]
-    }
-  }
+  "scope": "/",
+  "id": "/lair"
 }

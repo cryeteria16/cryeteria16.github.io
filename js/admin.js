@@ -6,16 +6,15 @@ let currentUser = null;
 
 onAuthStateChanged(auth, (user) => { 
   if (!user) {
-      window.location.replace("index.html");
+      window.location.replace("/lair");
       return;
   }
   
   currentUser = { id: user.uid };
   
   onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
-      // 🔥 SECURITY FIX: Requires both admin role AND an active local PIN session
-      if(!snap.exists() || snap.data().role !== 'admin' || sessionStorage.getItem('lair_admin_unlocked') !== 'true') {
-          alert('Unauthorized: Admin PIN validation required.');
+      // Only the owner account (role "admin", set in the Firebase console) can use Settings
+      if(!snap.exists() || snap.data().role !== 'admin') {
           window.location.replace("/lair");
           return;
       }
@@ -26,7 +25,6 @@ onAuthStateChanged(auth, (user) => {
     if(snap.exists()) {
       const d = snap.data();
       document.getElementById('notify-visitor').checked = d.visitor !== false;
-      document.getElementById('notify-guest').checked = d.guest !== false;
     }
   });
   
@@ -44,7 +42,6 @@ onAuthStateChanged(auth, (user) => {
           document.getElementById('toggle-dashboard').checked = d.features.dashboard !== false;
           document.getElementById('toggle-drop').checked = d.features.drop !== false;
           document.getElementById('toggle-theater').checked = d.features.theater !== false;
-          document.getElementById('toggle-voice').checked = d.features.voice !== false;
           document.getElementById('toggle-radar').checked = d.features.radar !== false;
       }
     }
@@ -66,8 +63,7 @@ onAuthStateChanged(auth, (user) => {
 
 document.getElementById('btn-save-notifications').addEventListener('click', async () => {
   await setDoc(doc(db, 'system', 'notifications'), { 
-    visitor: document.getElementById('notify-visitor').checked,
-    guest: document.getElementById('notify-guest').checked
+    visitor: document.getElementById('notify-visitor').checked
   }, { merge: true }); 
   alert('Matrix Updated');
 });
@@ -78,7 +74,6 @@ document.getElementById('btn-save-os').addEventListener('click', async () => {
     dashboard: document.getElementById('toggle-dashboard').checked,
     drop: document.getElementById('toggle-drop').checked,
     theater: document.getElementById('toggle-theater').checked,
-    voice: document.getElementById('toggle-voice').checked, 
     radar: document.getElementById('toggle-radar').checked 
   };
   await setDoc(doc(db, 'system', 'config'), { broadcast, features }, { merge: true }); 
@@ -108,17 +103,6 @@ document.getElementById('btn-save-config').addEventListener('click', async () =>
     accentColor: document.getElementById('config-accent').value 
   }, { merge: true }); 
   alert('Aesthetics Applied');
-});
-
-document.getElementById('btn-update-pin').addEventListener('click', async () => {
-    const newPin = document.getElementById('edit-pin').value;
-    if(!/^\d{4}$/.test(newPin)) {
-        alert("PIN must be exactly 4 digits.");
-        return;
-    }
-    await setDoc(doc(db, 'users', currentUser.id), { adminPin: newPin }, { merge: true });
-    alert('Admin PIN Updated');
-    document.getElementById('edit-pin').value = '';
 });
 
 document.getElementById('btn-update-password').addEventListener('click', async () => {

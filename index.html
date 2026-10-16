@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#090514">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="description" content="Ibad Hasan — visuals and archive. Exploring depth and digital spaces.">
@@ -26,7 +25,7 @@
 
   <div class="floating-header-wrapper">
     <header class="floating-pill">
-      <div class="pub-brand" id="brand-secret-trigger" title="Double tap for gateway">
+      <div class="pub-brand">
         <svg width="20" height="20" viewBox="0 0 26 26"><circle cx="10" cy="13" r="8" fill="var(--accent)"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" style="mix-blend-mode:screen"/></svg>
         <h1>Ibad Hasan</h1>
       </div>
@@ -75,17 +74,6 @@
       </div>
     </section>
   </main>
-
-  <div class="modal-overlay" id="modal-secret-login">
-    <div class="login-glass-card">
-      <h2 style="font-family:var(--font-display); font-size:24px; margin-bottom:24px;">Lair Gateway</h2>
-      <input type="text" id="login-username" placeholder="IDENTITY" autocomplete="off" spellcheck="false">
-      <input type="password" id="login-password" placeholder="PASSKEY">
-      <button class="btn-primary" id="btn-do-login" style="margin-top:12px;">Authenticate</button>
-      <button id="btn-cancel-login" style="background:transparent; border:none; color:var(--ink-soft); font-size:12px; font-family:var(--font-mono); margin-top:16px; width:100%;">Abort</button>
-      <p id="login-error-msg" style="font-size:11px; color:#E65C58; margin-top:16px; display:none;">Access Denied: Invalid Credentials</p>
-    </div>
-  </div>
 
   <script type="module" src="js/index.js"></script>
 </body>

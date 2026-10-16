@@ -1,6 +1,5 @@
-import { onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { doc, collection, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { auth, db } from "./firebase-config.js";
+import { db } from "./firebase-config.js";
 
 async function fireSilentRadar(actionType) {
   try {
@@ -158,48 +157,3 @@ document.getElementById('btn-download-vcard').addEventListener('click', () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 });
-
-// Secret Login Gateway
-const sm = document.getElementById('modal-secret-login');
-const brandBtn = document.getElementById('brand-secret-trigger');
-
-let tapCount = 0;
-let tapTimer;
-brandBtn.addEventListener('click', () => { 
-    tapCount++;
-    if (tapCount === 1) {
-        tapTimer = setTimeout(() => { tapCount = 0; }, 400);
-    } else if (tapCount === 2) {
-        clearTimeout(tapTimer);
-        tapCount = 0;
-        sm.classList.add('active'); 
-        if(navigator.vibrate) navigator.vibrate(20);
-    }
-});
-
-document.getElementById('btn-cancel-login').addEventListener('click', () => sm.classList.remove('active'));
-
-async function performLogin() {
-  const btn = document.getElementById('btn-do-login'); 
-  const usr = document.getElementById('login-username').value.trim().toLowerCase(); 
-  const pwd = document.getElementById('login-password').value;
-  if (!usr || !pwd) return;
-
-  btn.textContent = "Authenticating...";
-  document.getElementById('login-error-msg').style.display = 'none';
-
-  const authEmail = usr.includes('@') ? usr : `${usr}@lair.local`;
-
-  try { 
-      await signInWithEmailAndPassword(auth, authEmail, pwd); 
-  } catch(e) { 
-      document.getElementById('login-error-msg').style.display = 'block'; 
-      btn.textContent = "Authenticate"; 
-      fireSilentRadar('Failed Auth');
-  }
-}
-
-document.getElementById('btn-do-login').addEventListener('click', performLogin);
-document.getElementById('login-password').addEventListener('keydown', (e) => { if(e.key === 'Enter') performLogin(); });
-
-onAuthStateChanged(auth, (user) => { if (user) window.location.replace("/lair"); });

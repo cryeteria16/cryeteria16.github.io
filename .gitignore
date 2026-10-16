@@ -7,10 +7,13 @@ serviceAccountKey.json
 # Dependencies
 node_modules/
 
-# Local media and documents served by the Lair server
+# Your files on the PC (the Lair server keeps them in this folder) - never publish
 Movies/
 Photography/
 Invoices/
+Drive/
+.lair-cache/
+.lair-trash/
 
 # OS / editor junk
 .DS_Store
