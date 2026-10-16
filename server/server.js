@@ -113,6 +113,18 @@ async function verifyToken(req, res, next) {
   } catch (error) { return res.status(403).json({ error: 'Forbidden: Expired token.' }); }
 }
 
+// Only users whose Firestore profile has role 'admin' (same rule as firestore.rules)
+async function requireAdmin(req, res, next) {
+  try {
+    const snap = await db.collection('users').doc(req.user.uid).get();
+    if (snap.exists && snap.data().role === 'admin') return next();
+  } catch (e) { console.error('[Lair OS] Admin check failed:', e.message); }
+  return res.status(403).json({ error: 'Forbidden: Admins only.' });
+}
+
+// Escape user text before it goes into HTML (PDF template)
+const esc = (v) => String(v ?? '').trim().replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) || 'N/A';
+
 app.post('/api/stream-token', verifyToken, (req, res) => {
   const filename = path.basename(req.body.filename || '');
   if (!filename) return res.status(400).json({ error: 'filename required' });
@@ -557,7 +569,7 @@ const getBrowserPath = () => {
 };
 
 // 1. AI Auto-Fill Route
-app.post('/api/showcase/ai-draft', async (req, res) => {
+app.post('/api/showcase/ai-draft', strictLimiter, verifyToken, requireAdmin, async (req, res) => {
     try {
         const { prompt } = req.body;
         if (!prompt) return res.status(400).json({ error: 'Prompt required' });
@@ -581,51 +593,24 @@ app.post('/api/showcase/ai-draft', async (req, res) => {
 });
 
 // 2. PDF Generation Route (HTML to PDF)
-const UPLOAD_LIMITS = { fileSize: 35 * 1024 * 1024 }; // Establishes a 35MB safety limit
+const UPLOAD_LIMITS = { fileSize: 35 * 1024 * 1024 }; // 35MB per photo
 const showcaseUpload = multer({ storage: multer.memoryStorage(), limits: UPLOAD_LIMITS });
 
-app.post('/api/showcase/ai-draft', strictLimiter, verifyToken, requireAdmin, async (req, res) => {
-  
-// BEFORE
-app.post('/api/showcase/generate-breakdown', showcaseUpload.array('photos', 10), async (req, res) => {
-...
-    const base64 = file.buffer.toString('base64');
-    photoGridHtml += `... <img src="data:${file.mimetype};base64,${base64}" ...
-...
-<div class="content-box">${req.body.title || 'N/A'}</div>      (and location, description, cause, containment, scope)
-...
-        const browser = await puppeteer.launch({ ... });
-
-        await browser.close();
-
-        res.setHeader('Content-Type', 'application/pdf');
-        ...
-        res.send(pdfBuffer);
-
-// AFTER
 app.post('/api/showcase/generate-breakdown', strictLimiter, verifyToken, requireAdmin, showcaseUpload.array('photos', 10), async (req, res) => {
-...
-    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)) return;   // inside the forEach, before building the cell
-...
-<div class="content-box">${esc(req.body.title)}</div>             (do the same for the 5 other fields)
-...
-        const browser = await puppeteer.launch({ ...same options... });
-        let pdfBuffer;
-        try {
-            const page = await browser.newPage();
-            await page.setJavaScriptEnabled(false);
-            await page.setRequestInterception(true);
-            page.on('request', r => (r.url().startsWith('data:') || r.url() === 'about:blank') ? r.continue() : r.abort()); // blocks file:// and network
-            await page.setContent(htmlContent, { waitUntil: 'load' });
-            pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '10mm', bottom: '10mm', left: '8mm', right: '8mm' } });
-        } finally {
-            await browser.close();
-        }
-
-        res.setHeader('Content-Type', 'application/pdf');
-        ...
-        res.send(pdfBuffer);
-        
+    let browser;
+    try {
+        // Build the photo grid from images only
+        let photoGridHtml = '';
+        (req.files || []).forEach((file, i) => {
+            if (!/^image\/(jpeg|png|webp|gif)$/.test(file.mimetype)) return;
+            const base64 = file.buffer.toString('base64');
+            photoGridHtml += `
+                <div class="photo-cell">
+                    <img src="data:${file.mimetype};base64,${base64}">
+                    <div class="caption">Photo ${i + 1}</div>
+                </div>`;
+        });
+        if (!photoGridHtml) photoGridHtml = '<div class="content-box">No photos attached.</div>';
 
         // The AGFS Branded HTML Template
         const htmlContent = `
@@ -647,37 +632,37 @@ app.post('/api/showcase/generate-breakdown', strictLimiter, verifyToken, require
         </head>
         <body>
             <div class="header">Equipment Breakdown & Observation Report</div>
-            
+
             <div class="grid-2">
                 <div class="section" style="margin-top:30px;">
                     <div class="section-title">Incident Title</div>
-                    <div class="content-box">${req.body.title || 'N/A'}</div>
+                    <div class="content-box">${esc(req.body.title)}</div>
                 </div>
                 <div class="section" style="margin-top:30px;">
                     <div class="section-title">Building / Location</div>
-                    <div class="content-box">${req.body.location || 'N/A'}</div>
+                    <div class="content-box">${esc(req.body.location)}</div>
                 </div>
             </div>
 
             <div class="section">
                 <div class="section-title">Detailed Description</div>
-                <div class="content-box">${req.body.description || 'N/A'}</div>
+                <div class="content-box">${esc(req.body.description)}</div>
             </div>
 
             <div class="grid-2">
                 <div class="section">
                     <div class="section-title">Root Cause Analysis</div>
-                    <div class="content-box">${req.body.cause || 'N/A'}</div>
+                    <div class="content-box">${esc(req.body.cause)}</div>
                 </div>
                 <div class="section">
                     <div class="section-title">Containment Actions</div>
-                    <div class="content-box">${req.body.containment || 'N/A'}</div>
+                    <div class="content-box">${esc(req.body.containment)}</div>
                 </div>
             </div>
 
             <div class="section">
                 <div class="section-title">Scope of Repair</div>
-                <div class="content-box">${req.body.scope || 'N/A'}</div>
+                <div class="content-box">${esc(req.body.scope)}</div>
             </div>
 
             <div class="section" style="page-break-before: auto;">
@@ -690,20 +675,25 @@ app.post('/api/showcase/generate-breakdown', strictLimiter, verifyToken, require
         </html>
         `;
 
-        // Launch browser and print PDF
-       // Launch browser and print PDF (With Brave Sandbox Bypasses)
-        const browser = await puppeteer.launch({ 
-            executablePath: getBrowserPath(), 
+        // Launch browser and print PDF (With Brave Sandbox Bypasses)
+        browser = await puppeteer.launch({
+            executablePath: getBrowserPath(),
             headless: true,
             args: [
-                '--no-sandbox', 
-                '--disable-setuid-sandbox', 
-                '--disable-gpu', 
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-gpu',
                 '--disable-software-rasterizer'
             ]
         });
 
-        await browser.close();
+        // Locked-down page: no JavaScript, and only inline data: images may load (blocks file:// and network)
+        const page = await browser.newPage();
+        await page.setJavaScriptEnabled(false);
+        await page.setRequestInterception(true);
+        page.on('request', r => (r.url().startsWith('data:') || r.url() === 'about:blank') ? r.continue() : r.abort());
+        await page.setContent(htmlContent, { waitUntil: 'load' });
+        const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '10mm', bottom: '10mm', left: '8mm', right: '8mm' } });
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="AGFS_Breakdown_${Date.now()}.pdf"`);
@@ -712,6 +702,8 @@ app.post('/api/showcase/generate-breakdown', strictLimiter, verifyToken, require
     } catch (error) {
         console.error('[Showcase] PDF Gen Error:', error);
         res.status(500).json({ error: 'Failed to generate PDF' });
+    } finally {
+        if (browser) await browser.close().catch(() => {});
     }
 });
 

@@ -1,7 +1,7 @@
 {
-  "name": "lair-vault",
+  "name": "lair-os",
   "version": "1.0.0",
-  "description": "",
+  "description": "Ibad Hasan site + Lair OS server",
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js"
@@ -17,10 +17,16 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.7.1",
     "firebase-admin": "^14.3.0",
     "googleapis": "^140.0.0",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.3.0",
+    "puppeteer-core": "^25.14.0",
     "sharp": "^0.35.4"
+  },
+  "optionalDependencies": {
+    "heic-convert": "^2.1.0"
   }
 }

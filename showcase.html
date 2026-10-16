@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <title>AGFS Report Generator | Showcase</title>
     <link rel="stylesheet" href="css/showcase.css">
 </head>
@@ -66,14 +68,11 @@
             <span class="spin" id="gen-spin"></span>
             <span id="gen-btn-text">Generate Official PDF</span>
         </button>
-    </div>
-    
-<button id="btn-generate" class="btn-primary">
-            <span class="spin" id="gen-spin"></span>
-            <span id="gen-btn-text">Generate Official PDF</span>
-        </button>
+        <p id="auth-note" style="display:none; margin: 14px 0 0; font-size: 12px; color: var(--ink-soft); text-align: center;">
+            Sign in to <a href="lair.html" style="color: var(--con);">The Lair</a> with an admin account to use this tool.
+        </p>
     </div> <!-- End of the .card container -->
 
-    <script src="js/showcase.js"></script>
+    <script type="module" src="js/showcase.js"></script>
 </body>
 </html>

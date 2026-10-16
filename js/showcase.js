@@ -1,3 +1,19 @@
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { auth } from "./firebase-config.js";
+
+// The report API only accepts signed-in Lair admins, so every call carries a Firebase ID token.
+const authReady = new Promise(resolve => {
+    const stop = onAuthStateChanged(auth, user => { stop(); resolve(user); });
+});
+onAuthStateChanged(auth, user => {
+    document.getElementById('auth-note').style.display = user ? 'none' : 'block';
+});
+async function authHeaders() {
+    const user = auth.currentUser || await authReady;
+    if (!user) throw new Error('Not signed in');
+    return { Authorization: `Bearer ${await user.getIdToken()}` };
+}
+
 // 1. Photo Counting Logic
 const photoInput = document.getElementById('photo-input');
 const photoCountTxt = document.getElementById('photo-preview-count');
@@ -27,7 +43,7 @@ document.getElementById('btn-ai-fill').addEventListener('click', async () => {
     try {
         const response = await fetch('https://vault.ibadhasan.com/api/showcase/ai-draft', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
             body: JSON.stringify({ prompt: promptInput })
         });
 
@@ -43,7 +59,7 @@ document.getElementById('btn-ai-fill').addEventListener('click', async () => {
 
         btnText.textContent = "Report Drafted Successfully!";
     } catch (err) {
-        btnText.textContent = "Error Generating Draft";
+        btnText.textContent = err.message === 'Not signed in' ? "Sign in to The Lair first" : "Error Generating Draft";
     } finally {
         spinner.style.display = "none";
         setTimeout(() => btnText.textContent = "Auto-Fill Corporate Report via Gemini", 3000);
@@ -76,6 +92,7 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
     try {
         const response = await fetch('https://vault.ibadhasan.com/api/showcase/generate-breakdown', {
             method: 'POST',
+            headers: await authHeaders(),
             body: formData
         });
 
@@ -93,7 +110,7 @@ document.getElementById('btn-generate').addEventListener('click', async () => {
 
         btnText.textContent = "PDF Downloaded!";
     } catch (err) {
-        btnText.textContent = "Error Generating PDF";
+        btnText.textContent = err.message === 'Not signed in' ? "Sign in to The Lair first" : "Error Generating PDF";
         btn.style.background = "var(--err)";
     } finally {
         spinner.style.display = "none";
