@@ -1,26 +1,15 @@
-import { doc, collection, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { db } from "./firebase-config.js";
+// Homepage data comes from the always-on helper (api.ibadhasan.com), so it works even when
+// the home PC is off. No Firebase, no third-party trackers.
+const EDGE = 'https://api.ibadhasan.com';
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-async function fireSilentRadar(actionType) {
-  try {
-    const geoRes = await fetch('https://ipapi.co/json/');
-    const geo = await geoRes.json();
-    const ua = navigator.userAgent;
-    let device = /iPhone|iPad|iPod/i.test(ua) ? "iOS Device" : /Android/i.test(ua) ? "Android" : "PC/Mac";
-
-    const payload = {
-        type: actionType,
-        ip: geo.ip || 'Unknown',
-        city: geo.city || 'Unknown',
-        country: geo.country_name || 'Unknown',
-        device: device,
-        timestamp: serverTimestamp()
-    };
-
-    await addDoc(collection(db, 'radar_logs'), payload);
-  } catch(e) {}
-}
-fireSilentRadar('Portfolio View');
+// Count a visit once per browser session (city and country come from Cloudflare; no IP is kept)
+try {
+  if (!sessionStorage.getItem('visited')) {
+    sessionStorage.setItem('visited', '1');
+    fetch(`${EDGE}/public/visit`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'Portfolio View' }), keepalive: true }).catch(() => {});
+  }
+} catch (e) {}
 
 // Navigation Logic
 document.querySelectorAll('.pub-nav-link').forEach(link => {
@@ -33,22 +22,28 @@ document.querySelectorAll('.pub-nav-link').forEach(link => {
   });
 });
 
-let vcardData = { name: "Ibad Hasan", phone: "" };
+let vcardData = { name: "Ibad Hasan", phone: "", email: "" };
+let publicPhotos = [];
 
-// Dynamic Identity Sync from Lair Admin
-onSnapshot(doc(db, 'system', 'profile'), (snap) => {
-  if(snap.exists()) {
-    const d = snap.data();
-    if(d.heroTitle) document.getElementById('dynamic-hero-title').textContent = d.heroTitle;
-    if(d.heroSub) document.getElementById('dynamic-hero-desc').textContent = d.heroSub;
-    if(d.bio) document.getElementById('dynamic-bio-text').textContent = d.bio;
-    if(d.email) { 
-      document.getElementById('contact-email-link').href = `mailto:${d.email}`; 
-      document.getElementById('contact-email-text').textContent = d.email; 
-    }
-    if(d.vcardName) vcardData.name = d.vcardName;
-    if(d.vcardPhone) vcardData.phone = d.vcardPhone;
+// Profile and exhibition, set from The Lair's Settings
+fetch(`${EDGE}/public/site`).then(r => r.json()).then(({ profile = {}, exhibition = [] }) => {
+  const d = profile;
+  if (d.heroTitle) document.getElementById('dynamic-hero-title').textContent = d.heroTitle;
+  if (d.heroSub) document.getElementById('dynamic-hero-desc').textContent = d.heroSub;
+  if (d.bio) document.getElementById('dynamic-bio-text').textContent = d.bio;
+  if (d.email) {
+    document.getElementById('contact-email-link').href = `mailto:${d.email}`;
+    document.getElementById('contact-email-text').textContent = d.email;
   }
+  if (d.vcardName) vcardData.name = d.vcardName;
+  if (d.vcardPhone) vcardData.phone = d.vcardPhone;
+  vcardData.email = d.email || '';
+  publicPhotos = exhibition.map(x => ({ url: EDGE + x.url, dateFormatted: x.date }));
+  renderSpatialCloud();
+}).catch(() => {
+  document.getElementById('dynamic-bio-text').textContent = 'Back soon.';
+  document.getElementById('contact-email-text').textContent = 'Unavailable right now';
+  renderSpatialCloud();
 });
 
 // Apple visionOS Spatial Portal Logic
@@ -58,19 +53,11 @@ const spatialViewport = document.getElementById('spatial-viewport');
 const spatialCloud = document.getElementById('spatial-cloud');
 const exitBtn = document.getElementById('btn-exit-spatial');
 
-let publicPhotos = [];
-
-// Listen for photos flagged as 'public' from the Vault
-onSnapshot(collection(db, 'public_photos'), (snap) => {
-    publicPhotos = [];
-    snap.forEach(d => publicPhotos.push(d.data()));
-    renderSpatialCloud();
-});
 
 function renderSpatialCloud() {
     spatialCloud.innerHTML = '';
     if (!publicPhotos.length) {
-        spatialCloud.innerHTML = '<p style="font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); text-align:center; padding-top:200px;">Exhibition cloud initializing... Toggle photos inside The Lair Vault.</p>';
+        spatialCloud.innerHTML = '<p style="font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); text-align:center; padding-top:200px;">New work is on its way.</p>';
         return;
     }
 
@@ -99,8 +86,8 @@ function renderSpatialCloud() {
         card.dataset.baseTransform = baseTransform;
 
         // Render the image
-        card.innerHTML = `<img src="${photo.url}" alt="Gallery Image" loading="lazy">
-                          <span style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); text-align:center;">${photo.dateFormatted || 'Archive'}</span>`;
+        card.innerHTML = `<img src="${esc(photo.url)}" alt="Photograph by Ibad Hasan" loading="lazy" decoding="async">
+                          <span style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); text-align:center;">${esc(photo.dateFormatted || 'Archive')}</span>`;
         
         spatialCloud.appendChild(card);
     });
@@ -146,7 +133,11 @@ window.addEventListener('mousemove', (e) => {
 // V-Card Downloader
 document.getElementById('btn-download-vcard').addEventListener('click', () => {
     if(navigator.vibrate) navigator.vibrate(15);
-    const vcfStr = `BEGIN:VCARD\nVERSION:3.0\nFN:${vcardData.name}\nTEL;TYPE=CELL:${vcardData.phone}\nEND:VCARD`;
+    const lines = ['BEGIN:VCARD', 'VERSION:3.0', `FN:${vcardData.name}`];
+    if (vcardData.phone) lines.push(`TEL;TYPE=CELL:${vcardData.phone}`);
+    if (vcardData.email) lines.push(`EMAIL:${vcardData.email}`);
+    lines.push('URL:https://ibadhasan.com', 'END:VCARD');
+    const vcfStr = lines.join('\n');
     const blob = new Blob([vcfStr], { type: "text/vcard" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

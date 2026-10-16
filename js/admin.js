@@ -1,128 +1,78 @@
-import { onAuthStateChanged, updatePassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { auth, db } from "./firebase-config.js";
+// Settings for The Lair and the homepage. Everything is stored in the always-on helper.
+const EDGE = 'https://api.ibadhasan.com';
+const $ = (id) => document.getElementById(id);
+const token = (() => { try { return localStorage.getItem('lair.session'); } catch { return null; } })();
+if (!token) location.replace('/lair');
 
-let currentUser = null;
+async function edge(path, options = {}) {
+  const res = await fetch(EDGE + path, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}`, ...(options.body ? { 'Content-Type': 'application/json' } : {}) } });
+  if (res.status === 401) { location.replace('/lair'); throw new Error('Signed out'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+  return data;
+}
+const getValue = async (key) => (await edge(`/data/${key}`)).value || {};
+async function merge(key, patch, button) {
+  const label = button.textContent; button.disabled = true; button.textContent = 'Saving…';
+  try {
+    const current = await getValue(key);
+    await edge(`/data/${key}`, { method: 'PUT', body: JSON.stringify({ value: { ...current, ...patch } }) });
+    button.textContent = 'Saved ✔';
+  } catch (e) { button.textContent = 'Not saved'; alert(e.message); }
+  setTimeout(() => { button.textContent = label; button.disabled = false; }, 1600);
+}
 
-onAuthStateChanged(auth, (user) => { 
-  if (!user) {
-      window.location.replace("/lair");
-      return;
-  }
-  
-  currentUser = { id: user.uid };
-  
-  onSnapshot(doc(db, 'users', currentUser.id), (snap) => {
-      // Only the owner account (role "admin", set in the Firebase console) can use Settings
-      if(!snap.exists() || snap.data().role !== 'admin') {
-          window.location.replace("/lair");
-          return;
-      }
-      if(snap.data().theme) { document.body.setAttribute('data-theme', snap.data().theme); }
-  });
+(async () => {
+  const [config, profile] = await Promise.all([getValue('config'), getValue('profile')]);
+  if (config.theme) document.body.setAttribute('data-theme', config.theme);
+  if (config.accentColor) { $('config-accent').value = config.accentColor; document.documentElement.style.setProperty('--accent', config.accentColor); }
+  $('config-font-display').value = config.fontDisplay || '';
+  $('config-font-body').value = config.fontBody || '';
+  $('edit-broadcast').value = config.broadcast || '';
+  const f = config.features || {};
+  for (const k of ['dashboard', 'drop', 'theater', 'radar']) $(`toggle-${k}`).checked = f[k] !== false;
+  $('edit-hero-title').value = profile.heroTitle || '';
+  $('edit-hero-sub').value = profile.heroSub || '';
+  $('edit-bio').value = profile.bio || '';
+  $('edit-email').value = profile.email || '';
+  $('edit-vcard-phone').value = profile.vcardPhone || '';
+  $('edit-social-ig').value = profile.socials?.ig || '';
+  $('edit-social-x').value = profile.socials?.x || '';
+  $('edit-social-git').value = profile.socials?.git || '';
+  loadSessions();
+})().catch(() => {});
 
-  onSnapshot(doc(db, 'system', 'notifications'), (snap) => {
-    if(snap.exists()) {
-      const d = snap.data();
-      document.getElementById('notify-visitor').checked = d.visitor !== false;
-    }
-  });
-  
-  onSnapshot(doc(db, 'system', 'config'), (snap) => {
-    if(snap.exists() && document.activeElement.tagName !== "INPUT") {
-      const d = snap.data();
-      if(d.accentColor) { 
-        document.getElementById('config-accent').value = d.accentColor; 
-        document.documentElement.style.setProperty('--accent', d.accentColor); 
-      }
-      if(d.fontDisplay) document.getElementById('config-font-display').value = d.fontDisplay;
-      if(d.fontBody) document.getElementById('config-font-body').value = d.fontBody;
-      if(d.broadcast) document.getElementById('edit-broadcast').value = d.broadcast;
-      if(d.features) {
-          document.getElementById('toggle-dashboard').checked = d.features.dashboard !== false;
-          document.getElementById('toggle-drop').checked = d.features.drop !== false;
-          document.getElementById('toggle-theater').checked = d.features.theater !== false;
-          document.getElementById('toggle-radar').checked = d.features.radar !== false;
-      }
-    }
-  });
+async function loadSessions() {
+  try {
+    const { sessions } = await edge('/auth/sessions');
+    const box = $('session-list'); box.innerHTML = '';
+    sessions.forEach((s) => {
+      const row = document.createElement('div'); row.className = 'toggle-row';
+      const name = document.createElement('span'); name.textContent = `${s.device}${s.current ? ' (this device)' : ''}`;
+      const when = document.createElement('span'); when.style.cssText = 'font-family:var(--font-mono); font-size:11px; color:var(--ink-soft);';
+      when.textContent = new Date(s.lastSeen).toLocaleDateString([], { month: 'short', day: 'numeric' });
+      row.append(name, when); box.appendChild(row);
+    });
+  } catch { $('session-list').textContent = 'Could not load.'; }
+}
 
-  onSnapshot(doc(db, 'system', 'profile'), (snap) => {
-    if(snap.exists() && document.activeElement.tagName !== "TEXTAREA" && document.activeElement.tagName !== "INPUT") {
-      const d = snap.data();
-      document.getElementById('edit-hero-title').value = d.heroTitle || ''; 
-      document.getElementById('edit-hero-sub').value = d.heroSub || '';
-      document.getElementById('edit-bio').value = d.bio || ''; 
-      document.getElementById('edit-email').value = d.email || '';
-      document.getElementById('edit-social-ig').value = d.socials?.ig || ''; 
-      document.getElementById('edit-social-x').value = d.socials?.x || ''; 
-      document.getElementById('edit-social-git').value = d.socials?.git || '';
-    }
-  });
-});
+$('btn-save-os').addEventListener('click', (e) => merge('config', {
+  broadcast: $('edit-broadcast').value.trim(),
+  features: Object.fromEntries(['dashboard', 'drop', 'theater', 'radar'].map((k) => [k, $(`toggle-${k}`).checked])),
+}, e.currentTarget));
 
-document.getElementById('btn-save-notifications').addEventListener('click', async () => {
-  await setDoc(doc(db, 'system', 'notifications'), { 
-    visitor: document.getElementById('notify-visitor').checked
-  }, { merge: true }); 
-  alert('Matrix Updated');
-});
+$('btn-save-config').addEventListener('click', (e) => merge('config', {
+  fontDisplay: $('config-font-display').value.trim(), fontBody: $('config-font-body').value.trim(), accentColor: $('config-accent').value,
+}, e.currentTarget));
 
-document.getElementById('btn-save-os').addEventListener('click', async () => {
-  const broadcast = document.getElementById('edit-broadcast').value;
-  const features = { 
-    dashboard: document.getElementById('toggle-dashboard').checked,
-    drop: document.getElementById('toggle-drop').checked,
-    theater: document.getElementById('toggle-theater').checked,
-    radar: document.getElementById('toggle-radar').checked 
-  };
-  await setDoc(doc(db, 'system', 'config'), { broadcast, features }, { merge: true }); 
-  alert('OS Controls Updated');
-});
+$('btn-save-profile').addEventListener('click', (e) => merge('profile', {
+  heroTitle: $('edit-hero-title').value.trim(), heroSub: $('edit-hero-sub').value.trim(), bio: $('edit-bio').value.trim(),
+  email: $('edit-email').value.trim(), vcardPhone: $('edit-vcard-phone').value.trim(),
+  socials: { ig: $('edit-social-ig').value.trim(), x: $('edit-social-x').value.trim(), git: $('edit-social-git').value.trim() },
+}, e.currentTarget));
 
-document.getElementById('btn-save-profile').addEventListener('click', async () => {
-  const data = {
-    heroTitle: document.getElementById('edit-hero-title').value, 
-    heroSub: document.getElementById('edit-hero-sub').value,
-    bio: document.getElementById('edit-bio').value, 
-    email: document.getElementById('edit-email').value,
-    socials: { 
-      ig: document.getElementById('edit-social-ig').value, 
-      x: document.getElementById('edit-social-x').value, 
-      git: document.getElementById('edit-social-git').value 
-    }
-  };
-  await setDoc(doc(db, 'system', 'profile'), data, { merge: true }); 
-  alert('Identity Published');
-});
-
-document.getElementById('btn-save-config').addEventListener('click', async () => {
-  await setDoc(doc(db, 'system', 'config'), { 
-    fontDisplay: document.getElementById('config-font-display').value.trim(), 
-    fontBody: document.getElementById('config-font-body').value.trim(), 
-    accentColor: document.getElementById('config-accent').value 
-  }, { merge: true }); 
-  alert('Aesthetics Applied');
-});
-
-document.getElementById('btn-update-password').addEventListener('click', async () => {
-  const newPwd = document.getElementById('edit-password').value; 
-  const msg = document.getElementById('pwd-msg');
-  if(newPwd.length < 6) { 
-    msg.textContent = "Must be at least 6 characters."; 
-    msg.style.color = "var(--err)"; 
-    msg.style.display = "block"; 
-    return; 
-  }
-  try { 
-    await updatePassword(auth.currentUser, newPwd); 
-    msg.textContent = "Password updated successfully."; 
-    msg.style.color = "var(--con)"; 
-    msg.style.display = "block"; 
-    document.getElementById('edit-password').value = ''; 
-  } catch(e) { 
-    msg.textContent = "Error: Please sign out and sign back in to update password."; 
-    msg.style.color = "var(--err)"; 
-    msg.style.display = "block"; 
-  }
+$('btn-logout-others').addEventListener('click', async (e) => {
+  const btn = e.currentTarget;
+  if (!confirm('Sign out every other phone, tablet and computer?')) return;
+  try { await edge('/auth/logout-others', { method: 'POST', body: '{}' }); loadSessions(); btn.textContent = 'Done ✔'; } catch (err) { alert(err.message); }
 });

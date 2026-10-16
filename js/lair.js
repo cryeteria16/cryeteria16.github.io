@@ -1,7 +1,7 @@
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, collection, onSnapshot, query, orderBy, setDoc, updateDoc, deleteDoc, addDoc, getDoc, limit, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { auth, db } from "./firebase-config.js";
-
+// The Lair talks to two places:
+//   EDGE: the always-on helper (sign-in, notes, watchlist, settings, PC status). Works when the PC is off.
+//   TUNNEL_URL: the home PC itself (Vault files, movies). Only when the PC is on.
+const EDGE = "https://api.ibadhasan.com";
 const TUNNEL_URL = "https://vault.ibadhasan.com";
 const CHUNK = 8 * 1024 * 1024; // uploads go in 8 MB pieces (Cloudflare limits each request to 100 MB)
 
@@ -49,20 +49,31 @@ function showConfirm(title, msg, okText = 'Confirm') {
   });
 }
 
+// Session from the helper, remembered on this device (kept in memory if storage is blocked)
+let memToken = null;
+const session = {
+  get() { try { return localStorage.getItem('lair.session') || memToken; } catch { return memToken; } },
+  set(t) { memToken = t; try { localStorage.setItem('lair.session', t); } catch {} },
+  clear() { memToken = null; try { localStorage.removeItem('lair.session'); } catch {} },
+};
 async function fetchWithAuth(url, options = {}) {
-  const token = auth.currentUser ? await auth.currentUser.getIdToken() : '';
-  return fetch(url, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}` } });
+  return fetch(url, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${session.get() || ''}` } });
 }
-// JSON call to the PC; throws with the PC's own message
-async function api(path, options = {}) {
+async function call(base, path, options, offlineMsg) {
   let res;
-  try { res = await fetchWithAuth(TUNNEL_URL + path, options); }
-  catch { throw new Error('Your PC is not reachable right now.'); }
+  try { res = await fetchWithAuth(base + path, options); }
+  catch { throw Object.assign(new Error(offlineMsg), { offline: true }); }
   const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw Object.assign(new Error(data.error || `The PC answered ${res.status}.`), { status: res.status, data });
+  if (res.status === 401 && booted) signedOut('Please sign in again.');
+  if (!res.ok) throw Object.assign(new Error(data.error || `Error ${res.status}`), { status: res.status, data });
   return data;
 }
+// The PC (Vault)
+const api = (path, options = {}) => call(TUNNEL_URL, path, options, 'Your PC is offline right now.');
 const postJSON = (path, body) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+// The always-on helper
+const edge = (path, options = {}) => call(EDGE, path, options, 'No internet connection.');
+const edgeJSON = (method, path, body) => edge(path, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
 // ================= clock & wallpaper (once a minute, not every second) =================
 function updateDiurnalCycle() {
@@ -90,7 +101,7 @@ function openView(target) {
   document.querySelectorAll('.view-container').forEach(v => v.classList.toggle('active', v.id === `view-${target}`));
   $('btn-quick-capture').style.display = target === 'drop' ? 'flex' : 'none';
   if (onOpen[target]) { const fn = onOpen[target]; delete onOpen[target]; fn(); }
-  if (target === 'dashboard') pollStatus();
+  if (target === 'dashboard') { pollStatus(); initRadar(); }
   window.scrollTo(0, 0);
 }
 const activeView = () => document.querySelector('.dock-app.active')?.dataset.target;
@@ -109,82 +120,86 @@ swipeZone.addEventListener('touchend', e => {
   else if (dx < -80 && i > 0) openView(visible[i - 1]);
 }, { passive: true });
 
-// ================= sign in (owner only) =================
-const toEmail = (u) => (u.includes('@') ? u : `${u}@lair.local`);
+// ================= sign in (owner only, through the helper) =================
 $('signin-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = $('signin-btn'); const err = $('signin-error');
-  const user = $('signin-user').value.trim().toLowerCase(); const pass = $('signin-pass').value;
-  if (!user || !pass) return;
+  const username = $('signin-user').value.trim(); const password = $('signin-pass').value;
+  if (!username || !password) return;
   btn.disabled = true; btn.textContent = 'Signing in…'; err.textContent = '';
   try {
-    await signInWithEmailAndPassword(auth, toEmail(user), pass);
+    const res = await fetch(`${EDGE}/auth/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'Sign-in failed.');
+    session.set(data.token);
     $('signin-pass').value = '';
+    signedIn();
   } catch (e2) {
-    err.textContent = e2.code === 'auth/too-many-requests' ? 'Too many attempts. Wait a few minutes and try again.'
-      : e2.code === 'auth/network-request-failed' ? 'No internet connection.' : 'Wrong username or password.';
+    err.textContent = e2.message === 'Failed to fetch' ? 'No internet connection.' : e2.message;
   } finally { btn.disabled = false; btn.textContent = 'Sign in'; }
 });
 
 let booted = false;
-onAuthStateChanged(auth, async (user) => {
-  if (!user) { document.body.classList.add('signed-out'); document.body.classList.remove('auth-pending'); $('signin-user').focus({ preventScroll: true }); return; }
-  let owner = false;
-  try { const snap = await getDoc(doc(db, 'users', user.uid)); owner = snap.exists() && snap.data().role === 'admin'; } catch {}
-  if (!owner) {
-    await signOut(auth);
-    $('signin-error').textContent = 'This account does not have access to The Lair.';
-    document.body.classList.add('signed-out'); document.body.classList.remove('auth-pending');
-    return;
-  }
+function signedIn() {
   document.body.classList.remove('signed-out', 'auth-pending');
   if (!booted) { booted = true; boot(); }
-});
+}
+function signedOut(message = '') {
+  session.clear();
+  if (booted) { location.reload(); return; }
+  $('signin-error').textContent = message;
+  document.body.classList.add('signed-out'); document.body.classList.remove('auth-pending');
+  $('signin-user').focus({ preventScroll: true });
+}
 
-$('btn-signout').addEventListener('click', async () => { await signOut(auth); location.reload(); });
+$('btn-signout').addEventListener('click', async () => {
+  try { await fetchWithAuth(`${EDGE}/auth/logout`, { method: 'POST' }); } catch {}
+  session.clear(); location.reload();
+});
 
 function boot() {
   initConfig();
   initFridgeDoor();
   initRadar();
+  pollStatus();
   onOpen.drop = initDrive;
   onOpen.theater = initTheater;
   const params = new URLSearchParams(location.search);
   const want = location.hash.replace('#', '');
   if (params.get('share') === 'true') { history.replaceState({}, '', location.pathname); openView('drop'); }
   else if (VIEWS.includes(want)) openView(want);
-  else pollStatus();
   setTimeout(resizeCanvas, 150);
 }
 
 // ================= settings from Admin (theme, banner, fonts, which tabs show) =================
-function initConfig() {
+let config = {};
+async function initConfig() {
   $('btn-theme-toggle').addEventListener('click', () => {
     const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     applyTheme(next);
-    setDoc(doc(db, 'system', 'config'), { theme: next }, { merge: true }).catch(() => {});
+    config.theme = next;
+    edgeJSON('PUT', '/data/config', { value: config }).catch(() => {});
   });
-  onSnapshot(doc(db, 'system', 'config'), (snap) => {
-    if (!snap.exists()) return; const d = snap.data();
-    if (d.theme) applyTheme(d.theme);
-    const banner = $('broadcast-banner');
-    banner.textContent = d.broadcast || ''; banner.style.display = d.broadcast ? 'block' : 'none';
-    if (d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
-    if (d.fontDisplay || d.fontBody) {
-      const fams = [d.fontDisplay, d.fontBody].filter(Boolean).map(f => f.trim().replace(/ /g, '+'));
-      $('dynamic-fonts').href = `https://fonts.googleapis.com/css2?${fams.map(f => `family=${encodeURIComponent(f).replace(/%2B/g, '+')}:wght@400;500;600`).join('&')}&display=swap`;
-      if (d.fontDisplay) document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay}', serif`);
-      if (d.fontBody) document.documentElement.style.setProperty('--font-body', `'${d.fontBody}', sans-serif`);
-    }
-    const f = d.features || {};
-    $('dock-dashboard-link').style.display = f.dashboard === false ? 'none' : '';
-    $('dock-drop-link').style.display = f.drop === false ? 'none' : '';
-    $('dock-theater-link').style.display = f.theater === false ? 'none' : '';
-    const radarCard = $('radar-feed').closest('.card'); radarCard.style.display = f.radar === false ? 'none' : 'flex';
-    if ($(`dock-${activeView()}-link`)?.style.display === 'none') {
-      const first = VIEWS.find(v => $(`dock-${v}-link`).style.display !== 'none'); if (first) openView(first);
-    }
-  });
+  try { config = (await edge('/data/config')).value || {}; } catch { return; }
+  const d = config;
+  if (d.theme) applyTheme(d.theme);
+  const banner = $('broadcast-banner');
+  banner.textContent = d.broadcast || ''; banner.style.display = d.broadcast ? 'block' : 'none';
+  if (d.accentColor) document.documentElement.style.setProperty('--accent', d.accentColor);
+  if (d.fontDisplay || d.fontBody) {
+    const fams = [d.fontDisplay, d.fontBody].filter(Boolean).map(f => encodeURIComponent(f.trim()).replace(/%20/g, '+'));
+    $('dynamic-fonts').href = `https://fonts.googleapis.com/css2?${fams.map(f => `family=${f}:wght@400;500;600`).join('&')}&display=swap`;
+    if (d.fontDisplay) document.documentElement.style.setProperty('--font-display', `'${d.fontDisplay.replace(/'/g, '')}', serif`);
+    if (d.fontBody) document.documentElement.style.setProperty('--font-body', `'${d.fontBody.replace(/'/g, '')}', sans-serif`);
+  }
+  const f = d.features || {};
+  $('dock-dashboard-link').style.display = f.dashboard === false ? 'none' : '';
+  $('dock-drop-link').style.display = f.drop === false ? 'none' : '';
+  $('dock-theater-link').style.display = f.theater === false ? 'none' : '';
+  $('radar-feed').closest('.card').style.display = f.radar === false ? 'none' : 'flex';
+  if ($(`dock-${activeView()}-link`)?.style.display === 'none') {
+    const first = VIEWS.find(v => $(`dock-${v}-link`).style.display !== 'none'); if (first) openView(first);
+  }
 }
 function applyTheme(theme) {
   document.body.setAttribute('data-theme', theme);
@@ -197,28 +212,48 @@ function applyTheme(theme) {
 
 // ================= dashboard: PC status (only while the dashboard is on screen) =================
 let statusTimer = null;
+let pcOnline = null; // null = not known yet
+const ago = (ms) => { const m = Math.round((Date.now() - ms) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`; };
 async function pollStatus() {
   clearTimeout(statusTimer);
-  if (!booted || activeView() !== 'dashboard' || document.visibilityState !== 'visible') return;
-  const setLink = (on, text) => {
-    for (const id of ['health-dot', 'health-dot-top']) $(id).style.color = on ? 'var(--con)' : 'var(--err)';
-    $('health-text').textContent = text;
-  };
+  if (!booted || document.visibilityState !== 'visible') return;
   try {
-    const s = await api('/api/status');
-    setLink(true, 'PC online');
-    $('sys-cpu').textContent = s.cpu; $('sys-ram').textContent = s.ram;
-    renderUsage(s.usage, 'status-usage-fill', 'status-usage-text');
-    $('status-log').textContent = s.log && s.log.length ? s.log.map(l => l.replace(/^\S+T(\d\d:\d\d)\S* \[updater\] /, '$1  ')).join('\n') : 'No updates yet.';
-    const up = s.uptime > 86400 ? `${Math.floor(s.uptime / 86400)}d` : s.uptime > 3600 ? `${Math.floor(s.uptime / 3600)}h` : `${Math.floor(s.uptime / 60)}m`;
-    $('status-version').textContent = `Server ${s.version || 'unknown'} · running ${up}`;
+    const r = await edge('/pc/status');
+    const st = r.status;
+    pcOnline = r.online;
+    for (const id of ['health-dot', 'health-dot-top']) $(id).style.color = r.online ? 'var(--con)' : 'var(--err)';
+    $('connect-pc-card').hidden = r.paired;
+    $('pc-offline-note').hidden = r.online || !r.paired;
+    if (!r.paired) { $('health-text').textContent = 'PC not connected'; $('status-log').textContent = 'Use Connect PC above.'; }
+    else if (!st) { $('health-text').textContent = 'Waiting for the PC…'; }
+    else {
+      $('health-text').textContent = r.online ? 'PC online' : `PC offline · seen ${ago(st.lastSeen)}`;
+      $('pc-offline-note').textContent = `Your PC is offline (last seen ${ago(st.lastSeen)}). Files and movies will be back when it is. Notes, watchlist and settings still work.`;
+      $('sys-cpu').textContent = r.online ? (st.cpu ?? '--') : '--'; $('sys-ram').textContent = r.online ? (st.ram ?? '--') : '--';
+      renderUsage(st.usage, 'status-usage-fill', 'status-usage-text');
+      $('status-log').textContent = st.log && st.log.length ? st.log.map(l => l.replace(/^\S+T(\d\d:\d\d)\S* \[updater\] /, '$1  ')).join('\n') : 'No updates yet.';
+      const up = st.uptime > 86400 ? `${Math.floor(st.uptime / 86400)}d` : st.uptime > 3600 ? `${Math.floor(st.uptime / 3600)}h` : `${Math.floor((st.uptime || 0) / 60)}m`;
+      $('status-version').textContent = `Server ${st.version || 'unknown'}${r.online ? ` · running ${up}` : ''}`;
+    }
   } catch (e) {
-    setLink(false, e.status === 403 ? 'Access refused' : 'PC offline');
-    $('status-log').textContent = e.message;
+    if (e.offline) $('health-text').textContent = 'No internet';
   }
-  statusTimer = setTimeout(pollStatus, 30000);
+  statusTimer = setTimeout(pollStatus, activeView() === 'dashboard' ? 30000 : 120000);
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') pollStatus(); });
+
+// Connect PC: the helper gives a one-time code, the PC swaps it for its own key
+$('btn-connect-pc').addEventListener('click', async () => {
+  const btn = $('btn-connect-pc'); btn.disabled = true; btn.textContent = 'Connecting…';
+  try {
+    const { code } = await edgeJSON('POST', '/pc/pair-code', {});
+    await postJSON('/api/edge/link', { code });
+    showToast('PC connected. Copying your old data across…', 'success');
+    setTimeout(pollStatus, 4000);
+  } catch (e) {
+    showToast(e.offline ? 'Your PC needs to be on to connect it.' : e.message, 'error');
+  } finally { btn.disabled = false; btn.textContent = 'Connect PC'; }
+});
 
 function renderUsage(u, fillId, textId) {
   if (!u) return;
@@ -229,39 +264,38 @@ function renderUsage(u, fillId, textId) {
 }
 
 // ================= Fridge Door =================
-function initFridgeDoor() {
+async function initFridgeDoor() {
   const text = $('fridge-door-text'); const status = $('fridge-status');
-  let saveTimer; let typing = false;
-  onSnapshot(doc(db, 'system', 'fridge_door'), (snap) => {
-    if (snap.exists() && !typing && document.activeElement !== text) { text.value = snap.data().content || ''; status.textContent = 'Synced'; }
-  });
-  text.addEventListener('input', () => {
-    typing = true; status.textContent = 'Typing…'; clearTimeout(saveTimer);
-    saveTimer = setTimeout(async () => {
-      try { await setDoc(doc(db, 'system', 'fridge_door'), { content: text.value, timestamp: serverTimestamp() }, { merge: true }); status.textContent = 'Saved'; }
-      catch { status.textContent = 'Not saved'; }
-      typing = false;
-    }, 600);
-  });
+  let saveTimer; let dirty = false;
+  const load = async () => {
+    if (dirty || document.activeElement === text) return;
+    try { const r = await edge('/data/fridge'); text.value = r.value?.content || ''; status.textContent = 'Synced'; } catch { status.textContent = 'Offline'; }
+  };
+  const save = async () => {
+    try { await edgeJSON('PUT', '/data/fridge', { value: { content: text.value } }); dirty = false; status.textContent = 'Saved'; }
+    catch { status.textContent = 'Not saved'; }
+  };
+  text.addEventListener('input', () => { dirty = true; status.textContent = 'Typing…'; clearTimeout(saveTimer); saveTimer = setTimeout(save, 800); });
   text.addEventListener('blur', () => {
-    typing = false;
-    fetchWithAuth(`${TUNNEL_URL}/api/fridge/log`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text.value }) }).catch(() => {});
+    if (dirty) { clearTimeout(saveTimer); save(); }
+    // Also log to the Google Sheet when the PC is on
+    if (pcOnline) fetchWithAuth(`${TUNNEL_URL}/api/fridge/log`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: text.value }) }).catch(() => {});
   });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') load(); });
+  load();
 }
 
 // ================= Live Radar =================
-function initRadar() {
+async function initRadar() {
   const feed = $('radar-feed');
-  onSnapshot(query(collection(db, 'radar_logs'), orderBy('timestamp', 'desc'), limit(20)), (snap) => {
-    if (snap.empty) { feed.innerHTML = '<p class="muted-note">Waiting for visitors…</p>'; return; }
-    feed.innerHTML = '';
-    snap.forEach(d => {
-      const r = d.data(); const row = document.createElement('div'); row.className = 'radar-row';
-      const when = r.timestamp?.toDate ? r.timestamp.toDate().toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-      row.innerHTML = `<span>${esc(r.type || 'Visit')} · ${esc(r.city || 'Unknown')}, ${esc(r.country || '')}</span><span class="mini-label">${esc(when)}</span>`;
-      feed.appendChild(row);
-    });
-  });
+  try {
+    const { visits } = await edge('/radar');
+    if (!visits.length) { feed.innerHTML = '<p class="muted-note">Waiting for visitors…</p>'; return; }
+    feed.innerHTML = visits.slice(0, 20).map(v => {
+      const when = new Date(v.at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `<div class="radar-row"><span>${esc(v.type || 'Visit')} · ${esc(v.city || 'Unknown')}${v.country ? `, ${esc(v.country)}` : ''}</span><span class="mini-label">${esc(when)}</span></div>`;
+    }).join('');
+  } catch { feed.innerHTML = '<p class="muted-note">Could not load visitors.</p>'; }
 }
 
 // ================= VAULT (drive on the PC) =================
@@ -324,7 +358,15 @@ async function loadDrive(path = drivePath) {
     renderDrive();
   } catch (e) {
     if (e.status === 404 && path) { drivePath = ''; return loadDrive(''); }
-    grid.innerHTML = `<p class="muted-note">${esc(e.message)}</p>`;
+    if (e.offline) {
+      $('drive-crumbs').innerHTML = '<span class="crumb">Vault</span>';
+      $('btn-upload').disabled = true; $('btn-new-folder').disabled = true;
+      $('drive-usage-text').textContent = 'PC offline';
+    }
+    grid.innerHTML = e.offline
+      ? '<div class="offline-card"><span class="tile-icon">🌙</span><p><strong>Your PC is offline.</strong></p><p class="muted-note">Your files live on it, so they will be back when it is on. Notes, watchlist and settings still work.</p><button class="btn-secondary haptic-btn" id="btn-retry-vault">Try again</button></div>'
+      : `<p class="muted-note">${esc(e.message)}</p>`;
+    $('btn-retry-vault')?.addEventListener('click', () => loadDrive(path));
   }
 }
 
@@ -429,21 +471,24 @@ async function showLightboxItem() {
   const ex = $('lb-exhibit');
   ex.hidden = !inPhotosRoot(item);
   if (!ex.hidden) {
-    const ref = doc(db, 'public_photos', item.name);
-    const paint = (on) => { ex.textContent = on ? '★ In exhibition' : '☆ Exhibition'; ex.style.color = on ? 'var(--warn)' : ''; };
+    const paint = (on) => { ex.textContent = on ? '★ In exhibition' : '☆ Exhibition'; ex.style.color = on ? 'var(--warn)' : ''; ex.dataset.on = on ? '1' : ''; };
     paint(false);
-    getDoc(ref).then(s => paint(s.exists())).catch(() => {});
+    exhibitionIds().then(ids => { if (lbList[lbIndex] === item) paint(ids.has(item.name)); });
     ex.onclick = async () => {
+      ex.disabled = true;
       try {
-        const s = await getDoc(ref);
-        if (s.exists()) { await deleteDoc(ref); paint(false); showToast('Removed from the homepage exhibition'); }
-        else {
-          await setDoc(ref, { filename: item.name, url: `${TUNNEL_URL}/api/public/cloud/${encodeURIComponent(item.name)}`, dateFormatted: new Date(item.modified).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) });
-          paint(true); showToast('Added to the homepage exhibition', 'success');
-        }
-      } catch { showToast('Could not change the exhibition', 'error'); }
+        if (ex.dataset.on) { await edge(`/exhibition/${encodeURIComponent(item.name)}`, { method: 'DELETE' }); paint(false); showToast('Removed from the homepage'); }
+        else { await postJSON('/api/exhibition/add', { path: item.path }); paint(true); showToast('On the homepage now', 'success'); }
+        exhibitionCache = null;
+      } catch (e) { showToast(e.message, 'error'); }
+      ex.disabled = false;
     };
   }
+}
+let exhibitionCache = null;
+async function exhibitionIds() {
+  if (!exhibitionCache) exhibitionCache = edge('/exhibition').then(r => new Set(r.items.map(i => i.id))).catch(() => new Set());
+  return exhibitionCache;
 }
 
 // ---- uploads: 8 MB pieces, resume after a dropped connection or a reload ----
@@ -561,11 +606,13 @@ function initTheater() {
   });
 
   const listEl = $('shared-watchlist');
-  onSnapshot(query(collection(db, 'watchlist'), orderBy('timestamp', 'desc'), limit(40)), (snap) => {
-    if (snap.empty) { listEl.innerHTML = '<p class="muted-note">Your watchlist is empty. Search above to add something.</p>'; return; }
+  const loadWatchlist = async () => {
+    let items;
+    try { items = (await edge('/watchlist')).items; } catch (e) { listEl.innerHTML = `<p class="muted-note">${esc(e.message)}</p>`; return; }
+    if (!items.length) { listEl.innerHTML = '<p class="muted-note">Your watchlist is empty. Search above to add something.</p>'; return; }
     listEl.innerHTML = '';
-    snap.forEach(docSnap => {
-      const m = docSnap.data(); const card = document.createElement('div'); card.className = 'poster-card';
+    items.forEach(m => {
+      const card = document.createElement('div'); card.className = 'poster-card';
       card.innerHTML = `
         <div class="poster" ${m.poster && /^https:\/\/image\.tmdb\.org\//.test(m.poster) ? `style="background-image:url('${esc(m.poster)}')"` : ''}></div>
         <div class="poster-title">${esc(m.title)}</div>
@@ -573,15 +620,16 @@ function initTheater() {
       card.addEventListener('click', async () => {
         if (m.streamUrl) { window.scrollTo(0, 0); return playInTheater(m.streamUrl, m.title); }
         const url = prompt(`Paste a video link for ${m.title} (a YouTube link, or open the video in the Vault and copy its address):`);
-        if (url && url.trim()) { await updateDoc(docSnap.ref, { streamUrl: url.trim() }); showToast('Video linked', 'success'); }
+        if (url && url.trim()) { await edgeJSON('PATCH', `/watchlist/${m.id}`, { streamUrl: url.trim() }).catch(e => showToast(e.message, 'error')); showToast('Video linked', 'success'); loadWatchlist(); }
       });
       card.addEventListener('contextmenu', async (e) => {
         e.preventDefault();
-        if (await showConfirm(`Remove ${m.title}?`, 'It will be taken off your watchlist.', 'Remove')) deleteDoc(docSnap.ref);
+        if (await showConfirm(`Remove ${m.title}?`, 'It will be taken off your watchlist.', 'Remove')) { await edge(`/watchlist/${m.id}`, { method: 'DELETE' }).catch(() => {}); loadWatchlist(); }
       });
       listEl.appendChild(card);
     });
-  });
+  };
+  loadWatchlist();
 
   const resultsEl = $('tmdb-results'); const input = $('tmdb-search-input');
   const runSearch = async () => {
@@ -595,8 +643,8 @@ function initTheater() {
         const card = document.createElement('div'); card.className = 'poster-card';
         card.innerHTML = `<div class="poster" ${r.poster ? `style="background-image:url('${esc(r.poster)}')"` : ''}></div><div class="poster-title">${esc(r.title)} ${r.year ? `(${esc(r.year)})` : ''}</div><button class="btn-secondary haptic-btn poster-add">+ Add</button>`;
         card.querySelector('button').addEventListener('click', async () => {
-          await addDoc(collection(db, 'watchlist'), { title: r.title, poster: r.poster, type: r.type, status: 'Want to Watch', streamUrl: '', timestamp: serverTimestamp() });
-          showToast(`Added ${r.title}`, 'success');
+          try { await edgeJSON('POST', '/watchlist', { title: r.title, poster: r.poster, type: r.type }); showToast(`Added ${r.title}`, 'success'); loadWatchlist(); }
+          catch (e) { showToast(e.message, 'error'); }
         });
         resultsEl.appendChild(card);
       });
@@ -653,3 +701,10 @@ $('btn-save-magnet').addEventListener('click', () => {
     finally { btn.disabled = false; btn.textContent = 'Save to Photos'; }
   }, 'image/png');
 });
+
+// ================= start (last, so everything above is ready) =================
+// A remembered session goes straight in; the helper confirms it in the background.
+if (session.get()) {
+  signedIn();
+  fetchWithAuth(`${EDGE}/auth/check`).then(r => { if (r.status === 401) signedOut(); }).catch(() => {});
+} else signedOut();

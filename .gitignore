@@ -14,6 +14,7 @@ Invoices/
 Drive/
 .lair-cache/
 .lair-trash/
+.lair-edge.json
 
 # OS / editor junk
 .DS_Store

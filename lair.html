@@ -12,7 +12,7 @@
 <meta name="robots" content="noindex, nofollow">
 <title>The Lair</title>
 <link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="/css/lair.css?v=6">
+<link rel="stylesheet" href="/css/lair.css?v=7">
 </head>
 <body data-theme="dark" class="auth-pending signed-out">
 
@@ -56,6 +56,15 @@
   <main id="swipe-zone" class="app-only">
     <!-- ================= DASHBOARD ================= -->
     <section id="view-dashboard" class="view-container active">
+      <p id="pc-offline-note" class="card offline-note" hidden></p>
+
+      <div id="connect-pc-card" class="card connect-card" hidden>
+        <div>
+          <h2 class="mini-label" style="margin-bottom:6px;">One last step</h2>
+          <p style="font-size:14px; line-height:1.5;">Connect your PC to The Lair's always-on helper. Your PC needs to be on. This also copies your old notes, watchlist and homepage across.</p>
+        </div>
+        <button class="btn-primary haptic-btn" id="btn-connect-pc">Connect PC</button>
+      </div>
       <div class="card stagger-1 clocks-card">
         <div><h3 class="mini-label">Dubai</h3><div id="clock-dxb" class="clock">--:--</div></div>
         <div class="clocks-divider"></div>
@@ -213,6 +222,6 @@
     </div>
   </div>
 
-  <script type="module" src="/js/lair.js?v=6"></script>
+  <script type="module" src="/js/lair.js?v=7"></script>
 </body>
 </html>

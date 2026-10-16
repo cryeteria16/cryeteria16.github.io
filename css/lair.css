@@ -132,6 +132,13 @@ input:focus, textarea:focus, select:focus { border-color: var(--accent); }
 .usage-bar { height: 6px; border-radius: 6px; background: var(--input-bg); overflow: hidden; flex: none; width: 100%; }
 .usage-fill { height: 100%; width: 0; background: var(--con); border-radius: 6px; transition: width 0.4s ease; }
 
+.offline-note { padding: 14px 18px; margin-bottom: 20px; font-size: 13px; line-height: 1.5; border-color: rgba(229, 169, 60, 0.35); }
+.connect-card { padding: 20px 22px; margin-bottom: 20px; display: flex; gap: 16px; align-items: center; justify-content: space-between; border-color: rgba(112, 148, 122, 0.45); }
+@media (max-width: 600px) { .connect-card { flex-direction: column; align-items: stretch; } }
+[hidden] { display: none !important; }
+.offline-card { grid-column: 1 / -1; text-align: center; padding: 40px 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.offline-card .btn-secondary { margin-top: 10px; }
+
 /* ---------- vault (drive) ---------- */
 .drive-card { padding: 22px; position: relative; min-height: 60vh; }
 .drive-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
