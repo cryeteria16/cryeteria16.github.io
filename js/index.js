@@ -103,19 +103,23 @@ function renderSpatialCloud() {
         card.innerHTML = `<img src="${photo.url}" alt="Gallery Image" loading="lazy">
                           <span style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); text-align:center;">${photo.dateFormatted || 'Archive'}</span>`;
         
-        // Apply magnetic drifting physics
-        setInterval(() => {
-            if(!portalWindow.classList.contains('expanded')) return;
-            const driftY = Math.sin(Date.now() / 2000 + idx) * 15;
-            card.style.transform = `${baseTransform} translateY(${driftY}px)`;
-        }, 50);
-
         spatialCloud.appendChild(card);
     });
 }
 
+// Magnetic drift: one animation loop for all cards, running only while the exhibition is open
+let driftFrame = null;
+function drift() {
+    const t = Date.now() / 2000;
+    spatialCloud.querySelectorAll('.floating-photo-card').forEach((card, idx) => {
+        card.style.transform = `${card.dataset.baseTransform} translateY(${Math.sin(t + idx) * 15}px)`;
+    });
+    driftFrame = requestAnimationFrame(drift);
+}
+
 // Handle Portal Expansion
 portalBtn.addEventListener('click', () => {
+    if (!driftFrame) driftFrame = requestAnimationFrame(drift);
     portalWindow.classList.add('expanded');
     spatialViewport.classList.add('active');
     if (navigator.vibrate) navigator.vibrate(15);
@@ -123,6 +127,7 @@ portalBtn.addEventListener('click', () => {
 });
 
 exitBtn.addEventListener('click', () => {
+    cancelAnimationFrame(driftFrame); driftFrame = null;
     portalWindow.classList.remove('expanded');
     spatialViewport.classList.remove('active');
     document.body.style.overflow = 'auto';

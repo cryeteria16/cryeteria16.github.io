@@ -4,6 +4,9 @@ import { auth, db } from "./firebase-config.js";
 
 const TUNNEL_URL = "https://vault.ibadhasan.com"; 
 
+// Escape text written by other people (visitor logs, chat names, watchlist) before it goes into HTML
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 let currentUser = null;
 let activeLightboxFile = null;
 let userAdminPin = "0000"; 
@@ -939,7 +942,7 @@ function initTheaterChat() {
         if (!mine || timeStr) { 
             const metaDiv = document.createElement('div'); 
             metaDiv.style.cssText = 'font-family:var(--font-mono); font-size:10px; opacity:0.7; margin-bottom:2px; display:flex; justify-content:space-between; gap:12px;';
-            metaDiv.innerHTML = `<span>${!mine ? m.name : ''}</span><span>${timeStr}</span>`;
+            metaDiv.innerHTML = `<span>${!mine ? esc(m.name) : ''}</span><span>${timeStr}</span>`;
             row.appendChild(metaDiv); 
         }
         row.appendChild(document.createTextNode(m.text)); return row;
@@ -967,7 +970,7 @@ function initWatchlist() {
             const m = docSnap.data(); const card = document.createElement('div'); card.style.cssText = 'width:110px; cursor:pointer;';
             card.innerHTML = `
                 <div style="width:110px; height:160px; border-radius:12px; background:${m.poster ? `url('${m.poster}') center/cover` : 'var(--input-bg)'}; border:var(--glass-border); margin-bottom:6px;"></div>
-                <div style="font-size:11px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${m.title}</div>
+                <div style="font-size:11px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(m.title)}</div>
                 <div style="font-size:10px; color:${m.streamUrl ? 'var(--con)' : 'var(--ink-soft)'}; margin-top:2px;">${m.streamUrl ? '▶ Play in Theater' : '🔗 Link Media File'}</div>
             `;
             
@@ -1061,7 +1064,7 @@ function initRadarFeed() {
         snap.forEach(d => {
             const r = d.data(); const row = document.createElement('div'); row.className = 'radar-row';
             const when = r.timestamp?.toDate ? r.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-            row.innerHTML = `<span>${r.type || 'Visit'} — ${r.city || 'Unknown'}, ${r.country || ''}</span><span style="color:var(--ink-soft); font-family:var(--font-mono); font-size:11px;">${when}</span>`;
+            row.innerHTML = `<span>${esc(r.type || 'Visit')} — ${esc(r.city || 'Unknown')}, ${esc(r.country || '')}</span><span style="color:var(--ink-soft); font-family:var(--font-mono); font-size:11px;">${when}</span>`;
             feed.appendChild(row);
         });
     });

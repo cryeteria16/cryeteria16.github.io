@@ -27,8 +27,11 @@ service cloud.firestore {
     }
     
     match /radar_logs/{document} {
-      allow create: if true 
+      // Visitors can only add a log with exactly these fields, short strings, and the server's own time
+      allow create: if request.resource.data.keys().hasOnly(['type', 'ip', 'city', 'country', 'device', 'timestamp'])
                     && request.resource.data.keys().hasAll(['type', 'ip', 'city', 'country', 'device', 'timestamp'])
+                    && request.resource.data.device is string && request.resource.data.device.size() < 50
+                    && request.resource.data.timestamp == request.time
                     && request.resource.data.type is string && request.resource.data.type.size() < 50
                     && request.resource.data.ip is string && request.resource.data.ip.size() < 50
                     && request.resource.data.city is string && request.resource.data.city.size() < 100
@@ -39,9 +42,9 @@ service cloud.firestore {
       allow read, write: if isAdmin();
     }
 
+    // guest_chat is not used by the site anymore: only admins can read or clear old messages
     match /guest_chat/{document} {
-      allow read, create: if true;
-      allow update, delete: if isAdmin();
+      allow read, delete: if isAdmin();
     }
     match /system/watch_party {
       allow read: if true;
@@ -67,7 +70,8 @@ service cloud.firestore {
     }
 
     match /system/{document} {
-      allow read: if request.auth != null;
+      // analytics stays admin-only (its own rule above); everything else is readable when signed in
+      allow read: if request.auth != null && document != 'analytics';
       allow write: if isAdmin();
     }
     
