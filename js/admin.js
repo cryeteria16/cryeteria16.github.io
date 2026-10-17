@@ -80,7 +80,7 @@ const fmtDate = (ms) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric
 async function loadPasskeys() {
   const box = $('passkey-list');
   let passkeys;
-  try { ({ passkeys } = await edge('/auth/passkeys')); } catch { box.innerHTML = '<div class="row"><span class="soft">Could not load.</span></div>'; return; }
+  try { passkeys = (await edge('/auth/passkeys')).passkeys || []; } catch { box.innerHTML = '<div class="row"><span class="soft">Could not load.</span></div>'; return; }
   box.innerHTML = '';
   if (!passkeys.length) box.innerHTML = '<div class="row"><span class="soft">Not set up on any device yet.</span></div>';
   passkeys.forEach((p) => {
