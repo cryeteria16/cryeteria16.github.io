@@ -40,6 +40,7 @@ async function merge(key, patch, button) {
   $('edit-social-git').value = profile.socials?.git || '';
   loadSessions();
   loadPasskeys();
+  loadKeys();
 })().catch(() => {});
 
 async function loadSessions() {
@@ -106,4 +107,49 @@ $('btn-add-passkey').addEventListener('click', async (e) => {
     btn.textContent = 'Face ID is ready'; loadPasskeys();
   } catch (err) { btn.textContent = label; if (!err.cancelled) alert(err.message); }
   setTimeout(() => { btn.textContent = label; btn.disabled = false; }, 1800);
+});
+
+// ---- iPhone backup Shortcut keys (stored on the PC) ----
+const PC = 'https://vault.ibadhasan.com';
+async function pc(path, options = {}) {
+  let res;
+  try { res = await fetch(PC + path, { ...options, headers: { ...(options.headers || {}), Authorization: `Bearer ${token}`, ...(options.body ? { 'Content-Type': 'application/json' } : {}) } }); }
+  catch { throw Object.assign(new Error('Your PC is asleep. Turn it on to manage Shortcut keys.'), { offline: true }); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Error ${res.status}`);
+  return data;
+}
+async function loadKeys() {
+  const box = $('key-list');
+  let data;
+  try { data = await pc('/api/photos/backup/keys'); data.keys = Array.isArray(data.keys) ? data.keys : []; } catch (e) { box.innerHTML = `<div class="row"><span class="soft">${e.message}</span></div>`; $('btn-new-key').disabled = !!e.offline; return; }
+  $('btn-new-key').disabled = false;
+  box.innerHTML = '';
+  if (!data.keys.length) box.innerHTML = '<div class="row"><span class="soft">No Shortcut keys yet.</span></div>';
+  data.keys.forEach((k) => {
+    const row = document.createElement('div'); row.className = 'row';
+    const meta = document.createElement('span'); meta.className = 'meta';
+    const name = document.createElement('span'); name.textContent = k.name;
+    const when = document.createElement('small'); when.textContent = `Made ${fmtDate(k.created)}${k.lastUsed ? ` · last used ${fmtDate(k.lastUsed)}` : ' · not used yet'}`;
+    meta.append(name, when);
+    const rm = document.createElement('button'); rm.className = 'remove'; rm.textContent = 'Remove';
+    rm.addEventListener('click', async () => {
+      if (!confirm('Remove this key? The Shortcut using it will stop working until you give it a new key.')) return;
+      try { await pc(`/api/photos/backup/keys/${encodeURIComponent(k.id)}`, { method: 'DELETE' }); loadKeys(); } catch (e) { alert(e.message); }
+    });
+    row.append(meta, rm); box.appendChild(row);
+  });
+}
+$('btn-new-key').addEventListener('click', async (e) => {
+  const btn = e.currentTarget; btn.disabled = true;
+  try {
+    const { key } = await pc('/api/photos/backup/keys', { method: 'POST', body: JSON.stringify({ name: 'iPhone Shortcut' }) });
+    $('new-key-text').textContent = key; $('new-key').hidden = false;
+    loadKeys();
+  } catch (err) { alert(err.message); }
+  btn.disabled = false;
+});
+$('btn-copy-key').addEventListener('click', async (e) => {
+  try { await navigator.clipboard.writeText($('new-key-text').textContent); e.currentTarget.textContent = 'Copied'; }
+  catch { const r = document.createRange(); r.selectNodeContents($('new-key-text')); getSelection().removeAllRanges(); getSelection().addRange(r); e.currentTarget.textContent = 'Selected: tap Copy'; }
 });

@@ -120,7 +120,7 @@ function tickClock() {
 tickClock();
 
 // ================= navigation =================
-const VIEWS = ['home', 'vault', 'theater', 'radar'];
+const VIEWS = ['home', 'photos', 'vault', 'theater', 'radar'];
 const onOpen = {}; // view -> run once when first shown
 let current = 'home';
 function openView(target) {
@@ -218,6 +218,9 @@ function boot() {
   loadWatchlist();
   onOpen.vault = initDrive;
   onOpen.theater = initTheater;
+  onOpen.photos = initPhotos;
+  bindLightbox();
+  loadMemories();
   const params = new URLSearchParams(location.search);
   const want = location.hash.replace('#', '');
   if (params.get('share') === 'true') { history.replaceState({}, '', location.pathname); openView('vault'); }
@@ -234,7 +237,7 @@ async function initConfig() {
   const f = d.features || {};
   const hide = { vault: f.drop === false, theater: f.theater === false, radar: f.radar === false };
   for (const [v, off] of Object.entries(hide)) {
-    $(`tab-${v}`).hidden = off;
+    const tab = $(`tab-${v}`); if (tab) tab.hidden = off;
     if (v === 'vault') $('tile-vault').hidden = off;
     if (v === 'radar') $('tile-radar').hidden = off;
     if (v === 'theater') $('tile-upnext').hidden = off;
@@ -388,23 +391,6 @@ function initDrive() {
   ['dragleave', 'drop'].forEach(t => zone.addEventListener(t, (e) => { if (t === 'dragleave' && zone.contains(e.relatedTarget)) return; zone.classList.remove('dragging'); }));
   zone.addEventListener('drop', (e) => { if (!drivePath) return; e.preventDefault(); queueUploads([...e.dataTransfer.files], drivePath); });
 
-  // Photo viewer
-  $('lb-close').addEventListener('click', closeLightbox);
-  $('lb-prev').addEventListener('click', () => stepLightbox(-1));
-  $('lb-next').addEventListener('click', () => stepLightbox(1));
-  document.addEventListener('keydown', (e) => {
-    if (!$('photo-lightbox').classList.contains('active')) return;
-    if (e.key === 'Escape') closeLightbox(); if (e.key === 'ArrowLeft') stepLightbox(-1); if (e.key === 'ArrowRight') stepLightbox(1);
-  });
-  let lbX = 0; let lbY = 0;
-  const stage = document.querySelector('.lb-stage');
-  stage.addEventListener('touchstart', (e) => { lbX = e.changedTouches[0].screenX; lbY = e.changedTouches[0].screenY; }, { passive: true });
-  stage.addEventListener('touchend', (e) => {
-    const dx = lbX - e.changedTouches[0].screenX; const dy = e.changedTouches[0].screenY - lbY;
-    if (dy > 90 && Math.abs(dy) > Math.abs(dx)) return closeLightbox(); // swipe down to close
-    if (Math.abs(dx) > 50) stepLightbox(dx > 0 ? 1 : -1);
-  }, { passive: true });
-
   loadDrive();
   resumePendingUploads();
 }
@@ -490,7 +476,7 @@ function downloadItem(item) {
   const a = document.createElement('a'); a.href = TUNNEL_URL + item.download; a.rel = 'noopener';
   document.body.appendChild(a); a.click(); a.remove();
 }
-const inPhotosRoot = (item) => item.path.split('/').length === 2 && item.path.startsWith('Photos/');
+const inPhotosRoot = (item) => item.path.startsWith('Photos/') && item.kind === 'image';
 
 function showActions(item) {
   const acts = [{ label: 'Open', icon: item.type === 'folder' ? 'folder' : 'image', run: () => openItem(item) }];
@@ -504,17 +490,37 @@ async function renameItem(item) {
   try { await postJSON('/api/drive/rename', { path: item.path, name }); showToast('Renamed', 'success'); loadDrive(); }
   catch (e) { showToast(e.message, 'error'); }
 }
-async function deleteItem(item) {
+async function deleteItem(item, after = () => loadDrive()) {
   const what = item.type === 'folder' ? 'this folder and everything in it' : 'this file';
   if (!(await showConfirm(`Delete ${item.name}?`, `This moves ${what} to the recycle bin on your PC. It is emptied after 30 days.`, 'Delete'))) return false;
-  try { await postJSON('/api/drive/delete', { path: item.path }); showToast('Moved to the recycle bin', 'success'); loadDrive(); return true; }
+  try { await postJSON('/api/drive/delete', { path: item.path }); showToast('Moved to the recycle bin', 'success'); after(); return true; }
   catch (e) { showToast(e.message, 'error'); return false; }
 }
 
 // ---- photo viewer: shows a phone-sized preview; the original only on request ----
-let lbList = []; let lbIndex = 0;
-function openLightbox(item) {
-  lbList = sortedItems().filter(i => i.preview);
+let lbList = []; let lbIndex = 0; let lbSource = 'vault';
+function bindLightbox() {
+  $('lb-close').addEventListener('click', closeLightbox);
+  $('lb-prev').addEventListener('click', () => stepLightbox(-1));
+  $('lb-next').addEventListener('click', () => stepLightbox(1));
+  document.addEventListener('keydown', (e) => {
+    if (!$('photo-lightbox').classList.contains('active')) return;
+    if (e.key === 'Escape') closeLightbox(); if (e.key === 'ArrowLeft') stepLightbox(-1); if (e.key === 'ArrowRight') stepLightbox(1);
+  });
+  let lbX = 0; let lbY = 0;
+  const stage = document.querySelector('.lb-stage');
+  stage.addEventListener('touchstart', (e) => { lbX = e.changedTouches[0].screenX; lbY = e.changedTouches[0].screenY; }, { passive: true });
+  stage.addEventListener('touchend', (e) => {
+    const dx = lbX - e.changedTouches[0].screenX; const dy = e.changedTouches[0].screenY - lbY;
+    if (dy > 90 && Math.abs(dy) > Math.abs(dx)) return closeLightbox(); // swipe down to close
+    if (Math.abs(dx) > 50) stepLightbox(dx > 0 ? 1 : -1);
+  }, { passive: true });
+
+}
+// list: the photos to swipe through (defaults to the open Vault folder); source 'photos' adds Favourite and Album
+function openLightbox(item, list, source = 'vault') {
+  lbSource = source;
+  lbList = (list || sortedItems()).filter(i => i.preview);
   lbIndex = Math.max(0, lbList.findIndex(i => i.path === item.path));
   showLightboxItem();
   openOverlay($('photo-lightbox'));
@@ -528,7 +534,20 @@ function showLightboxItem() {
   $('lightbox-name').textContent = `${item.name} · ${fmtBytes(item.size)}`;
   $('lb-prev').style.visibility = $('lb-next').style.visibility = lbList.length > 1 ? 'visible' : 'hidden';
   $('lb-original').onclick = () => window.open(TUNNEL_URL + item.url, '_blank', 'noopener');
-  $('lb-delete').onclick = async () => { if (await deleteItem(item)) closeLightbox(); };
+  $('lb-delete').onclick = async () => {
+    if (!(await deleteItem(item, lbSource === 'photos' ? () => photosRemoved([item.path]) : undefined))) return;
+    lbList.splice(lbIndex, 1);
+    if (!lbList.length) return closeLightbox();
+    lbIndex = Math.min(lbIndex, lbList.length - 1); showLightboxItem();
+  };
+  const fav = $('lb-fav'); const alb = $('lb-album');
+  fav.hidden = alb.hidden = lbSource !== 'photos';
+  if (lbSource === 'photos') {
+    const paintFav = () => { fav.classList.toggle('on', !!item.fav); fav.classList.add('fav-btn'); fav.querySelector('span').textContent = item.fav ? 'Loved' : 'Favourite'; };
+    paintFav();
+    fav.onclick = async () => { fav.disabled = true; try { await setFavourite([item], !item.fav); paintFav(); } catch (e) { showToast(e.message, 'error'); } fav.disabled = false; };
+    alb.onclick = () => pickAlbum([item]);
+  }
   const ex = $('lb-exhibit');
   ex.hidden = !inPhotosRoot(item);
   if (ex.hidden) return;
@@ -553,6 +572,7 @@ function exhibitionIds() {
 
 // ---- uploads: 8 MB pieces, resume after a dropped connection or a reload ----
 const uploads = []; let uploading = false;
+const BACKUP = '__backup__'; // the special "Back up" destination: the PC files these into Photos/iPhone/YYYY-MM
 const fileKey = (f, dir) => `lair.up.${dir}|${f.name}|${f.size}|${f.lastModified}`;
 const newId = () => [...crypto.getRandomValues(new Uint8Array(16))].map(b => b.toString(16).padStart(2, '0')).join('');
 
@@ -580,6 +600,7 @@ async function runUploads() {
     if (next.state === 'done' && next.dir === drivePath) loadDrive();
   }
   uploading = false;
+  backupFinished();
   setTimeout(renderQueue, 4200);
 }
 async function uploadOne(u) {
@@ -593,14 +614,14 @@ async function uploadOne(u) {
     let tries = 0;
     while (true) {
       const end = Math.min(u.sent + CHUNK, u.file.size);
-      const qs = `id=${id}&dir=${encodeURIComponent(u.dir)}&name=${encodeURIComponent(u.file.name)}&size=${u.file.size}&offset=${u.sent}`;
+      const qs = `id=${id}&dir=${encodeURIComponent(u.dir)}&name=${encodeURIComponent(u.file.name)}&size=${u.file.size}&offset=${u.sent}${u.dir === BACKUP ? `&backup=1&taken=${u.file.lastModified || ''}` : ''}`;
       try {
         const res = await fetchWithAuth(`${TUNNEL_URL}/api/drive/upload?${qs}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: u.file.slice(u.sent, end) });
         const data = await res.json().catch(() => ({}));
         if (res.status === 409 && typeof data.received === 'number') { u.sent = data.received; continue; }
         if (!res.ok) throw Object.assign(new Error(data.error || `Upload refused (${res.status})`), { fatal: true });
         u.sent = data.received; tries = 0; u.state = 'sending'; renderQueue();
-        if (data.done) break;
+        if (data.done) { u.duplicate = !!data.duplicate; break; }
       } catch (e) {
         if (e.fatal || ++tries > 6) throw e;
         u.state = 'retry'; renderQueue();
@@ -618,6 +639,272 @@ function resumePendingUploads() {
   const pending = [];
   try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k.startsWith('lair.up.')) pending.push(store.get(k)); } } catch {}
   if (pending.length) showToast(`${pending.length} upload${pending.length > 1 ? 's were' : ' was'} interrupted. Choose the same file${pending.length > 1 ? 's' : ''} again to carry on where ${pending.length > 1 ? 'they' : 'it'} stopped.`);
+}
+
+// ================= PHOTOS =================
+// Library (newest first, by the date each photo was taken), Albums, Favourites, On this day,
+// and Back up from this phone. All of it lives on the PC; only small previews come down.
+let phView = 'all';          // 'all' | 'favs' | 'album:<id>'
+let phSeg = 'all';           // which tab of the switch: all | albums | favs
+let phItems = [];            // what's shown, in order
+let phNext = null; let phLoading = false; let phTotal = 0;
+let phAlbum = null;          // { id, name } when an album is open
+let selecting = false; const selected = new Set();
+const monthName = (ym) => { const [y, m] = ym.split('-').map(Number); return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }); };
+const takenLabel = (t) => { if (!t) return ''; const [y, m, d] = t.slice(0, 10).split('-').map(Number); return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' }); };
+
+function initPhotos() {
+  document.querySelectorAll('#photos-seg .seg').forEach(b => b.addEventListener('click', () => setSeg(b.dataset.seg)));
+  $('photos-select').addEventListener('click', () => setSelecting(!selecting));
+  $('album-back').addEventListener('click', () => setSeg('albums'));
+  $('album-menu').addEventListener('click', albumMenu);
+  $('photos-backup').addEventListener('click', () => $('backup-input').click());
+  $('backup-input').addEventListener('change', (e) => { startBackup([...e.target.files]); e.target.value = ''; });
+  $('sel-fav').addEventListener('click', async () => { const items = selItems(); if (!items.length) return; const on = !items.every(i => i.fav); try { await setFavourite(items, on); showToast(on ? 'Added to Favourites' : 'Removed from Favourites', 'success'); setSelecting(false); } catch (e) { showToast(e.message, 'error'); } });
+  $('sel-album').addEventListener('click', () => { const items = selItems(); if (items.length) pickAlbum(items, () => setSelecting(false)); });
+  $('sel-delete').addEventListener('click', deleteSelected);
+  // Load more as you scroll near the bottom
+  new IntersectionObserver((es) => { if (es[0].isIntersecting && phNext && !phLoading && current === 'photos') loadPhotos(true); }, { rootMargin: '600px' }).observe($('photos-more'));
+  setSeg('all');
+}
+
+function setSeg(seg) {
+  phSeg = seg; phAlbum = null;
+  document.querySelectorAll('#photos-seg .seg').forEach(b => { const on = b.dataset.seg === seg; b.classList.toggle('active', on); b.setAttribute('aria-selected', on); });
+  $('photos-seg').hidden = false; $('album-back').hidden = true; $('album-menu').hidden = true;
+  $('photos-title').textContent = 'Photos';
+  setSelecting(false);
+  if (seg === 'albums') { $('photos-grid').hidden = true; $('albums-grid').hidden = false; $('photos-memories').hidden = true; $('photos-select').hidden = true; $('photos-sub').textContent = ''; loadAlbums(); return; }
+  $('photos-grid').hidden = false; $('albums-grid').hidden = true; $('photos-select').hidden = false;
+  phView = seg; loadPhotos(false);
+  if (seg === 'all') loadMemories(); else $('photos-memories').hidden = true;
+}
+
+function openAlbum(a) {
+  phSeg = 'albums'; phAlbum = { id: a.id, name: a.name }; phView = `album:${a.id}`;
+  $('photos-seg').hidden = true; $('album-back').hidden = false; $('album-menu').hidden = false; $('photos-select').hidden = false;
+  $('photos-title').textContent = a.name;
+  $('photos-grid').hidden = false; $('albums-grid').hidden = true; $('photos-memories').hidden = true;
+  setSelecting(false); loadPhotos(false); window.scrollTo(0, 0);
+}
+
+async function loadPhotos(more) {
+  const grid = $('photos-grid');
+  if (!more) { phItems = []; phNext = null; grid.innerHTML = '<p class="ph-empty">Loading…</p>'; }
+  phLoading = true;
+  try {
+    const q = new URLSearchParams({ view: phView, limit: '120' }); if (more && phNext) q.set('before', phNext);
+    const data = await api(`/api/photos/list?${q}`);
+    if (!Array.isArray(data.items)) data.items = [];
+    phNext = data.next || null; phTotal = Number(data.total) || 0;
+    if (!more) grid.innerHTML = '';
+    appendPhotos(data.items);
+    phItems.push(...data.items);
+    const count = `${phTotal.toLocaleString()} ${phTotal === 1 ? 'item' : 'items'}`;
+    $('photos-sub').textContent = phTotal ? count + (data.scanning ? ' · still reading dates…' : '') : '';
+    if (!phItems.length) grid.innerHTML = emptyPhotos();
+  } catch (e) {
+    if (!more) grid.innerHTML = e.offline
+      ? `<div class="ph-empty"><span class="tile-icon violet">${icon('moon')}</span><strong>Your PC is asleep</strong>Your photos live on it, so they come back when it's on.<br><button class="btn btn-glass" id="ph-retry">Try again</button></div>`
+      : `<p class="ph-empty">${esc(e.message)}</p>`;
+    $('ph-retry')?.addEventListener('click', () => loadPhotos(false));
+    $('photos-sub').textContent = '';
+  } finally { phLoading = false; }
+}
+function emptyPhotos() {
+  if (phView === 'favs') return `<div class="ph-empty"><span class="tile-icon rose">${icon('heart')}</span><strong>No favourites yet</strong>Tap the heart on a photo to keep it here.</div>`;
+  if (phAlbum) return `<div class="ph-empty"><span class="tile-icon blue">${icon('album')}</span><strong>This album is empty</strong>Go to Library, tap Select, choose photos, then the album button.</div>`;
+  return `<div class="ph-empty"><span class="tile-icon teal">${icon('photos')}</span><strong>No photos yet</strong>Back up photos from this phone, or put them in Photos on your PC.<br><button class="btn btn-primary" onclick="document.getElementById('backup-input').click()">Back up from this phone</button></div>`;
+}
+function appendPhotos(items) {
+  const grid = $('photos-grid');
+  let monthGrid = grid.lastElementChild?.classList.contains('ph-grid') ? grid.lastElementChild : null;
+  let curMonth = monthGrid?.dataset.month || '';
+  const frag = document.createDocumentFragment();
+  for (const it of items) {
+    const ym = (it.taken || '').slice(0, 7);
+    if (ym !== curMonth || !monthGrid) {
+      curMonth = ym;
+      const h = document.createElement('h2'); h.className = 'ph-month'; h.textContent = ym ? monthName(ym) : 'Undated';
+      monthGrid = document.createElement('div'); monthGrid.className = 'ph-grid'; monthGrid.dataset.month = ym;
+      frag.append(h, monthGrid);
+    }
+    monthGrid.appendChild(photoTile(it));
+    if (!monthGrid.isConnected && !frag.contains(monthGrid)) frag.appendChild(monthGrid);
+  }
+  grid.appendChild(frag);
+}
+function photoTile(it) {
+  const b = document.createElement('button');
+  b.className = `ph${selected.has(it.path) ? ' sel' : ''}`; b.dataset.path = it.path;
+  b.setAttribute('aria-label', `${it.kind === 'video' ? 'Video' : 'Photo'}, ${takenLabel(it.taken)}`);
+  b.innerHTML = (it.thumb ? `<img src="${esc(TUNNEL_URL + it.thumb)}" alt="" loading="lazy" decoding="async">` : `<span class="ph-vid">${icon(it.kind === 'video' ? 'film' : 'image')}</span>`)
+    + (it.fav ? `<svg class="ph-fav" aria-hidden="true"><use href="#i-heart"/></svg>` : '')
+    + (it.kind === 'video' && it.thumb ? `<span class="ph-badge">Video</span>` : '')
+    + `<span class="ph-check" aria-hidden="true">${icon('check')}</span>`;
+  b.addEventListener('click', () => {
+    if (selecting) { toggleSelect(it.path, b); return; }
+    if (it.kind === 'video') { openView('theater'); playInTheater(TUNNEL_URL + it.url, it.name); return; }
+    openLightbox(it, phItems, 'photos');
+  });
+  return b;
+}
+function refreshTile(it) {
+  const old = document.querySelector(`.ph[data-path="${CSS.escape(it.path)}"]`);
+  if (old) old.replaceWith(photoTile(it));
+}
+function photosRemoved(paths) {
+  const gone = new Set(paths);
+  phItems = phItems.filter(i => !gone.has(i.path));
+  paths.forEach(p => document.querySelector(`.ph[data-path="${CSS.escape(p)}"]`)?.remove());
+  document.querySelectorAll('.ph-grid').forEach(g => { if (!g.children.length) { g.previousElementSibling?.remove(); g.remove(); } });
+  phTotal = Math.max(0, phTotal - paths.length);
+  $('photos-sub').textContent = phTotal ? `${phTotal.toLocaleString()} items` : '';
+  if (!phItems.length) $('photos-grid').innerHTML = emptyPhotos();
+}
+
+// ---- selecting several ----
+function setSelecting(on) {
+  selecting = on; selected.clear();
+  document.querySelectorAll('.ph.sel').forEach(el => el.classList.remove('sel'));
+  $('photos-grid').classList.toggle('selecting', on);
+  document.body.classList.toggle('selecting-photos', on);
+  $('select-bar').hidden = !on;
+  $('photos-select').textContent = on ? 'Cancel' : 'Select';
+  $('photos-select').classList.toggle('on', on);
+  paintSelectBar();
+}
+function toggleSelect(p, el) { selected.has(p) ? selected.delete(p) : selected.add(p); el.classList.toggle('sel', selected.has(p)); paintSelectBar(); }
+function paintSelectBar() {
+  const n = selected.size;
+  $('select-count').textContent = n ? `${n} selected` : 'Tap photos to select';
+  ['sel-fav', 'sel-album', 'sel-delete'].forEach(id => { $(id).disabled = !n; });
+}
+const selItems = () => phItems.filter(i => selected.has(i.path));
+async function deleteSelected() {
+  const items = selItems(); if (!items.length) return;
+  if (!(await showConfirm(`Delete ${items.length} ${items.length === 1 ? 'item' : 'items'}?`, 'They move to the recycle bin on your PC and are emptied after 30 days.', 'Delete'))) return;
+  const done = [];
+  for (const it of items) { try { await postJSON('/api/drive/delete', { path: it.path }); done.push(it.path); } catch {} }
+  photosRemoved(done); setSelecting(false);
+  showToast(done.length === items.length ? 'Moved to the recycle bin' : `${done.length} of ${items.length} deleted`, done.length === items.length ? 'success' : 'error');
+}
+
+// ---- favourites and albums ----
+async function setFavourite(items, on) {
+  await postJSON('/api/photos/favourite', { paths: items.map(i => i.path), on });
+  for (const it of items) { it.fav = on; refreshTile(it); }
+  if (phView === 'favs' && !on) photosRemoved(items.map(i => i.path));
+}
+async function pickAlbum(items, after = () => {}) {
+  let albums = [];
+  try { albums = (await api('/api/photos/albums')).albums; } catch (e) { return showToast(e.message, 'error'); }
+  const body = openSheet(items.length === 1 ? 'Add to album' : `Add ${items.length} to album`, `<div class="sheet-group album-pick">
+    <button class="sheet-btn" data-new="1">${icon('plus')}New album…</button>
+    ${albums.map(a => `<button class="sheet-btn" data-id="${esc(a.id)}">${a.cover ? `<span class="thumb"><img src="${esc(TUNNEL_URL + a.cover)}" alt=""></span>` : icon('album')}<span>${esc(a.name)}</span><span class="soft" style="margin-left:auto">${a.count}</span></button>`).join('')}
+  </div>`);
+  body.querySelectorAll('.sheet-btn').forEach(b => b.addEventListener('click', async () => {
+    closeSheet();
+    const paths = items.map(i => i.path);
+    try {
+      if (b.dataset.new) {
+        const name = await askText('New album', '', 'Create', 'Album name'); if (!name) return;
+        await postJSON('/api/photos/albums', { name, paths }); showToast(`Added to ${name}`, 'success');
+      } else {
+        await postJSON(`/api/photos/albums/${b.dataset.id}/add`, { paths });
+        showToast(`Added to ${albums.find(a => a.id === b.dataset.id)?.name || 'album'}`, 'success');
+      }
+      after();
+    } catch (e) { showToast(e.message, 'error'); }
+  }));
+}
+async function loadAlbums() {
+  const box = $('albums-grid');
+  box.innerHTML = '<p class="ph-empty" style="grid-column:1/-1">Loading…</p>';
+  let data;
+  try { data = await api('/api/photos/albums'); }
+  catch (e) { box.innerHTML = `<p class="ph-empty" style="grid-column:1/-1">${esc(e.offline ? 'Your PC is asleep. Albums come back when it is on.' : e.message)}</p>`; return; }
+  const card = (cover, name, count, attrs, extra = '') => `<button class="album" ${attrs}><span class="album-cover ${extra}">${cover ? `<img src="${esc(TUNNEL_URL + cover)}" alt="" loading="lazy">` : icon(extra === 'new' ? 'plus' : 'album')}</span><span class="album-name">${esc(name)}</span><span class="album-count">${esc(count)}</span></button>`;
+  box.innerHTML = card(data.favourites.cover, 'Favourites', `${data.favourites.count}`, 'data-favs="1"')
+    + data.albums.map(a => card(a.cover, a.name, `${a.count}`, `data-id="${esc(a.id)}"`)).join('')
+    + card(null, 'New album', '', 'data-new="1"', 'new');
+  box.querySelectorAll('.album').forEach(b => b.addEventListener('click', async () => {
+    if (b.dataset.favs) return setSeg('favs');
+    if (b.dataset.new) {
+      const name = await askText('New album', '', 'Create', 'Album name'); if (!name) return;
+      try { await postJSON('/api/photos/albums', { name }); loadAlbums(); } catch (e) { showToast(e.message, 'error'); }
+      return;
+    }
+    openAlbum(data.albums.find(a => a.id === b.dataset.id));
+  }));
+}
+function albumMenu() {
+  if (!phAlbum) return;
+  actionSheet(phAlbum.name, [
+    { label: 'Rename album', icon: 'doc', run: async () => {
+      const name = await askText('Rename album', phAlbum.name, 'Rename'); if (!name) return;
+      try { await postJSON(`/api/photos/albums/${phAlbum.id}/rename`, { name }); phAlbum.name = name; $('photos-title').textContent = name; } catch (e) { showToast(e.message, 'error'); }
+    } },
+    ...(selecting && selected.size ? [{ label: `Remove ${selected.size} from album`, icon: 'x', run: async () => {
+      const paths = [...selected];
+      try { await postJSON(`/api/photos/albums/${phAlbum.id}/remove`, { paths }); photosRemoved(paths); setSelecting(false); } catch (e) { showToast(e.message, 'error'); }
+    } }] : []),
+    { label: 'Delete album', icon: 'x', danger: true, run: async () => {
+      if (!(await showConfirm(`Delete "${phAlbum.name}"?`, 'Only the album goes. The photos stay in your library.', 'Delete album'))) return;
+      try { await apiDelete(`/api/photos/albums/${phAlbum.id}`); setSeg('albums'); } catch (e) { showToast(e.message, 'error'); }
+    } },
+  ]);
+}
+const apiDelete = (path) => api(path, { method: 'DELETE' });
+
+// ---- On this day ----
+async function loadMemories() {
+  let data;
+  try { data = await api('/api/photos/memories'); } catch { $('home-memories').hidden = true; $('photos-memories').hidden = true; return; }
+  data.items = Array.isArray(data.items) ? data.items : []; data.years = Array.isArray(data.years) ? data.years : [];
+  const has = data.items.length > 0;
+  const yrNow = Number(new Date().toLocaleDateString('en-CA', { timeZone: tz }).slice(0, 4));
+  const sub = data.years.map(y => { const n = yrNow - Number(y); return n === 1 ? '1 year ago' : `${n} years ago`; }).slice(0, 3).join(' · ');
+  for (const pre of ['home', 'photos']) {
+    const card = $(`${pre}-memories`);
+    card.hidden = !has || (pre === 'photos' && phView !== 'all');
+    if (!has) continue;
+    $(`${pre}-memories-sub`).textContent = sub;
+    const strip = $(`${pre}-memories-strip`); strip.innerHTML = '';
+    data.items.slice(0, 12).forEach(it => {
+      const b = document.createElement('button'); b.className = 'mem'; b.setAttribute('aria-label', `Photo from ${takenLabel(it.taken)}`);
+      b.innerHTML = `<img src="${esc(TUNNEL_URL + it.thumb)}" alt="" loading="lazy"><span>${esc(it.taken.slice(0, 4))}</span>`;
+      b.addEventListener('click', () => openLightbox(it, data.items, 'photos'));
+      strip.appendChild(b);
+    });
+  }
+}
+
+// ---- Back up from this phone (only when you tap it) ----
+let backupRun = null;
+async function startBackup(files) {
+  if (!files.length) return;
+  let have = [];
+  try { have = (await postJSON('/api/photos/backup/check', { files: files.map(f => ({ name: f.name, size: f.size })) })).have; }
+  catch (e) { return showToast(e.offline ? 'Your PC needs to be on to back up.' : e.message, 'error'); }
+  const fresh = files.filter((f, i) => !have[i]);
+  const skipped = files.length - fresh.length;
+  if (!fresh.length) return showToast(files.length === 1 ? 'That one is already backed up.' : `All ${files.length} are already backed up.`, 'success');
+  backupRun = { skipped, items: fresh.length };
+  showToast(`Backing up ${fresh.length} ${fresh.length === 1 ? 'item' : 'items'}${skipped ? ` (${skipped} already there)` : ''}`);
+  queueUploads(fresh, BACKUP);
+}
+function backupFinished() {
+  if (!backupRun) return;
+  const mine = uploads.filter(u => u.dir === BACKUP);
+  if (mine.some(u => u.state === 'waiting' || u.state === 'sending' || u.state === 'retry')) return;
+  const ok = mine.filter(u => u.state === 'done' && !u.duplicate).length;
+  const dup = mine.filter(u => u.duplicate).length + backupRun.skipped;
+  const failed = mine.filter(u => u.state === 'error').length;
+  showToast(`Backed up ${ok}${dup ? ` · ${dup} already there` : ''}${failed ? ` · ${failed} failed` : ''}`, failed ? 'error' : 'success');
+  for (let i = uploads.length - 1; i >= 0; i--) if (uploads[i].dir === BACKUP && uploads[i].state !== 'error') uploads.splice(i, 1);
+  backupRun = null;
+  if (current === 'photos' && phSeg === 'all') loadPhotos(false);
 }
 
 // ================= THEATER =================

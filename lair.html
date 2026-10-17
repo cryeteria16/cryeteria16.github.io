@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="robots" content="noindex, nofollow">
 <title>The Lair</title>
-<link rel="stylesheet" href="/css/lair.css?v=9">
+<link rel="stylesheet" href="/css/lair.css?v=10">
 </head>
 <body class="auth-pending signed-out">
 
@@ -45,6 +45,11 @@
     <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
     <symbol id="i-face" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9v1.5M15 9v1.5M12 9v4h-1M9.5 16a3.5 3.5 0 0 0 5 0"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7-4.4-9-9.2C1.7 7.3 4 4 7.4 4c2 0 3.6 1.2 4.6 2.8C13 5.2 14.6 4 16.6 4 20 4 22.3 7.3 21 10.8 19 15.6 12 20 12 20z"/></symbol>
+    <symbol id="i-album" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="3"/><path d="M6 4h12M8 1.5h8"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></symbol>
+    <symbol id="i-photos" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM12 12a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 12a4 4 0 1 0-8 0 4 4 0 0 0 8 0zM12 12a4 4 0 1 0 8 0 4 4 0 0 0-8 0z"/></symbol>
+    <symbol id="i-cloudup" viewBox="0 0 24 24"><path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18"/><path d="M12 12v8M9 15l3-3 3 3"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></symbol>
   </defs>
 </svg>
@@ -135,11 +140,47 @@
       </button>
     </div>
 
+    <div class="card memories" id="home-memories" hidden>
+      <div class="memories-head"><span class="tile-label">On this day</span><span class="tile-label soft" id="home-memories-sub"></span></div>
+      <div class="memories-strip" id="home-memories-strip"></div>
+    </div>
+
     <div class="shortcuts">
       <a class="chip" href="https://github.com/cryeteria16" target="_blank" rel="noopener">GitHub</a>
       <a class="chip" href="https://dash.cloudflare.com/" target="_blank" rel="noopener">Cloudflare</a>
       <a class="chip" href="/" target="_blank" rel="noopener">ibadhasan.com</a>
     </div>
+  </section>
+
+  <!-- ================= PHOTOS ================= -->
+  <section id="view-photos" class="view" aria-label="Photos">
+    <div class="page-head">
+      <div class="page-title-wrap">
+        <button class="round glass-solid" id="album-back" aria-label="All albums" hidden><svg class="ic"><use href="#i-back"/></svg></button>
+        <h1 class="page-title" id="photos-title">Photos</h1>
+      </div>
+      <div class="head-actions">
+        <button class="pill-btn glass-solid" id="photos-select">Select</button>
+        <button class="round glass-solid" id="album-menu" aria-label="Album options" hidden><svg class="ic"><use href="#i-more"/></svg></button>
+        <button class="round accent" id="photos-backup" aria-label="Back up from this phone"><svg class="ic"><use href="#i-cloudup"/></svg></button>
+      </div>
+    </div>
+    <div class="segmented" role="tablist" id="photos-seg">
+      <button role="tab" class="seg active" data-seg="all" aria-selected="true">Library</button>
+      <button role="tab" class="seg" data-seg="albums" aria-selected="false">Albums</button>
+      <button role="tab" class="seg" data-seg="favs" aria-selected="false">Favourites</button>
+    </div>
+    <p class="soft page-sub" id="photos-sub"></p>
+
+    <div class="card memories" id="photos-memories" hidden>
+      <div class="memories-head"><span class="tile-label">On this day</span><span class="tile-label soft" id="photos-memories-sub"></span></div>
+      <div class="memories-strip" id="photos-memories-strip"></div>
+    </div>
+
+    <div id="photos-grid" class="ph-wrap"></div>
+    <div id="albums-grid" class="albums" hidden></div>
+    <div id="photos-more" class="ph-more" aria-hidden="true"></div>
+    <input type="file" id="backup-input" accept="image/*,video/*" multiple hidden>
   </section>
 
   <!-- ================= VAULT ================= -->
@@ -213,7 +254,7 @@
 
   <!-- ================= RADAR ================= -->
   <section id="view-radar" class="view" aria-label="Radar">
-    <div class="page-head"><h1 class="page-title">Radar</h1></div>
+    <div class="page-head"><div class="page-title-wrap"><button class="round glass-solid" data-go="home" aria-label="Back to Home"><svg class="ic"><use href="#i-back"/></svg></button><h1 class="page-title">Radar</h1></div></div>
     <p class="soft page-sub">Who visited ibadhasan.com. City and country only.</p>
     <div class="card group" id="radar-feed"><p class="soft pad">Loading…</p></div>
   </section>
@@ -222,11 +263,21 @@
 <!-- Tab bar -->
 <nav class="tabbar glass-solid app-only" aria-label="Main">
   <button class="tab active" data-target="home" id="tab-home"><svg class="ic"><use href="#i-home"/></svg><span>Home</span></button>
+  <button class="tab" data-target="photos" id="tab-photos"><svg class="ic"><use href="#i-photos"/></svg><span>Photos</span></button>
   <button class="tab" data-target="vault" id="tab-vault"><svg class="ic"><use href="#i-folder"/></svg><span>Vault</span></button>
   <button class="tab" data-target="theater" id="tab-theater"><svg class="ic"><use href="#i-play"/></svg><span>Theater</span></button>
-  <button class="tab" data-target="radar" id="tab-radar"><svg class="ic"><use href="#i-radar"/></svg><span>Radar</span></button>
   <a class="tab" href="/admin" id="tab-settings"><svg class="ic"><use href="#i-settings"/></svg><span>Settings</span></a>
 </nav>
+
+<!-- Photo selection -->
+<div id="select-bar" class="select-bar glass-solid app-only" hidden>
+  <span id="select-count">0 selected</span>
+  <div class="select-actions">
+    <button class="round" id="sel-fav" aria-label="Favourite"><svg class="ic"><use href="#i-heart"/></svg></button>
+    <button class="round" id="sel-album" aria-label="Add to album"><svg class="ic"><use href="#i-album"/></svg></button>
+    <button class="round danger" id="sel-delete" aria-label="Delete"><svg class="ic"><use href="#i-x"/></svg></button>
+  </div>
+</div>
 
 <!-- Upload progress -->
 <div id="upload-queue" class="upload-queue glass-solid app-only" hidden></div>
@@ -280,11 +331,13 @@
   </div>
   <div class="lb-actions glass-solid">
     <button class="lb-act" id="lb-original"><svg class="ic"><use href="#i-image"/></svg><span>Original</span></button>
+    <button class="lb-act" id="lb-fav" hidden><svg class="ic"><use href="#i-heart"/></svg><span>Favourite</span></button>
+    <button class="lb-act" id="lb-album" hidden><svg class="ic"><use href="#i-album"/></svg><span>Album</span></button>
     <button class="lb-act" id="lb-exhibit" hidden><svg class="ic"><use href="#i-star"/></svg><span>Homepage</span></button>
     <button class="lb-act danger" id="lb-delete"><svg class="ic"><use href="#i-x"/></svg><span>Delete</span></button>
   </div>
 </div>
 
-<script type="module" src="/js/lair.js?v=9"></script>
+<script type="module" src="/js/lair.js?v=10"></script>
 </body>
 </html>

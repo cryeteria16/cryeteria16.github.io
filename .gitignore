@@ -21,3 +21,6 @@ Drive/
 Thumbs.db
 desktop.ini
 *.log
+.lair-edge.json
+.lair-photos.json
+.lair-upload-keys.json

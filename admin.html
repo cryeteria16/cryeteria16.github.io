@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="robots" content="noindex, nofollow">
 <title>Settings · The Lair</title>
-<link rel="stylesheet" href="/css/admin.css?v=3">
+<link rel="stylesheet" href="/css/admin.css?v=4">
 </head>
 <body>
 <div class="wallpaper" aria-hidden="true"></div>
@@ -53,6 +53,35 @@
   </section>
   <button class="btn" id="btn-save-profile">Save homepage</button>
 
+  <h2 class="group-title">iPhone backup Shortcut</h2>
+  <p class="note">A one-tap Shortcut that sends every photo taken since its last run to your PC. It uses its own key that can only add photos: it can't see, download or delete anything. Your PC needs to be on.</p>
+  <section class="group" id="key-list"><div class="row"><span class="soft">Loading…</span></div></section>
+  <div id="new-key" class="group key-box" hidden>
+    <div class="row field"><span>Your new key (shown once, copy it now)</span><code id="new-key-text"></code></div>
+    <div class="row"><button class="btn btn-glass" id="btn-copy-key" style="margin:0">Copy key</button></div>
+  </div>
+  <button class="btn" id="btn-new-key">Create a Shortcut key</button>
+  <details class="howto">
+    <summary>How to make the Shortcut (5 minutes, once)</summary>
+    <ol>
+      <li>Create a key above and copy it.</li>
+      <li>Open the <b>Shortcuts</b> app, tap <b>+</b>, name it <b>Back up to Lair</b>.</li>
+      <li>Add <b>Text</b> and paste your key into it. Long-press it, <b>Rename</b> to <i>Key</i>.</li>
+      <li>Add <b>Get Contents of URL</b>: <code>https://vault.ibadhasan.com/api/photos/backup/since</code>. Show More, Headers: <code>Authorization</code> = <code>Bearer </code> then the <i>Key</i> variable.</li>
+      <li>Add <b>Get Dates from Input</b> (input: Contents of URL).</li>
+      <li>Add <b>Find Photos</b> with the filter <b>Date Taken is after</b> the <i>Dates</i> variable, sorted by Date Taken.</li>
+      <li>Add <b>Repeat with Each</b> (Photos). Inside it:
+        <ol>
+          <li><b>Format Date</b>: Repeat Item's Date Taken, format <b>ISO 8601</b>, include time.</li>
+          <li><b>Get Contents of URL</b>: <code>https://vault.ibadhasan.com/api/photos/backup/upload?name=</code> then Repeat Item's <i>Name</i>, then <code>&amp;taken=</code> then the Formatted Date. Method <b>POST</b>, header <code>Authorization</code> = <code>Bearer </code> + <i>Key</i>, Request Body <b>File</b> = Repeat Item.</li>
+        </ol>
+      </li>
+      <li>After the repeat, add <b>Get Contents of URL</b>: <code>https://vault.ibadhasan.com/api/photos/backup/finish</code>, method <b>POST</b>, same header.</li>
+      <li>Add <b>Show Notification</b>: "Backed up to The Lair". Then tap the share button, <b>Add to Home Screen</b>.</li>
+    </ol>
+    <p>Each photo goes to Photos › iPhone › its month, at full quality. Ones already there are skipped. Videos over about 95 MB can't go through the Shortcut: use Back up in The Lair for those. Stuck on a step? Ask Claude and it will walk you through it.</p>
+  </details>
+
   <h2 class="group-title">Face ID</h2>
   <p class="note">Sign in with Face ID, Touch ID or Windows Hello instead of your password. Set it up once on each device.</p>
   <section class="group" id="passkey-list"><div class="row"><span class="soft">Loading…</span></div></section>
@@ -64,6 +93,6 @@
   <p class="note">To change your password, update the <b>LAIR_PASSWORD</b> secret in the <b>lair-edge</b> repository on GitHub (Settings › Secrets and variables › Actions), then run <b>Actions › Deploy › Run workflow</b>. It signs out every device.</p>
 </main>
 
-<script type="module" src="/js/admin.js?v=3"></script>
+<script type="module" src="/js/admin.js?v=4"></script>
 </body>
 </html>
