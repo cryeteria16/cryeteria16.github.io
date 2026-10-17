@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="robots" content="noindex, nofollow">
 <title>Settings · The Lair</title>
-<link rel="stylesheet" href="/css/admin.css?v=2">
+<link rel="stylesheet" href="/css/admin.css?v=3">
 </head>
 <body>
 <div class="wallpaper" aria-hidden="true"></div>
@@ -53,12 +53,17 @@
   </section>
   <button class="btn" id="btn-save-profile">Save homepage</button>
 
+  <h2 class="group-title">Face ID</h2>
+  <p class="note">Sign in with Face ID, Touch ID or Windows Hello instead of your password. Set it up once on each device.</p>
+  <section class="group" id="passkey-list"><div class="row"><span class="soft">Loading…</span></div></section>
+  <button class="btn" id="btn-add-passkey" hidden>Set up Face ID on this device</button>
+
   <h2 class="group-title">Security</h2>
   <section class="group" id="session-list"><div class="row"><span class="soft">Loading…</span></div></section>
   <button class="btn btn-glass danger" id="btn-logout-others">Sign out all other devices</button>
   <p class="note">To change your password, update the <b>LAIR_PASSWORD</b> secret in the <b>lair-edge</b> repository on GitHub (Settings › Secrets and variables › Actions), then run <b>Actions › Deploy › Run workflow</b>. It signs out every device.</p>
 </main>
 
-<script src="/js/admin.js?v=2"></script>
+<script type="module" src="/js/admin.js?v=3"></script>
 </body>
 </html>

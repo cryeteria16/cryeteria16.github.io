@@ -1,6 +1,8 @@
 // The Lair talks to two places:
 //   EDGE: the always-on helper (sign-in, watchlist, settings, visitors, PC status). Works when the PC is off.
 //   TUNNEL_URL: the home PC itself (Vault files, movies, movie search). Only when the PC is on.
+import { passkeySupported, registerPasskey, loginWithPasskey } from './passkey.js?v=1';
+
 const EDGE = "https://api.ibadhasan.com";
 const TUNNEL_URL = "https://vault.ibadhasan.com";
 const CHUNK = 8 * 1024 * 1024; // uploads go in 8 MB pieces (Cloudflare limits each request to 100 MB)
@@ -73,7 +75,7 @@ function openSheet(title, html) {
   openOverlay($('sheet'));
   return $('sheet-body');
 }
-function closeSheet() { closeOverlay($('sheet')); }
+function closeSheet() { closeOverlay($('sheet')); setTimeout(() => { $('sheet-cancel').textContent = 'Close'; }, 300); }
 $('sheet-cancel').addEventListener('click', closeSheet);
 $('sheet').addEventListener('click', (e) => { if (e.target.id === 'sheet') closeSheet(); });
 // Buttons in a sheet: [{ label, icon, danger, run }]
@@ -149,6 +151,7 @@ $('signin-form').addEventListener('submit', async (e) => {
     session.set(data.token);
     $('signin-pass').value = '';
     signedIn();
+    offerFaceId();
   } catch (e2) {
     err.textContent = e2.message === 'Failed to fetch' ? 'No internet connection.' : e2.message;
   } finally { btn.disabled = false; btn.textContent = 'Sign in'; }
@@ -164,7 +167,43 @@ function signedOut(message = '') {
   if (booted) { location.reload(); return; }
   $('signin-error').textContent = message;
   document.body.classList.add('signed-out'); document.body.classList.remove('auth-pending');
-  $('signin-user').focus({ preventScroll: true });
+  showFaceIdIfSetUp();
+}
+
+// ---- Face ID ----
+// This device remembers that it has Face ID set up for The Lair, so the sign-in screen can lead with it
+const FACEID_KEY = 'lair.faceid';
+async function showFaceIdIfSetUp() {
+  const on = store.get(FACEID_KEY) && await passkeySupported();
+  $('faceid-box').hidden = !on;
+  $('password-box').hidden = !!on;
+  if (!on) $('signin-user').focus({ preventScroll: true });
+}
+$('btn-show-password').addEventListener('click', () => { $('faceid-box').hidden = true; $('password-box').hidden = false; $('signin-user').focus(); });
+$('btn-faceid').addEventListener('click', async () => {
+  const btn = $('btn-faceid'); const err = $('signin-error');
+  btn.disabled = true; err.textContent = '';
+  try {
+    const data = await loginWithPasskey();
+    session.set(data.token);
+    signedIn();
+  } catch (e) {
+    if (!e.cancelled) err.textContent = e.message;
+    if (e.status === 401 && /isn't set up/.test(e.message)) { store.del(FACEID_KEY); showFaceIdIfSetUp(); }
+  } finally { btn.disabled = false; }
+});
+// After a password sign-in on a phone or computer that can do it, offer Face ID once
+async function offerFaceId() {
+  if (store.get(FACEID_KEY) || store.get('lair.faceidAsked') || !(await passkeySupported())) return;
+  store.set('lair.faceidAsked', true);
+  const body = openSheet('Use Face ID next time?', `<p class="sheet-note">Sign in with a glance instead of typing your password. Your face never leaves this device.</p>
+    <button class="btn btn-primary btn-block" id="faceid-yes">Set up Face ID</button>`);
+  $('sheet-cancel').textContent = 'Not now';
+  body.querySelector('#faceid-yes').addEventListener('click', async (e) => {
+    e.currentTarget.disabled = true;
+    try { await registerPasskey(session.get()); store.set(FACEID_KEY, true); closeSheet(); showToast('Face ID is ready. Use it next time you sign in.', 'success'); }
+    catch (err) { e.currentTarget.disabled = false; if (!err.cancelled) showToast(err.message, 'error'); }
+  });
 }
 $('btn-signout').addEventListener('click', async () => {
   if (!(await showConfirm('Lock The Lair?', 'You will need your password to come back in on this device.', 'Lock'))) return;

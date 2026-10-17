@@ -48,3 +48,6 @@ input[type=color]::-webkit-color-swatch { border: none; border-radius: 50%; }
 .btn:disabled { opacity: .6; }
 .btn-glass { background: var(--card); color: var(--ink); border: 1px solid var(--line); box-shadow: var(--edge); }
 .btn.danger { color: var(--err); }
+.row .remove { min-height: 44px; padding: 0 4px 0 12px; background: none; border: none; color: var(--err); font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.row .meta { display: flex; flex-direction: column; min-width: 0; }
+.row .meta small { margin-top: 2px; }

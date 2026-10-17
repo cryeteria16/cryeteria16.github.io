@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="robots" content="noindex, nofollow">
 <title>The Lair</title>
-<link rel="stylesheet" href="/css/lair.css?v=8">
+<link rel="stylesheet" href="/css/lair.css?v=9">
 </head>
 <body class="auth-pending signed-out">
 
@@ -44,6 +44,7 @@
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
     <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></symbol>
     <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+    <symbol id="i-face" viewBox="0 0 24 24"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9v1.5M15 9v1.5M12 9v4h-1M9.5 16a3.5 3.5 0 0 0 5 0"/></symbol>
     <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></symbol>
   </defs>
 </svg>
@@ -58,15 +59,21 @@
     <div class="signin-mark" aria-hidden="true"><svg class="ic"><use href="#i-lock"/></svg></div>
     <h1>The Lair</h1>
     <p class="signin-sub">Private. Sign in to continue.</p>
-    <label class="field">
-      <span>Username</span>
-      <input type="text" id="signin-user" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" required>
-    </label>
-    <label class="field">
-      <span>Password</span>
-      <input type="password" id="signin-pass" name="password" autocomplete="current-password" required>
-    </label>
-    <button type="submit" class="btn btn-primary btn-block" id="signin-btn">Sign in</button>
+    <div id="faceid-box" hidden>
+      <button type="button" class="btn btn-primary btn-block btn-faceid" id="btn-faceid"><svg class="ic"><use href="#i-face"/></svg>Sign in with Face ID</button>
+      <button type="button" class="link-btn" id="btn-show-password">Use password instead</button>
+    </div>
+    <div id="password-box">
+      <label class="field">
+        <span>Username</span>
+        <input type="text" id="signin-user" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" required>
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input type="password" id="signin-pass" name="password" autocomplete="current-password" required>
+      </label>
+      <button type="submit" class="btn btn-primary btn-block" id="signin-btn">Sign in</button>
+    </div>
     <p id="signin-error" role="alert"></p>
   </form>
 </div>
@@ -278,6 +285,6 @@
   </div>
 </div>
 
-<script type="module" src="/js/lair.js?v=8"></script>
+<script type="module" src="/js/lair.js?v=9"></script>
 </body>
 </html>

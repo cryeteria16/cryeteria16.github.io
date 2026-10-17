@@ -102,6 +102,9 @@ body:not(.signed-out) #signin-screen { display: none; }
 .signin-card h1 { font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
 .signin-sub { color: var(--soft); margin: 4px 0 24px; }
 .signin-card .btn { margin-top: 6px; }
+.btn-faceid { min-height: 52px; font-size: 16px; }
+.btn-faceid .ic { width: 24px; height: 24px; }
+.link-btn { display: block; margin: 14px auto 0; min-height: 44px; padding: 0 12px; color: var(--accent); font-size: 15px; font-weight: 600; }
 #signin-error { color: var(--err); font-size: 14px; min-height: 20px; margin-top: 12px; }
 
 /* Banner and toasts */
@@ -255,6 +258,8 @@ main { max-width: 1080px; margin: 0 auto; padding: 8px 16px calc(var(--safe-b) +
 .overlay.active .sheet { transform: none; }
 .grabber { width: 38px; height: 5px; border-radius: 3px; background: rgba(255, 255, 255, .3); margin: 0 auto 12px; }
 .sheet h2 { font-size: 17px; font-weight: 700; text-align: center; margin-bottom: 14px; overflow-wrap: anywhere; padding: 0 8px; }
+#sheet-body > .btn { margin-bottom: 10px; }
+.sheet-note { color: var(--soft); text-align: center; font-size: 15px; margin: -4px 8px 18px; }
 .sheet-group { background: rgba(255, 255, 255, .07); border-radius: 16px; overflow: hidden; margin-bottom: 12px; }
 .sheet-btn { width: 100%; min-height: 54px; display: flex; align-items: center; gap: 14px; padding: 0 16px; font-size: 16px; font-weight: 500; text-align: left; position: relative; }
 .sheet-btn + .sheet-btn::before { content: ""; position: absolute; top: 0; left: 52px; right: 0; height: 1px; background: rgba(255, 255, 255, .08); }

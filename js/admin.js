@@ -1,4 +1,6 @@
 // Settings for The Lair and the homepage. Everything is stored in the always-on helper.
+import { passkeySupported, registerPasskey } from './passkey.js?v=1';
+
 const EDGE = 'https://api.ibadhasan.com';
 const $ = (id) => document.getElementById(id);
 const token = (() => { try { return localStorage.getItem('lair.session'); } catch { return null; } })();
@@ -37,6 +39,7 @@ async function merge(key, patch, button) {
   $('edit-social-x').value = profile.socials?.x || '';
   $('edit-social-git').value = profile.socials?.git || '';
   loadSessions();
+  loadPasskeys();
 })().catch(() => {});
 
 async function loadSessions() {
@@ -70,4 +73,37 @@ $('btn-logout-others').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
   if (!confirm('Sign out every other phone, tablet and computer?')) return;
   try { await edge('/auth/logout-others', { method: 'POST', body: '{}' }); loadSessions(); btn.textContent = 'Done'; } catch (err) { alert(err.message); }
+});
+
+// ---- Face ID devices ----
+const fmtDate = (ms) => new Date(ms).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+async function loadPasskeys() {
+  const box = $('passkey-list');
+  let passkeys;
+  try { ({ passkeys } = await edge('/auth/passkeys')); } catch { box.innerHTML = '<div class="row"><span class="soft">Could not load.</span></div>'; return; }
+  box.innerHTML = '';
+  if (!passkeys.length) box.innerHTML = '<div class="row"><span class="soft">Not set up on any device yet.</span></div>';
+  passkeys.forEach((p) => {
+    const row = document.createElement('div'); row.className = 'row';
+    const meta = document.createElement('span'); meta.className = 'meta';
+    const name = document.createElement('span'); name.textContent = p.device || 'Device';
+    const when = document.createElement('small'); when.textContent = `Added ${fmtDate(p.created)}${p.lastUsed ? ` · last used ${fmtDate(p.lastUsed)}` : ''}`;
+    meta.append(name, when);
+    const rm = document.createElement('button'); rm.className = 'remove'; rm.textContent = 'Remove';
+    rm.addEventListener('click', async () => {
+      if (!confirm(`Remove Face ID for ${p.device}? That device will need the password next time.`)) return;
+      try { await edge(`/auth/passkeys/${encodeURIComponent(p.id)}`, { method: 'DELETE' }); loadPasskeys(); } catch (e) { alert(e.message); }
+    });
+    row.append(meta, rm); box.appendChild(row);
+  });
+  $('btn-add-passkey').hidden = !(await passkeySupported());
+}
+$('btn-add-passkey').addEventListener('click', async (e) => {
+  const btn = e.currentTarget; btn.disabled = true; const label = btn.textContent; btn.textContent = 'Waiting for Face ID…';
+  try {
+    await registerPasskey(token);
+    try { localStorage.setItem('lair.faceid', 'true'); } catch {}
+    btn.textContent = 'Face ID is ready'; loadPasskeys();
+  } catch (err) { btn.textContent = label; if (!err.cancelled) alert(err.message); }
+  setTimeout(() => { btn.textContent = label; btn.disabled = false; }, 1800);
 });
