@@ -5,223 +5,279 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#060709" id="meta-theme-color">
+<meta name="theme-color" content="#081325">
+<meta name="color-scheme" content="dark">
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="robots" content="noindex, nofollow">
 <title>The Lair</title>
-<link id="dynamic-fonts" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="/css/lair.css?v=7">
+<link rel="stylesheet" href="/css/lair.css?v=8">
 </head>
-<body data-theme="dark" class="auth-pending signed-out">
+<body class="auth-pending signed-out">
 
-  <div class="os-wallpaper" id="diurnal-wallpaper"></div>
-  <div id="broadcast-banner"></div>
-  <div id="toast-container"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11 12 4l9 7v8a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3z"/></symbol>
+    <symbol id="i-radar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 12 18 6"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+    <symbol id="i-pc" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18M3 12h18"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h12M8 12h12M8 18h12M4 6h0M4 12h0M4 18h0"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M6 10l6-6 6 6M4 20h16"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></symbol>
+    <symbol id="i-newfolder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 10v6M9 13h6"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></symbol>
+    <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/></symbol>
+    <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></symbol>
+    <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></symbol>
+  </defs>
+</svg>
 
-  <!-- Sign in -->
-  <div id="signin-screen">
-    <form class="card signin-card" id="signin-form" autocomplete="on">
-      <svg width="34" height="34" viewBox="0 0 26 26" aria-hidden="true"><circle cx="10" cy="13" r="8" fill="var(--con)"/><circle cx="16" cy="13" r="8" fill="#7A9BC2" style="mix-blend-mode:screen"/></svg>
-      <h1>The Lair</h1>
-      <p class="signin-sub">Private. Sign in to continue.</p>
-      <label class="field-label" for="signin-user">Username</label>
+<div class="wallpaper" aria-hidden="true"></div>
+<div id="broadcast-banner" role="status"></div>
+<div id="toast-container" aria-live="polite"></div>
+
+<!-- Sign in -->
+<div id="signin-screen">
+  <form class="glass signin-card" id="signin-form" autocomplete="on">
+    <div class="signin-mark" aria-hidden="true"><svg class="ic"><use href="#i-lock"/></svg></div>
+    <h1>The Lair</h1>
+    <p class="signin-sub">Private. Sign in to continue.</p>
+    <label class="field">
+      <span>Username</span>
       <input type="text" id="signin-user" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" required>
-      <label class="field-label" for="signin-pass">Password</label>
+    </label>
+    <label class="field">
+      <span>Password</span>
       <input type="password" id="signin-pass" name="password" autocomplete="current-password" required>
-      <button type="submit" class="btn-primary" id="signin-btn">Sign in</button>
-      <p id="signin-error" role="alert"></p>
-      <a href="/" class="signin-back">← ibadhasan.com</a>
+    </label>
+    <button type="submit" class="btn btn-primary btn-block" id="signin-btn">Sign in</button>
+    <p id="signin-error" role="alert"></p>
+  </form>
+</div>
+
+<!-- Top bar -->
+<header class="topbar app-only">
+  <button class="pill glass-solid" id="pc-pill" aria-label="PC status">
+    <span class="dot" id="pc-dot"></span><span id="pc-pill-text">Checking PC…</span>
+  </button>
+  <button class="round glass-solid" id="btn-signout" aria-label="Lock The Lair"><svg class="ic"><use href="#i-lock"/></svg></button>
+</header>
+
+<main class="app-only" id="main">
+
+  <!-- ================= HOME ================= -->
+  <section id="view-home" class="view active" aria-label="Home">
+    <div class="hero">
+      <div class="clock" id="clock-dxb">--:--</div>
+      <div class="hero-sub"><span id="today-date"></span> · Dubai <span class="hero-alt">· Pakistan <span id="clock-pkt">--:--</span></span></div>
+    </div>
+
+    <div id="connect-pc-card" class="card notice" hidden>
+      <div class="notice-text">
+        <strong>Connect your PC</strong>
+        <span>Links your home PC to The Lair. The PC needs to be on.</span>
+      </div>
+      <button class="btn btn-primary" id="btn-connect-pc">Connect</button>
+    </div>
+    <div id="pc-offline-note" class="card notice muted" hidden>
+      <div class="tile-icon violet"><svg class="ic"><use href="#i-moon"/></svg></div>
+      <div class="notice-text"><strong>Your PC is asleep</strong><span id="pc-offline-text">Files and movies come back when it's on. Everything else works.</span></div>
+    </div>
+
+    <div class="tiles">
+      <button class="card tile" id="tile-vault" data-go="vault">
+        <span class="tile-icon blue"><svg class="ic"><use href="#i-folder"/></svg></span>
+        <span class="tile-body"><span class="tile-big" id="tile-vault-big">--</span><span class="tile-label" id="tile-vault-label">Vault</span></span>
+        <span class="tile-bar"><span class="tile-bar-fill" id="tile-vault-fill"></span></span>
+      </button>
+      <button class="card tile" id="tile-pc">
+        <span class="tile-icon teal"><svg class="ic"><use href="#i-pc"/></svg></span>
+        <span class="tile-body"><span class="tile-big" id="tile-pc-big">--</span><span class="tile-label" id="tile-pc-label">PC</span></span>
+      </button>
+
+      <div class="card wide upnext" id="tile-upnext">
+        <div class="poster-sm" id="upnext-poster" aria-hidden="true"></div>
+        <button class="upnext-text" data-go="theater">
+          <span class="tile-label">Up next</span>
+          <span class="upnext-title" id="upnext-title">Your watchlist</span>
+          <span class="tile-label soft" id="upnext-sub">Loading…</span>
+        </button>
+        <button class="play-btn" id="upnext-play" aria-label="Play"><svg class="ic fill" viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg></button>
+      </div>
+
+      <button class="card wide row-tile" data-go="radar" id="tile-radar">
+        <span class="tile-icon violet"><svg class="ic"><use href="#i-radar"/></svg></span>
+        <span class="row-text"><span class="row-title" id="radar-today">Visitors</span><span class="tile-label soft" id="radar-cities">Loading…</span></span>
+        <svg class="ic chev"><use href="#i-chev"/></svg>
+      </button>
+    </div>
+
+    <div class="shortcuts">
+      <a class="chip" href="https://github.com/cryeteria16" target="_blank" rel="noopener">GitHub</a>
+      <a class="chip" href="https://dash.cloudflare.com/" target="_blank" rel="noopener">Cloudflare</a>
+      <a class="chip" href="/" target="_blank" rel="noopener">ibadhasan.com</a>
+    </div>
+  </section>
+
+  <!-- ================= VAULT ================= -->
+  <section id="view-vault" class="view" aria-label="Vault">
+    <div class="page-head">
+      <div class="page-title-wrap">
+        <button class="round glass-solid" id="drive-back" aria-label="Back" hidden><svg class="ic"><use href="#i-back"/></svg></button>
+        <h1 class="page-title" id="drive-title">Vault</h1>
+      </div>
+      <div class="head-actions">
+        <button class="round glass-solid" id="drive-view-toggle" aria-label="Show as grid"><svg class="ic"><use href="#i-grid"/></svg></button>
+        <button class="round accent" id="drive-add" aria-label="Add"><svg class="ic"><use href="#i-plus"/></svg></button>
+      </div>
+    </div>
+    <p class="crumbs" id="drive-crumbs"></p>
+
+    <label class="search card">
+      <svg class="ic"><use href="#i-search"/></svg>
+      <span class="sr">Search this folder</span>
+      <input type="search" id="drive-search" placeholder="Search this folder" autocomplete="off">
+    </label>
+
+    <div class="toolbar">
+      <div class="usage">
+        <div class="bar"><div class="bar-fill" id="drive-usage-fill"></div></div>
+        <span class="tile-label soft" id="drive-usage-text">--</span>
+      </div>
+      <label class="sort">
+        <span class="sr">Sort</span>
+        <select id="drive-sort">
+          <option value="name">Name</option>
+          <option value="new">Newest</option>
+          <option value="size">Largest</option>
+        </select>
+      </label>
+    </div>
+
+    <input type="file" id="drive-file-input" multiple hidden>
+    <input type="file" id="drive-camera-input" accept="image/*,video/*" capture="environment" hidden>
+
+    <div id="drive-list" class="drive list"></div>
+    <div id="drive-drop-hint" class="drop-hint">Drop files to upload here</div>
+  </section>
+
+  <!-- ================= THEATER ================= -->
+  <section id="view-theater" class="view" aria-label="Theater">
+    <div class="page-head"><h1 class="page-title">Theater</h1></div>
+    <div class="card player-card">
+      <div class="player" id="theater-frame-box">
+        <div id="theater-player-slot" class="player-slot"><span class="soft">Pick something from your watchlist or the Vault</span></div>
+        <div id="yt-container" class="player-slot" hidden><div id="yt-player-slot"></div></div>
+      </div>
+      <form class="inline-form" id="cowatch-form">
+        <label class="sr" for="cowatch-url-input">Video link</label>
+        <input type="url" id="cowatch-url-input" placeholder="Paste a video link (.mp4 or YouTube)">
+        <button class="btn btn-primary" type="submit">Play</button>
+      </form>
+    </div>
+
+    <h2 class="section-title">Watchlist</h2>
+    <div class="posters" id="shared-watchlist"><p class="soft">Loading…</p></div>
+
+    <h2 class="section-title">Add to watchlist</h2>
+    <form class="inline-form" id="tmdb-form">
+      <label class="sr" for="tmdb-search-input">Search movies and shows</label>
+      <input type="search" id="tmdb-search-input" placeholder="Search movies and shows">
+      <button class="btn btn-glass" type="submit">Search</button>
     </form>
+    <div class="posters" id="tmdb-results"></div>
+  </section>
+
+  <!-- ================= RADAR ================= -->
+  <section id="view-radar" class="view" aria-label="Radar">
+    <div class="page-head"><h1 class="page-title">Radar</h1></div>
+    <p class="soft page-sub">Who visited ibadhasan.com. City and country only.</p>
+    <div class="card group" id="radar-feed"><p class="soft pad">Loading…</p></div>
+  </section>
+</main>
+
+<!-- Tab bar -->
+<nav class="tabbar glass-solid app-only" aria-label="Main">
+  <button class="tab active" data-target="home" id="tab-home"><svg class="ic"><use href="#i-home"/></svg><span>Home</span></button>
+  <button class="tab" data-target="vault" id="tab-vault"><svg class="ic"><use href="#i-folder"/></svg><span>Vault</span></button>
+  <button class="tab" data-target="theater" id="tab-theater"><svg class="ic"><use href="#i-play"/></svg><span>Theater</span></button>
+  <button class="tab" data-target="radar" id="tab-radar"><svg class="ic"><use href="#i-radar"/></svg><span>Radar</span></button>
+  <a class="tab" href="/admin" id="tab-settings"><svg class="ic"><use href="#i-settings"/></svg><span>Settings</span></a>
+</nav>
+
+<!-- Upload progress -->
+<div id="upload-queue" class="upload-queue glass-solid app-only" hidden></div>
+
+<!-- Bottom sheet (actions, PC details, add menu) -->
+<div id="sheet" class="overlay" aria-hidden="true">
+  <div class="sheet glass-solid" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+    <div class="grabber" aria-hidden="true"></div>
+    <h2 id="sheet-title"></h2>
+    <div id="sheet-body"></div>
+    <button class="btn btn-glass btn-block" id="sheet-cancel">Close</button>
   </div>
+</div>
 
-  <nav class="os-menubar app-only" id="top-nav">
-    <span class="menubar-title"><span class="sys-dot" id="health-dot-top" style="color:var(--ink-soft);"></span>The Lair</span>
-    <div style="display:flex; gap:12px; align-items:center;">
-      <button id="btn-theme-toggle" class="btn-secondary haptic-btn" style="padding:6px 12px; font-size:11px;"><span id="theme-icon">☀️</span><span class="nav-btn-text"> Light</span></button>
-      <button id="btn-signout" class="haptic-btn" style="color:var(--err); font-size:12px; font-weight:600;">Lock</button>
-    </div>
-  </nav>
-
-  <div class="os-dock-wrapper app-only">
-    <div class="os-dock">
-      <div class="dock-app app-link active haptic-btn" data-target="dashboard" id="dock-dashboard-link">Dashboard</div>
-      <div class="dock-app app-link haptic-btn" data-target="drop" id="dock-drop-link">Vault</div>
-      <div class="dock-app app-link haptic-btn" data-target="theater" id="dock-theater-link">Theater</div>
-      <a class="dock-app haptic-btn" href="/admin" id="dock-admin-link">Settings</a>
-    </div>
-  </div>
-
-  <main id="swipe-zone" class="app-only">
-    <!-- ================= DASHBOARD ================= -->
-    <section id="view-dashboard" class="view-container active">
-      <p id="pc-offline-note" class="card offline-note" hidden></p>
-
-      <div id="connect-pc-card" class="card connect-card" hidden>
-        <div>
-          <h2 class="mini-label" style="margin-bottom:6px;">One last step</h2>
-          <p style="font-size:14px; line-height:1.5;">Connect your PC to The Lair's always-on helper. Your PC needs to be on. This also copies your old notes, watchlist and homepage across.</p>
-        </div>
-        <button class="btn-primary haptic-btn" id="btn-connect-pc">Connect PC</button>
-      </div>
-      <div class="card stagger-1 clocks-card">
-        <div><h3 class="mini-label">Dubai</h3><div id="clock-dxb" class="clock">--:--</div></div>
-        <div class="clocks-divider"></div>
-        <div><h3 class="mini-label">Pakistan</h3><div id="clock-pkt" class="clock">--:--</div></div>
-      </div>
-
-      <div class="card stagger-2" style="padding:22px; margin-bottom:20px;">
-        <h2 class="mini-label" style="margin-bottom:16px;">Command Bay</h2>
-        <div class="carousel-snap" id="command-bay-grid">
-              <a href="https://github.com/Cryeteria" target="_blank" rel="noopener" class="btn-secondary haptic-btn" style="display:flex; align-items:center; gap:8px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg> GitHub
-              </a>
-              <a href="https://dash.cloudflare.com/" target="_blank" rel="noopener" class="btn-secondary haptic-btn" style="display:flex; align-items:center; gap:8px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg> Cloudflare
-              </a>
-              <a href="https://console.firebase.google.com/" target="_blank" rel="noopener" class="btn-secondary haptic-btn" style="display:flex; align-items:center; gap:8px;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> Firebase
-              </a>
-          </div>
-      </div>
-
-      <div class="dash-grid">
-        <div class="card stagger-3 status-card">
-          <div class="status-head">
-            <span class="mini-label status-link"><span id="health-dot" class="sys-dot" style="color:var(--ink-soft);"></span><span id="health-text">Checking PC…</span></span>
-            <span class="mini-label">CPU <span id="sys-cpu">--</span>% · RAM <span id="sys-ram">--</span>%</span>
-          </div>
-          <div class="usage-bar"><div class="usage-fill" id="status-usage-fill"></div></div>
-          <p class="mini-label" id="status-usage-text" style="margin:8px 0 14px;">Storage: --</p>
-          <div id="status-log" class="status-log">Waiting for the PC…</div>
-          <p class="mini-label" id="status-version" style="margin-top:10px;"></p>
-        </div>
-
-        <div class="card stagger-3" id="fridge-card" style="padding:22px; display:flex; flex-direction:column;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
-            <h2 class="mini-label">The Fridge Door</h2>
-            <span id="fridge-status" class="mini-label">Synced</span>
-          </div>
-          <textarea id="fridge-door-text" placeholder="Notes to self…" spellcheck="false" style="flex:1; min-height:140px; resize:none; font-size:14px; line-height:1.6; background:transparent; padding:16px !important; border:none;"></textarea>
-        </div>
-
-        <div class="card stagger-4" id="fridge-magnet-card" style="padding:22px; display:flex; flex-direction:column;">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-            <h2 class="mini-label">Fridge Magnet</h2>
-            <div class="magnet-tools">
-              <input type="color" id="magnet-color" value="#70947A" title="Pen colour">
-              <span class="tool-sep"></span>
-              <button id="btn-clear-canvas" class="haptic-btn">Clear</button>
-              <span class="tool-sep"></span>
-              <button id="btn-save-magnet" class="haptic-btn" style="color:var(--con); font-weight:600;">Save to Photos</button>
-            </div>
-          </div>
-          <div class="magnet-canvas-wrap"><canvas id="magnet-canvas"></canvas></div>
-        </div>
-
-        <div class="card stagger-4" style="padding:22px; display:flex; flex-direction:column;">
-          <h2 class="mini-label" style="margin-bottom:14px;">Live Radar</h2>
-          <div id="radar-feed" style="flex:1; overflow-y:auto; max-height:140px;"><p class="muted-note">Waiting for visitors…</p></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= VAULT (DRIVE) ================= -->
-    <section id="view-drop" class="view-container">
-      <div class="card stagger-1 drive-card">
-        <div class="drive-top">
-          <nav class="drive-crumbs" id="drive-crumbs" aria-label="Folder"></nav>
-          <div class="drive-actions">
-            <select id="drive-sort" class="drive-sort" aria-label="Sort">
-              <option value="name">Name</option>
-              <option value="new">Newest</option>
-              <option value="size">Largest</option>
-            </select>
-            <button class="btn-secondary haptic-btn" id="btn-new-folder">New folder</button>
-            <button class="btn-primary haptic-btn" id="btn-upload">Upload</button>
-          </div>
-        </div>
-        <div class="usage-row">
-          <div class="usage-bar"><div class="usage-fill" id="drive-usage-fill"></div></div>
-          <span class="mini-label" id="drive-usage-text">--</span>
-        </div>
-        <input type="file" id="drive-file-input" multiple style="display:none;">
-        <input type="file" id="drive-camera-input" accept="image/*,video/*" capture="environment" style="display:none;">
-
-        <div id="upload-queue" class="upload-queue" hidden></div>
-        <div id="drive-grid" class="drive-grid"></div>
-        <div id="drive-drop-hint" class="drop-hint">Drop files here to upload</div>
-      </div>
-    </section>
-
-    <!-- ================= THEATER ================= -->
-    <section id="view-theater" class="view-container">
-      <section class="card stagger-1" style="padding:22px; margin-bottom:24px;">
-        <div class="theater-container" id="theater-frame-box" style="margin-bottom:18px;">
-          <div id="theater-player-slot" class="theater-slot"><span class="muted-note">Pick something from the Vault or your watchlist</span></div>
-          <div id="yt-container" class="theater-slot" style="display:none;"><div id="yt-player-slot"></div></div>
-        </div>
-        <div style="display:flex; gap:12px;">
-          <input type="text" id="cowatch-url-input" placeholder="Video link (.mp4 or YouTube)…">
-          <button class="btn-primary haptic-btn" id="btn-load-cowatch">Play</button>
-        </div>
-      </section>
-
-      <section class="card stagger-2" style="padding:22px;">
-        <h2 style="font-family:var(--font-display); font-size:19px; margin-bottom:14px;">Watchlist</h2>
-        <div style="display:flex; gap:10px; margin-bottom:18px;">
-          <input type="text" id="tmdb-search-input" placeholder="Search movies and shows to add…">
-          <button class="btn-secondary haptic-btn" id="btn-tmdb-search" style="width:auto;">Search</button>
-        </div>
-        <div class="carousel-snap" id="tmdb-results" style="margin-bottom:18px;"></div>
-        <div class="carousel-snap" id="shared-watchlist"><p class="muted-note">Loading…</p></div>
-      </section>
-    </section>
-  </main>
-
-  <div class="fab-capture haptic-btn app-only" id="btn-quick-capture" style="display:none;" title="Camera to Photos">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-  </div>
-
-  <!-- Photo viewer -->
-  <div id="photo-lightbox" class="modal-overlay">
-    <div class="lightbox-card">
-      <div class="lightbox-stage">
-        <button class="lb-nav haptic-btn" id="lb-prev" aria-label="Previous">‹</button>
-        <img id="lightbox-img" alt="">
-        <button class="lb-nav haptic-btn" id="lb-next" aria-label="Next">›</button>
-      </div>
-      <p id="lightbox-name" class="mini-label" style="margin:12px 0;"></p>
-      <div class="lightbox-actions">
-        <button class="btn-secondary haptic-btn" id="lb-original">Original</button>
-        <button class="btn-secondary haptic-btn" id="lb-exhibit" hidden>☆ Exhibition</button>
-        <button class="btn-secondary haptic-btn danger-text" id="lb-delete">Delete</button>
-        <button class="btn-primary haptic-btn" id="lb-close">Close</button>
-      </div>
+<!-- Confirm -->
+<div id="confirm-modal" class="overlay" aria-hidden="true">
+  <div class="dialog glass-solid" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title">
+    <h2 id="confirm-title">Are you sure?</h2>
+    <p id="confirm-msg"></p>
+    <div class="dialog-actions">
+      <button id="btn-confirm-cancel" class="btn btn-glass">Cancel</button>
+      <button id="btn-confirm-ok" class="btn btn-danger">Confirm</button>
     </div>
   </div>
+</div>
 
-  <!-- Item actions -->
-  <div id="action-sheet" class="modal-overlay">
-    <div class="card sheet-card">
-      <p class="mini-label" id="sheet-title" style="margin-bottom:14px; word-break:break-all;"></p>
-      <div id="sheet-buttons" class="sheet-buttons"></div>
-      <button class="btn-secondary haptic-btn" id="sheet-cancel" style="width:100%; margin-top:10px;">Cancel</button>
+<!-- Text prompt (new folder, rename, link a video) -->
+<div id="prompt-modal" class="overlay" aria-hidden="true">
+  <form class="dialog glass-solid" id="prompt-form" role="dialog" aria-modal="true" aria-labelledby="prompt-title">
+    <h2 id="prompt-title"></h2>
+    <label class="sr" for="prompt-input">Value</label>
+    <input type="text" id="prompt-input" autocomplete="off">
+    <div class="dialog-actions">
+      <button type="button" id="btn-prompt-cancel" class="btn btn-glass">Cancel</button>
+      <button type="submit" id="btn-prompt-ok" class="btn btn-primary">OK</button>
     </div>
-  </div>
+  </form>
+</div>
 
-  <div id="confirm-modal" class="modal-overlay">
-    <div class="card" style="max-width:360px; text-align:center; padding:26px;">
-      <h3 id="confirm-title" style="font-family:var(--font-display); font-size:18px; margin-bottom:8px;">Are you sure?</h3>
-      <p id="confirm-msg" style="font-size:13px; color:var(--ink-soft); margin-bottom:20px;"></p>
-      <div style="display:flex; gap:10px;">
-        <button id="btn-confirm-cancel" class="btn-secondary haptic-btn" style="flex:1;">Cancel</button>
-        <button id="btn-confirm-ok" class="btn-primary haptic-btn" style="flex:1; background:var(--err); color:#fff;">Confirm</button>
-      </div>
-    </div>
+<!-- Photo viewer -->
+<div id="photo-lightbox" class="overlay lightbox" aria-hidden="true">
+  <div class="lb-top">
+    <button class="round glass-solid" id="lb-close" aria-label="Close"><svg class="ic"><use href="#i-x"/></svg></button>
+    <span id="lightbox-name" class="lb-name"></span>
+    <span class="round-spacer"></span>
   </div>
+  <div class="lb-stage">
+    <button class="round glass-solid lb-nav" id="lb-prev" aria-label="Previous"><svg class="ic"><use href="#i-back"/></svg></button>
+    <img id="lightbox-img" alt="">
+    <button class="round glass-solid lb-nav" id="lb-next" aria-label="Next"><svg class="ic"><use href="#i-chev"/></svg></button>
+  </div>
+  <div class="lb-actions glass-solid">
+    <button class="lb-act" id="lb-original"><svg class="ic"><use href="#i-image"/></svg><span>Original</span></button>
+    <button class="lb-act" id="lb-exhibit" hidden><svg class="ic"><use href="#i-star"/></svg><span>Homepage</span></button>
+    <button class="lb-act danger" id="lb-delete"><svg class="ic"><use href="#i-x"/></svg><span>Delete</span></button>
+  </div>
+</div>
 
-  <script type="module" src="/js/lair.js?v=7"></script>
+<script type="module" src="/js/lair.js?v=8"></script>
 </body>
 </html>

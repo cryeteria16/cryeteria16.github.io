@@ -10,13 +10,14 @@ Personal site of Ibad Hasan. The owner is not a developer: keep explanations pla
 
 ## How it fits together
 - Website (this repo): static pages. `/` homepage, `/lair` The Lair (his private hub), `admin.html` settings.
-- `lair-edge` (private repo `cryeteria16/lair-edge`): Cloudflare Worker + D1 at `api.ibadhasan.com`. Always on. Sign-in, Fridge Door, watchlist, settings, visitor radar, homepage photo previews, PC status. Pushing to its `main` deploys it by GitHub Actions (tests first). Secrets live in that repo's Actions secrets, never in chat.
-- `lair-server` (private repo `cryeteria16/admin-dashboard`, folder `lair-server/`): Node server on his home PC at `vault.ibadhasan.com` (Cloudflare tunnel, port 3005). Vault drive (100 GB), movies, TMDB search, Fridge Magnet and the Fridge Google Sheet log. Pushing `lair-server/` to that repo's `main` deploys it: the PC updates itself within ~2 minutes. Test first.
-- Firebase is retired. `serviceAccountKey.json` on the PC is only for the Fridge Google Sheet.
+- `lair-edge` (private repo `cryeteria16/lair-edge`): Cloudflare Worker + D1 at `api.ibadhasan.com`. Always on. Sign-in, watchlist, settings, visitor radar, homepage photo previews, PC status. Pushing to its `main` deploys it by GitHub Actions (tests first). Secrets live in that repo's Actions secrets, never in chat.
+- `lair-server` (private repo `cryeteria16/admin-dashboard`, folder `lair-server/`): Node server on his home PC at `vault.ibadhasan.com` (Cloudflare tunnel, port 3005). Vault drive (100 GB), movies, TMDB search, exhibition previews. Pushing `lair-server/` to that repo's `main` deploys it: the PC updates itself within ~2 minutes. Test first.
+- Firebase is retired and nothing uses `serviceAccountKey.json` any more. Fridge Door and Fridge Magnet were removed on purpose.
+- Look: "Night Glass" (dark, Apple-style glass, a hint of Frutiger). Real blur only on the tab bar, top buttons, sheets and dialogs; cards fake it.
 
 ## What works with the PC off
-Works: homepage, sign-in, Fridge Door notes, watchlist, settings, visitor radar, PC status, exhibition photo previews.
-Needs the PC: Vault files, movies, TMDB search, Fridge Magnet save and Sheet log.
+Works: homepage, sign-in, watchlist, settings, visitor radar, PC status, exhibition photo previews.
+Needs the PC: Vault files, movies, TMDB search, adding photos to the homepage.
 
 ## Sign-in
 Owner only, password only. The password is the `LAIR_PASSWORD` secret in `lair-edge`; changing it means updating that secret and re-running the deploy. Sessions last 60 days, can be signed out from settings.

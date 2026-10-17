@@ -3,8 +3,8 @@
   "short_name": "Lair",
   "start_url": "/lair",
   "display": "standalone",
-  "background_color": "#060709",
-  "theme_color": "#060709",
+  "background_color": "#081325",
+  "theme_color": "#081325",
   "icons": [
     {
       "src": "/icons/icon-192.png",
