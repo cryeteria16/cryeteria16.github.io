@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="robots" content="noindex, nofollow">
 <title>The Lair</title>
-<link rel="stylesheet" href="/css/lair.css?v=10">
+<link rel="stylesheet" href="/css/lair.css?v=11">
 </head>
 <body class="auth-pending signed-out">
 
@@ -133,11 +133,22 @@
         <button class="play-btn" id="upnext-play" aria-label="Play"><svg class="ic fill" viewBox="0 0 24 24"><path d="M7 4v16l13-8z"/></svg></button>
       </div>
 
+      <button class="card wide row-tile" data-go="documents" id="tile-docs">
+        <span class="tile-icon amber"><svg class="ic"><use href="#i-doc"/></svg></span>
+        <span class="row-text"><span class="row-title">Documents</span><span class="tile-label soft" id="docs-sub">Scan, search and keep track of dates</span></span>
+        <svg class="ic chev"><use href="#i-chev"/></svg>
+      </button>
+
       <button class="card wide row-tile" data-go="radar" id="tile-radar">
         <span class="tile-icon violet"><svg class="ic"><use href="#i-radar"/></svg></span>
         <span class="row-text"><span class="row-title" id="radar-today">Visitors</span><span class="tile-label soft" id="radar-cities">Loading…</span></span>
         <svg class="ic chev"><use href="#i-chev"/></svg>
       </button>
+    </div>
+
+    <div class="card dates-card" id="home-dates" hidden>
+      <div class="memories-head"><span class="tile-label">Important dates</span><button class="tile-label link" data-go="documents">See all</button></div>
+      <div id="home-dates-list"></div>
     </div>
 
     <div class="card memories" id="home-memories" hidden>
@@ -252,6 +263,28 @@
     <div class="posters" id="tmdb-results"></div>
   </section>
 
+  <!-- ================= DOCUMENTS ================= -->
+  <section id="view-documents" class="view" aria-label="Documents">
+    <div class="page-head">
+      <div class="page-title-wrap"><button class="round glass-solid" data-go="home" aria-label="Back to Home"><svg class="ic"><use href="#i-back"/></svg></button><h1 class="page-title">Documents</h1></div>
+      <div class="head-actions"><button class="round accent" id="docs-scan" aria-label="Scan a document"><svg class="ic"><use href="#i-camera"/></svg></button></div>
+    </div>
+    <form class="search card" id="docs-search-form" role="search">
+      <svg class="ic"><use href="#i-search"/></svg>
+      <input type="search" id="docs-search" placeholder="Search inside your documents" autocomplete="off" enterkeyhint="search" aria-label="Search documents">
+    </form>
+
+    <div id="docs-dates-block">
+      <div class="toolbar"><h2 class="section-title tight">Important dates</h2><button class="pill-btn glass-solid" id="dates-add">Add</button></div>
+      <div class="card group" id="dates-list"></div>
+    </div>
+
+    <div class="toolbar"><h2 class="section-title tight" id="docs-list-title">Documents</h2><span class="tile-label soft" id="docs-status"></span></div>
+    <div class="drive list" id="docs-list"><p class="empty">Loading…</p></div>
+    <input type="file" id="scan-camera" accept="image/*" capture="environment" hidden>
+    <input type="file" id="scan-library" accept="image/*" multiple hidden>
+  </section>
+
   <!-- ================= RADAR ================= -->
   <section id="view-radar" class="view" aria-label="Radar">
     <div class="page-head"><div class="page-title-wrap"><button class="round glass-solid" data-go="home" aria-label="Back to Home"><svg class="ic"><use href="#i-back"/></svg></button><h1 class="page-title">Radar</h1></div></div>
@@ -338,6 +371,6 @@
   </div>
 </div>
 
-<script type="module" src="/js/lair.js?v=10"></script>
+<script type="module" src="/js/lair.js?v=11"></script>
 </body>
 </html>

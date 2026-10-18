@@ -120,7 +120,7 @@ function tickClock() {
 tickClock();
 
 // ================= navigation =================
-const VIEWS = ['home', 'photos', 'vault', 'theater', 'radar'];
+const VIEWS = ['home', 'photos', 'vault', 'theater', 'radar', 'documents'];
 const onOpen = {}; // view -> run once when first shown
 let current = 'home';
 function openView(target) {
@@ -131,6 +131,7 @@ function openView(target) {
   if (onOpen[target]) { const fn = onOpen[target]; delete onOpen[target]; fn(); }
   if (target === 'home') pollStatus();
   if (target === 'radar') loadRadar();
+  if (target === 'documents' && docsReady) { renderDates(); loadDocs(); }
   history.replaceState(null, '', target === 'home' ? location.pathname : `#${target}`);
   window.scrollTo(0, 0);
 }
@@ -219,6 +220,8 @@ function boot() {
   onOpen.vault = initDrive;
   onOpen.theater = initTheater;
   onOpen.photos = initPhotos;
+  onOpen.documents = initDocuments;
+  loadDates();
   bindLightbox();
   loadMemories();
   const params = new URLSearchParams(location.search);
@@ -905,6 +908,189 @@ function backupFinished() {
   for (let i = uploads.length - 1; i >= 0; i--) if (uploads[i].dir === BACKUP && uploads[i].state !== 'error') uploads.splice(i, 1);
   backupRun = null;
   if (current === 'photos' && phSeg === 'all') loadPhotos(false);
+}
+
+// ================= DOCUMENTS =================
+// Scans become PDFs on your PC, search reads the text inside them, and the important dates live in the helper (so they show even when the PC is off).
+const DOC_PRESETS = ['Emirates ID', 'Passport', 'Residence visa', 'Driving licence', 'Car registration', 'Car insurance', 'Health insurance', 'Tenancy (Ejari)'];
+const ymdMs = (s) => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+const daysUntil = (ymd) => Math.round((ymdMs(ymd) - ymdMs(dayKey(Date.now()))) / 86400000);
+const longDate = (ymd) => new Date(ymdMs(ymd)).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+function dueText(n) {
+  const plural = (v, w) => `${v} ${w}${v === 1 ? '' : 's'}`;
+  if (n < 0) return `${plural(-n, 'day')} ago`;
+  if (n === 0) return 'Today';
+  if (n === 1) return 'Tomorrow';
+  if (n <= 60) return `in ${n} days`;
+  const months = Math.round(n / 30.4);
+  if (months < 24) return `in ${plural(months, 'month')}`;
+  return `in ${Math.round(n / 365.25 * 10) / 10} years`;
+}
+const dueTone = (n) => (n <= 30 ? 'bad' : n <= 90 ? 'warn' : 'ok');
+
+let dateItems = null; // null until loaded from the helper
+async function loadDates() {
+  try { dateItems = ((await edge('/data/docdates')).value?.items || []).filter(x => x && x.date && x.label); }
+  catch { if (dateItems === null) dateItems = []; }
+  renderHomeDates(); renderDates();
+}
+async function saveDates() { await edgeJSON('PUT', '/data/docdates', { value: { items: dateItems } }); renderHomeDates(); renderDates(); }
+const sortedDates = () => [...(dateItems || [])].sort((a, b) => a.date.localeCompare(b.date));
+const dateRow = (it, tag = 'button') => { const n = daysUntil(it.date); return `<${tag} class="r-row date-row" data-id="${esc(it.id)}"><span class="r-flag amber">${icon('doc')}</span><span class="r-text"><span class="r-place">${esc(it.label)}</span><span class="r-when">${n < 0 ? 'Expired ' : 'Expires '}${esc(longDate(it.date))}</span></span><span class="due ${dueTone(n)}">${esc(dueText(n))}</span></${tag}>`; };
+function renderHomeDates() {
+  const soon = sortedDates().filter(x => daysUntil(x.date) <= 180);
+  $('home-dates').hidden = !soon.length;
+  if (!soon.length) return;
+  $('home-dates-list').innerHTML = soon.slice(0, 4).map(x => dateRow(x)).join('') + (soon.length > 4 ? `<p class="soft more-note">and ${soon.length - 4} more</p>` : '');
+  $('home-dates-list').querySelectorAll('.date-row').forEach(b => b.addEventListener('click', () => openView('documents')));
+}
+function renderDates() {
+  const box = $('dates-list'); if (!box) return;
+  const items = sortedDates();
+  if (!items.length) { box.innerHTML = '<p class="soft pad">Add your Emirates ID, passport, visa and car dates. They show on Home when they get close.</p>'; return; }
+  box.innerHTML = items.map(x => dateRow(x)).join('');
+  box.querySelectorAll('.date-row').forEach(b => b.addEventListener('click', () => dateSheet(dateItems.find(x => x.id === b.dataset.id))));
+}
+function dateSheet(existing, preset = {}) {
+  const it = existing || {};
+  const body = openSheet(existing ? 'Edit date' : 'Add a date', `
+    <label class="field"><span>What</span><input id="dt-label" type="text" maxlength="60" placeholder="Emirates ID" value="${esc(it.label || preset.label || '')}"></label>
+    <div class="chips" id="dt-presets">${DOC_PRESETS.map(p => `<button type="button" class="chip" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>
+    <label class="field"><span>Expires on</span><input id="dt-date" type="date" value="${esc(it.date || preset.date || '')}"></label>
+    <button class="btn btn-primary btn-block" id="dt-save">Save</button>
+    ${existing ? '<button class="btn btn-glass btn-block danger-text" id="dt-del">Remove</button>' : ''}`);
+  body.querySelectorAll('#dt-presets .chip').forEach(c => c.addEventListener('click', () => { $('dt-label').value = c.dataset.p; }));
+  $('dt-save').addEventListener('click', async () => {
+    const label = $('dt-label').value.trim(); const date = $('dt-date').value;
+    if (!label) return showToast('Add a name, like Passport.', 'error');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || +date.slice(0, 4) < 2000 || +date.slice(0, 4) > 2100) return showToast('Pick the expiry date.', 'error');
+    const before = dateItems;
+    dateItems = existing ? dateItems.map(x => x.id === existing.id ? { ...x, label, date } : x) : [...(dateItems || []), { id: newId(), label, date, ...(preset.doc ? { doc: preset.doc } : {}) }];
+    try { await saveDates(); closeSheet(); showToast('Saved', 'success'); }
+    catch (e) { dateItems = before; showToast(e.message, 'error'); }
+  });
+  $('dt-del')?.addEventListener('click', async () => {
+    if (!(await showConfirm(`Remove ${existing.label}?`, 'This only removes the reminder. Your document stays where it is.', 'Remove'))) return;
+    const before = dateItems; dateItems = dateItems.filter(x => x.id !== existing.id);
+    try { await saveDates(); closeSheet(); } catch (e) { dateItems = before; showToast(e.message, 'error'); }
+  });
+}
+
+let docs = []; let docsQuery = ''; let docsSeq = 0; let docsPollTimer = null; let docsReady = false;
+function initDocuments() {
+  $('docs-scan').addEventListener('click', () => scanSheet());
+  $('dates-add').addEventListener('click', () => dateSheet(null));
+  let t = null;
+  $('docs-search').addEventListener('input', (e) => { clearTimeout(t); t = setTimeout(() => { docsQuery = e.target.value.trim(); loadDocs(); }, 350); });
+  $('docs-search-form').addEventListener('submit', (e) => { e.preventDefault(); $('docs-search').blur(); clearTimeout(t); docsQuery = $('docs-search').value.trim(); loadDocs(); });
+  $('scan-camera').addEventListener('change', (e) => addScanPages([...e.target.files], e.target));
+  $('scan-library').addEventListener('change', (e) => addScanPages([...e.target.files], e.target));
+  docsReady = true;
+  renderDates(); loadDocs();
+}
+async function loadDocs() {
+  const seq = ++docsSeq; const q = docsQuery;
+  clearTimeout(docsPollTimer);
+  $('docs-dates-block').hidden = !!q;
+  $('docs-list-title').textContent = q ? 'Results' : 'Documents';
+  let d;
+  try { d = await api(q ? `/api/docs/search?q=${encodeURIComponent(q)}` : '/api/docs/list'); }
+  catch (e) { if (seq === docsSeq) { $('docs-status').textContent = ''; $('docs-list').innerHTML = `<p class="empty">${e.offline ? 'Your PC is asleep. Documents come back when it is on. Your important dates still work.' : esc(e.message)}</p>`; } return; }
+  if (seq !== docsSeq) return;
+  docs = d.items || [];
+  if (!q) $('docs-sub').textContent = docs.length ? `${d.total ?? docs.length} ${docs.length === 1 ? 'document' : 'documents'} · scan and search` : 'Scan, search and keep track of dates';
+  $('docs-status').textContent = d.pending ? `Reading ${d.pending}…` : '';
+  renderDocs(q);
+  if (d.pending) docsPollTimer = setTimeout(() => { if (current === 'documents') loadDocs(); }, 4000); // while text is being read
+}
+const DOC_ICON = { pdf: 'doc', image: 'image', text: 'doc' };
+function renderDocs(q) {
+  const list = $('docs-list');
+  if (!docs.length) { list.innerHTML = `<p class="empty">${q ? 'Nothing found. Scans take a moment before they can be searched.' : 'No documents yet. Tap the camera to scan one, or put files in Vault › Documents.'}</p>`; return; }
+  list.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  docs.forEach(item => {
+    const el = document.createElement('div'); el.className = 'item';
+    const thumb = item.thumb ? `<span class="thumb"><img src="${esc(TUNNEL_URL + item.thumb)}" alt="" loading="lazy" decoding="async"></span>` : `<span class="thumb k-${esc(item.docKind === 'image' ? 'image' : item.docKind === 'pdf' ? 'pdf' : 'text')}">${icon(DOC_ICON[item.docKind] || 'doc')}</span>`;
+    const meta = [item.folder, item.pages > 1 ? `${item.pages} pages` : '', item.modified ? new Date(item.modified).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''].filter(Boolean).join(' · ');
+    el.innerHTML = `<button class="item-main" title="${esc(item.name)}">${thumb}<span class="item-text"><span class="item-name">${esc(item.name)}</span><span class="item-meta">${esc(meta)}</span>${item.snippet ? `<span class="item-snip">${esc(item.snippet)}</span>` : ''}${item.expiryGuess ? `<span class="item-exp">Expires ${esc(longDate(item.expiryGuess))}</span>` : ''}</span></button><button class="item-more" aria-label="More for ${esc(item.name)}">${icon('more')}</button>`;
+    el.querySelector('.item-main').addEventListener('click', () => window.open(TUNNEL_URL + item.url, '_blank', 'noopener'));
+    el.querySelector('.item-more').addEventListener('click', () => docActions(item));
+    el.querySelector('img')?.addEventListener('error', (e) => e.target.parentElement.classList.add('k-image'));
+    frag.appendChild(el);
+  });
+  list.appendChild(frag);
+}
+function docActions(item) {
+  const acts = [
+    { label: 'Open', icon: 'doc', run: () => window.open(TUNNEL_URL + item.url, '_blank', 'noopener') },
+    { label: 'Download', icon: 'upload', run: () => downloadItem(item) },
+  ];
+  if (item.expiryGuess && !(dateItems || []).some(x => x.doc === item.path)) acts.push({ label: `Add expiry to Important dates (${longDate(item.expiryGuess)})`, icon: 'star', run: () => dateSheet(null, { label: item.name.replace(/\.[^.]+$/, ''), date: item.expiryGuess, doc: item.path }) });
+  acts.push({ label: 'Rename', icon: 'doc', run: () => renameDoc(item) }, { label: 'Delete', icon: 'x', danger: true, run: () => deleteItem(item, loadDocs) });
+  actionSheet(item.name, acts);
+}
+async function renameDoc(item) {
+  const name = await askText('Rename', item.name, 'Rename'); if (!name || name === item.name) return;
+  try { await postJSON('/api/drive/rename', { path: item.path, name }); showToast('Renamed', 'success'); loadDocs(); }
+  catch (e) { showToast(e.message, 'error'); }
+}
+
+// ---- scanner: take or choose pictures of pages, then save them as one PDF ----
+let scanPages = []; let scanName = ''; let scanBusy = false;
+async function fileToPage(file) {
+  const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null);
+  if (!bmp) throw new Error('That picture could not be read.');
+  const sc = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * sc); c.height = Math.round(bmp.height * sc);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); bmp.close?.();
+  return c.toDataURL('image/jpeg', 0.85);
+}
+function rotateData(url) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => { const c = document.createElement('canvas'); c.width = img.height; c.height = img.width; const x = c.getContext('2d'); x.translate(c.width, 0); x.rotate(Math.PI / 2); x.drawImage(img, 0, 0); resolve(c.toDataURL('image/jpeg', 0.85)); };
+    img.onerror = () => reject(new Error('Could not turn that page.')); img.src = url;
+  });
+}
+async function addScanPages(files, input) {
+  if (input) input.value = '';
+  if (!files.length) return;
+  for (const f of files) {
+    if (scanPages.length >= 40) { showToast('That is the most pages for one scan.', 'error'); break; }
+    try { scanPages.push({ url: await fileToPage(f) }); } catch (e) { showToast(e.message, 'error'); }
+  }
+  scanSheet();
+}
+function scanSheet() {
+  const n = scanPages.length;
+  const body = openSheet('Scan a document', `
+    <p class="sheet-note">${n ? 'Add the next page, or save when you are done.' : 'Take a photo of each page. Lay the paper flat with good light.'}</p>
+    ${n ? `<div class="scan-pages">${scanPages.map((p, i) => `<div class="scan-page"><img src="${p.url}" alt="Page ${i + 1}"><span class="scan-n">${i + 1}</span><span class="scan-tools"><button data-rot="${i}" aria-label="Turn page ${i + 1}">↻</button><button data-del="${i}" aria-label="Remove page ${i + 1}">${icon('x')}</button></span></div>`).join('')}</div>` : ''}
+    <div class="scan-add"><button class="btn btn-glass" id="scan-take">${icon('camera')} ${n ? 'Add page' : 'Take photo'}</button><button class="btn btn-glass" id="scan-pick">${icon('image')} From photos</button></div>
+    ${n ? `<label class="field"><span>Name (optional)</span><input id="scan-name" type="text" maxlength="100" placeholder="Passport, Lease, Receipt…" value="${esc(scanName)}"></label>
+    <button class="btn btn-primary btn-block" id="scan-save">Save as PDF · ${n} ${n === 1 ? 'page' : 'pages'}</button>
+    <button class="btn btn-glass btn-block danger-text" id="scan-clear">Start over</button>` : ''}`);
+  $('scan-take').addEventListener('click', () => $('scan-camera').click());
+  $('scan-pick').addEventListener('click', () => $('scan-library').click());
+  body.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', () => { scanPages.splice(+b.dataset.del, 1); scanSheet(); }));
+  body.querySelectorAll('[data-rot]').forEach(b => b.addEventListener('click', async () => { const p = scanPages[+b.dataset.rot]; try { p.url = await rotateData(p.url); scanSheet(); } catch (e) { showToast(e.message, 'error'); } }));
+  $('scan-name')?.addEventListener('input', (e) => { scanName = e.target.value; });
+  $('scan-clear')?.addEventListener('click', () => { scanPages = []; scanName = ''; scanSheet(); });
+  $('scan-save')?.addEventListener('click', saveScan);
+}
+async function saveScan() {
+  if (scanBusy || !scanPages.length) return;
+  scanBusy = true; const btn = $('scan-save'); btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    const r = await postJSON('/api/docs/scan', { name: scanName.trim(), pages: scanPages.map(p => p.url) });
+    scanPages = []; scanName = ''; closeSheet();
+    showToast(`Saved ${r.item.name}`, 'success');
+    docsQuery = ''; $('docs-search').value = ''; loadDocs();
+  } catch (e) {
+    showToast(e.offline ? 'Your PC needs to be on to save a scan. Your pages are kept.' : e.message, 'error');
+    btn.disabled = false; btn.textContent = `Save as PDF · ${scanPages.length} ${scanPages.length === 1 ? 'page' : 'pages'}`;
+  } finally { scanBusy = false; }
 }
 
 // ================= THEATER =================
