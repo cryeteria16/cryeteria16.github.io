@@ -27,7 +27,7 @@ Owner only, password only. The password is the `LAIR_PASSWORD` secret in `lair-e
 
 ## Plan (agreed with Ibad, Oct 2026). Do in this order, show him before publishing each.
 1. Face ID sign-in (passkeys): done on branch `face-id`, helper routes `/auth/passkey/*`.
-2. Photos library: timeline by date (from the photo itself), albums, favourites, "on this day". No map.
+2. Photos library (DONE, live Oct 2026): timeline by date (from the photo itself), albums, favourites, "on this day". No map.
    Phone backup, on demand only (never automatic): (A) "Back up" button with the photo picker, (B) a one-tap iPhone Shortcut with an upload-only key that can be revoked in Settings. Skip duplicates; keep originals; folders Photos/iPhone/YYYY-MM.
 3. Documents: camera scanner to PDF, search inside PDFs and scans (text read on the PC), important dates (Emirates ID, passport, visa, car) shown on Home.
 4. Safety: app-style install, nightly cloud backup of chosen Vault folders (Cloudflare R2, he sets up the bucket), sign-in activity log in Settings.
