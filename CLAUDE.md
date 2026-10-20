@@ -4,7 +4,7 @@ Personal site of Ibad Hasan. The owner is not a developer: keep explanations pla
 
 ## Hard rules
 - This repo is PUBLIC. Never commit passwords, keys, tokens, `.env`, `serviceAccountKey.json` or any of his files (Drive/, Photography/, Movies/).
-- Personal only. Nothing from his work (Al Ghurair) goes here, and personal work never touches the work hub repo's `hub/`, `receiver/` or workflows.
+- Personal only, with one exception he asked for (Oct 2026): `work/` is his own backup copy of the work hub at ibadhasan.com/work (see below). Personal work still never touches the work hub repo's `hub/`, `receiver/` or its Install workflow.
 - Pushing to `main` publishes the site within 1-2 minutes (GitHub Pages). Show him the change and get his OK in chat first, and test at phone, iPad and desktop widths, light and dark mode.
 - Keep it light on data and battery (his iPhone runs hot): previews not originals, no heavy animation or blur on phones, no constant polling.
 
@@ -14,6 +14,12 @@ Personal site of Ibad Hasan. The owner is not a developer: keep explanations pla
 - `lair-server` (private repo `cryeteria16/admin-dashboard`, folder `lair-server/`): Node server on his home PC at `vault.ibadhasan.com` (Cloudflare tunnel, port 3005). Vault drive (100 GB), movies, TMDB search, exhibition previews. Pushing `lair-server/` to that repo's `main` deploys it: the PC updates itself within ~2 minutes. Test first.
 - Firebase is retired and nothing uses `serviceAccountKey.json` any more. Fridge Door and Fridge Magnet were removed on purpose.
 - Look: "Night Glass" (dark, Apple-style glass, a hint of Frutiger). Real blur only on the tab bar, top buttons, sheets and dialogs; cards fake it.
+
+## Work hub copy (ibadhasan.com/work)
+- His backup of the work hub, in case the company one is ever deleted. The company hub stays where it is and is not changed.
+- `work/` is GENERATED from `hub/Index.html` in admin-dashboard: `node tools/make-work-site.js ../cryeteria16.github.io/work`. Never edit it by hand; rebuild after hub changes.
+- The copy never opens company files: its works list comes from the tracker Excel he uploads on the Dashboard ("Upload tracker").
+- Each hub page has its own address (/work/mri/, /work/bills/, ...). Calls go to `api.ibadhasan.com/work/call` (owner sign-in), which passes them to his personal Apps Script copy (`WORK_HUB_URL` / `WORK_HUB_KEY` secrets in lair-edge). No file IDs, keys or script addresses ever go in this repo.
 
 ## What works with the PC off
 Works: homepage, sign-in, watchlist, settings, visitor radar, PC status, exhibition photo previews.

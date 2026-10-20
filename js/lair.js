@@ -160,6 +160,9 @@ $('signin-form').addEventListener('submit', async (e) => {
 
 let booted = false;
 function signedIn() {
+  // Came here to sign in for the work pages (/work/...): go back there
+  const next = new URLSearchParams(location.search).get('next') || '';
+  if (/^\/work(\/[\w\-\/]*)?$/.test(next.split('?')[0])) { location.replace(next); return; }
   document.body.classList.remove('signed-out', 'auth-pending');
   if (!booted) { booted = true; boot(); }
 }
