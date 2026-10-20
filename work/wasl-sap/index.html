@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en" data-start="wasl">
+<head>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#2A1240">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Work">
+  <link rel="icon" href="/icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="/work/assets/hub.css?v=60d0c51409">
+  <script src="/work/assets/gsr.js?v=9cbe5de327"></script>
+  <!-- Built from hub/Index.html by tools/make-work-site.js (admin-dashboard repo). Do not edit here. -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+  <title>WASL SAP · Work</title>
+  <!--
+    ======================================================================
+    YOU DO NOT NEED TO EDIT THIS FILE FOR SIZES, TITLES, LOGO, STATUS LIST OR AGE LIMITS.
+    Those settings are all in the CONFIG box at the top of Code.gs.
+    Only edit this file to change labels/placeholders, colours or add form fields.
+    ======================================================================
+  -->
+  <!-- Used only by the "Export to Excel" button. If it cannot load, the button falls back to a CSV file that Excel also opens. -->
+  <script async src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <!-- ADDED: light / dark theme (set before the page draws). v37: always opens light; the header switch changes it for the visit. -->
+  <script src="/work/assets/js/01.js?v=2ea3b18ed2"></script>
+  <!-- v15.1 ADDED: colour themes (Admin > Appearance). Applied before the page draws, so it never flashes the old colours.
+       Each theme has a light and a dark set. The chosen theme is remembered on this device and saved in Admin.gs (same on every device). -->
+  <script src="/work/assets/js/02.js?v=c4e0d6069b"></script>
+  <!-- ADDED: theme switch, live indicator, Procurement page, dark theme -->
+  <!-- ADDED: roomier layout + motion (screen only; printing and "reduce motion" settings are not affected) -->
+  <!-- ADDED: Job Documents (Google Drive filing) -->
+  <!-- ADDED: Today page, Prepare RF, Chase -->
+  <!-- ADDED: Site Map -->
+  <!-- ADDED: Job Journeys -->
+  <!-- ADDED: Create in MRI -->
+  <!-- ADDED: softer tone + gentle motion (screen only; the colour scheme is unchanged, "reduce motion" turns the motion off) -->
+  <!-- ADDED: PDF Compiler page + "Merged PDF" box in the work panel -->
+  <!-- ADDED: MRI Work Orders page, live progress, top-bar chip -->
+  <!-- ADDED: Tracker updates (bell, panel, history in the work panel) -->
+  <!-- ADDED: layout clean-up (menu groups, phone tab bar, roomier phone headers) -->
+  </head>
+<body>
+<script src="/work/assets/js/03.js?v=1fb49334b2"></script>
+
+
+<div id="appShell">
+  <header class="app-header">
+    <button class="btn-menu" id="btn-menu" aria-label="Show or hide menu">☰</button>
+    <img id="logo" src="" alt="Logo" class="header-logo" style="display:none;">
+    <div class="header-divider"></div>
+    <div class="header-title" id="hdr-title">DD Variable Works</div>
+    <!-- ADDED: light / dark switch (works on every page) -->
+    <button type="button" class="theme-btn" id="theme-btn" role="switch" aria-checked="false" aria-label="Dark mode" title="Switch light / dark">
+      <svg class="tb-sun" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+      <svg class="tb-moon" aria-hidden="true" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"></path></svg>
+      <span class="tb-knob" aria-hidden="true"></span>
+    </button>
+  </header>
+
+  <div class="app-body">
+    <!-- SIDEBAR MENU (show/hide with SHOW_SIDEBAR in Code.gs). Edit the names below if you want. -->
+    <nav class="sidebar" id="sidebar">
+      <div class="sidebar-inner">
+        <div class="nav-section">Overview</div>
+        <div class="nav-item" data-view="today" tabindex="0"><span class="ni">✅</span>Today</div>
+        <div class="nav-item" data-view="health" tabindex="0"><span class="ni">📈</span>Project health</div>
+        <div class="nav-item active" data-view="dash" tabindex="0"><span class="ni">📊</span>Dashboard</div>
+        <div class="nav-item" data-view="journey" tabindex="0"><span class="ni">🚇</span>Job Journeys</div>
+        <div class="nav-item" data-view="map" tabindex="0"><span class="ni">🗺️</span>Site Map</div>
+        <div class="nav-section">Raise and track</div>
+        <div class="nav-item" data-view="desk" tabindex="0"><span class="ni">🧭</span>Job Desk <small class="nav-hint">MRI + D365</small></div>
+        <div class="nav-item" data-view="mri" tabindex="0"><span class="ni">🛠️</span>MRI Work Orders<span class="nav-badge" data-tab-badge="mri" hidden></span></div>
+        <div class="nav-item" data-view="proc" tabindex="0"><span class="ni">📦</span>Procurement <small class="nav-hint">D365</small></div>
+        <div class="nav-item" data-view="wasl" tabindex="0"><span class="ni">🔒</span>WASL SAP</div>
+        <div class="nav-section">Documents and reports</div>
+        <div class="nav-item" data-view="docs" tabindex="0"><span class="ni">📁</span>Job Documents</div>
+        <div class="nav-item" data-view="pdfc" tabindex="0"><span class="ni">🧩</span>PDF Compiler</div>
+        <div class="nav-item" data-view="breakdown" tabindex="0"><span class="ni">📑</span>Breakdown Report</div>
+        <div class="nav-item" data-view="work" tabindex="0"><span class="ni">🗓️</span>Monthly Report</div>
+        <div class="nav-item" data-view="bills" tabindex="0"><span class="ni">🧾</span>Bills</div>
+        <div class="nav-section">Admin</div>
+        <div class="nav-item" data-view="admin" tabindex="0"><span class="ni">🛡️</span>Admin <small class="nav-hint" id="adm-nav-lock">🔒</small></div>
+      </div>
+    </nav>
+    <div class="nav-scrim" id="nav-scrim"></div>
+
+    <main class="content" id="content">
+
+      <!-- ======================================================= -->
+      <!--  DASHBOARD                                               -->
+      <!-- ======================================================= -->
+      <section id="view-dash">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Works dashboard</div>
+            <div class="view-sub" id="dash-sub">Loading the tracker...</div>
+          </div>
+          <div class="view-actions">
+            <button id="btn-refresh" class="btn btn-ghost btn-sm" disabled>↻ Refresh</button>
+            <button id="btn-export" class="btn btn-primary btn-sm" disabled>⬇ Export to Excel</button>
+          </div>
+        </div>
+
+        <div id="dash-warn" class="banner banner-warn" style="display:none;"></div>
+        <div id="dash-error" class="banner banner-err" style="display:none;"></div>
+        <div id="dash-loading" class="loading-box"><div class="spin-dark"></div><span>Reading the VW_Tracker sheet...</span></div>
+
+        <div id="dash-body" style="display:none;">
+
+          <div id="dx-show"></div>
+
+          <div class="section-head"><h2>Needs your attention</h2><span>All months. Click a card to see exactly those works.</span></div>
+          <div class="action-grid" id="action-grid"></div>
+
+          <div class="card">
+            <div class="card-header"><span class="card-title">Filters</span></div>
+            <div class="card-body">
+              <div class="filters">
+                <div class="f-field"><label for="f-month">Month</label><select id="f-month"></select></div>
+                <div class="f-field"><label for="f-building">Building</label><select id="f-building"></select></div>
+                <div class="f-field"><label for="f-major">Category</label><select id="f-major"></select></div>
+                <div class="f-field"><label for="f-assignee">Assigned to</label><select id="f-assignee"></select></div>
+                <div class="f-field"><label for="f-search">Search</label><input type="search" id="f-search" placeholder="Quote ref, CRM, RF, description..."></div>
+              </div>
+            </div>
+            <div class="chips" id="chips"></div>
+          </div>
+
+          <div class="section-head"><h2 id="kpi-title">Overview</h2><span id="kpi-note"></span></div>
+          <div class="kpi-grid" id="kpi-grid"></div>
+
+          <div class="chart-grid">
+            <div class="card"><div class="card-header"><span class="card-title">Works by status</span></div><div class="card-body" id="chart-status"></div></div>
+            <div class="card"><div class="card-header"><span class="card-title">Works per month</span></div><div class="card-body" id="chart-month"></div></div>
+            <div class="card"><div class="card-header"><span class="card-title">Top work types</span></div><div class="card-body" id="chart-cat"></div></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title" id="tbl-title">Works</span>
+              <span class="muted" style="font-size:12px;" id="tbl-sub"></span>
+            </div>
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th data-sort="qtn">Quote</th>
+                    <th>Work</th>
+                    <th data-sort="status">Status</th>
+                    <th>To do</th>
+                    <th data-sort="cost" class="num">WASL cost</th>
+                    <th data-sort="date">Date</th>
+                    <th data-sort="age">Waiting</th>
+                  </tr>
+                </thead>
+                <tbody id="tbl-body"></tbody>
+              </table>
+            </div>
+            <div class="more-row" id="tbl-more" style="display:none;"><button class="btn btn-ghost btn-sm" id="btn-more">Show more</button></div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!--  BREAKDOWN REPORT                                        -->
+      <!-- ======================================================= -->
+      <section id="view-breakdown" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title" id="bd-title">New Breakdown Report</div>
+            <div class="view-sub" id="bd-sub"></div>
+          </div>
+        </div>
+        <div id="bd-settings-err" class="banner banner-err" style="display:none;">Could not load the report settings. Check Code.gs, save it, and deploy a NEW version.</div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Report Details</span>
+            <span style="font-size:11px;color:var(--text-3);background:var(--bg);padding:4px 10px;border-radius:99px;">Ref auto-assigned on save</span>
+          </div>
+          <div class="card-body">
+
+            <!-- MAIN FIELDS. To rename a field: change the text inside <label> and the placeholder="..." -->
+            <div class="form-grid">
+              <div class="form-field">
+                <label class="form-label">CRM No.</label>
+                <input type="text" id="rep-crm" class="form-input" inputmode="numeric" autocomplete="off" placeholder="e.g. 600584534 (becomes the report reference)">
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="rep-type">Type of work</label>
+                <select id="rep-type" class="form-select"><option value="">Choose to fill in the standard text…</option></select>
+              </div>
+              <div class="form-field span-2 bd-wa-wrap">
+                <button type="button" class="bd-wa-link" id="bd-wa-link" aria-expanded="false">Paste a WhatsApp message</button>
+                <div id="bd-wa" hidden>
+                  <textarea id="bd-wa-text" class="form-textarea" rows="3" placeholder="Paste the message, e.g. 71th floor water meter wooden door bulged need to replace, 6005374070 · size 77×196 thickness 5cm"></textarea>
+                  <div class="bd-wa-row"><span id="bd-wa-found" class="bd-wa-found"></span><button type="button" class="btn btn-ghost btn-sm" id="bd-wa-use">Fill in</button></div>
+                </div>
+              </div>
+              <div class="form-field">
+                <label class="form-label">Title <span class="req">*</span></label>
+                <input type="text" id="rep-title" class="form-input" placeholder="e.g., Swimming Pool Circulation Pump Breakdown">
+              </div>
+              <div class="form-field">
+                <label class="form-label">Building &amp; Location <span class="req">*</span></label>
+                <input type="text" id="rep-loc" class="form-input" placeholder="e.g., DD140 - Al Murooj Complex">
+              </div>
+
+              <div class="form-field span-2">
+                <label class="form-label">Detailed Breakdown Description <span class="req">*</span></label>
+                <textarea id="rep-desc" class="form-textarea" rows="3" placeholder="Provide full breakdown details and operational timeline..."></textarea>
+              </div>
+
+              <div class="form-field">
+                <label class="form-label">Root Cause</label>
+                <textarea id="rep-cause" class="form-textarea" rows="3" placeholder="Analysis of primary physical or technical failure..."></textarea>
+              </div>
+              <div class="form-field">
+                <label class="form-label">Immediate Containment / Actions Taken</label>
+                <textarea id="rep-containment" class="form-textarea" rows="3" placeholder="Interim safety measures, isolation, or actions taken..."></textarea>
+              </div>
+
+              <div class="form-field span-2">
+                <label class="form-label">Scope of Repair (Permanent Actions &amp; Costs)</label>
+                <textarea id="rep-scope" class="form-textarea" rows="3" placeholder="Permanent repairs, replacement part specifications, and cost breakdowns..."></textarea>
+              </div>
+            </div>
+
+            <div class="section-label">Additional Details</div>
+            <div class="form-grid">
+              <div class="form-field">
+                <label class="form-label" for="rep-date">Breakdown Date <span style="font-weight:500;color:var(--text-3)">&amp; time (optional)</span></label>
+                <div class="bd-dt"><input type="date" id="rep-date" class="form-input" aria-label="Breakdown date"><input type="time" id="rep-time" class="form-input" aria-label="Breakdown time (optional)"></div>
+              </div>
+              <div class="form-field">
+                <label class="form-label">Equipment Involved</label>
+                <input type="text" id="rep-equipment" class="form-input" placeholder="e.g., Circulation pump P-02">
+              </div>
+              <div class="form-field">
+                <label class="form-label">Estimated Duration</label>
+                <input type="text" id="rep-duration" class="form-input" placeholder="e.g., 2 days">
+              </div>
+              <div class="form-field">
+                <label class="form-label">Status</label>
+                <!-- Status choices are filled from STATUS_OPTIONS in Code.gs -->
+                <select id="rep-status" class="form-select">
+                  <option value="">Select status</option>
+                </select>
+              </div>
+              <div class="form-field">
+                <label class="form-label">Impact on Operations</label>
+                <input type="text" id="rep-ops" class="form-input" placeholder="e.g., Pool closed to residents">
+              </div>
+              <div class="form-field">
+                <label class="form-label">Impact on Tenants</label>
+                <input type="text" id="rep-tenant" class="form-input" placeholder="e.g., No impact / water supply interrupted">
+              </div>
+              <div class="form-field">
+                <label class="form-label">Reported By</label>
+                <input type="text" id="rep-by" class="form-input" placeholder="Enter your name">
+              </div>
+              <div class="form-field">
+                <label class="form-label">Tentative Completion Date</label>
+                <input type="date" id="rep-completion" class="form-input">
+              </div>
+              <div class="form-field" id="rep-link-wrap" style="display:none;">
+                <label class="form-label">Link to job (optional)</label>
+                <input type="text" id="rep-link" class="form-input" list="rep-link-list" placeholder="Type a quote or CRM number to file the report in that job's folder" autocomplete="off">
+                <datalist id="rep-link-list"></datalist>
+              </div>
+            </div>
+
+            <div style="border-top:1px solid var(--border);padding-top:18px;margin-top:4px;">
+              <div class="form-field">
+                <label class="form-label">Photographic Evidence</label>
+                <div id="photo-dropzone" class="dropzone">
+                  <!-- accept="..." = allowed photo file types -->
+                  <input type="file" id="photo-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none;">
+                  <div class="dz-icon">📷</div>
+                  <div class="dz-title">Click to upload observation photos</div>
+                  <div class="dz-sub">Photos are kept whole, never cropped. Portrait photos sit side by side; 3-4 photos make a 2 × 2 grid; then extra pages of 4.</div>
+                </div>
+                <div id="layout-hint" class="layout-hint"></div>
+                <div id="photo-grid" class="photo-grid"></div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap;">
+              <button id="btn-cancel" class="btn btn-ghost">Clear Form</button>
+              <button id="btn-preview" class="btn btn-preview" disabled>👁 Preview Report</button>
+              <button id="btn-generate" class="btn btn-primary" style="width:auto;" disabled>📄 Compile &amp; Export Official Report</button>
+            </div>
+
+            <div id="result-box" class="result-card">
+              <div>
+                <div class="result-title" id="result-title">Report Compiled Successfully</div>
+                <div style="font-size:12px;color:var(--success);margin-top:2px;">Saved directly to your Google Drive folder.</div>
+              </div>
+              <div class="result-links">
+                <a id="link-pdf" href="#" target="_blank" class="btn-link btn-pdf">View PDF</a>
+                <a id="link-doc" href="#" target="_blank" class="btn-link btn-doc">Edit Doc</a>
+                <button type="button" id="bd-again" class="btn-link btn-doc" style="cursor:pointer">＋ Make another like this</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!--  MONTHLY REPORT: ADD A WORK SLIDE                        -->
+      <!-- ======================================================= -->
+      <section id="view-work" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Add a work to the monthly report</div>
+            <div class="view-sub">Fill in the work, add exactly 2 or 4 photos, and the slide is added to the presentation.</div>
+          </div>
+        </div>
+        <div id="ws-err" class="banner banner-err" style="display:none;"></div>
+
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">Work details</span>
+            <span style="font-size:11px;color:var(--text-3);background:var(--bg);padding:4px 10px;border-radius:99px;">Adding to: <b id="ws-deck">...</b></span>
+          </div>
+          <div class="card-body">
+            <div class="form-grid">
+              <div class="form-field">
+                <label class="form-label" for="ws-person">Your name <span class="req">*</span></label>
+                <select id="ws-person" class="form-select"><option value="">Select your name</option></select>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="ws-section">Section <span class="req">*</span></label>
+                <select id="ws-section" class="form-select"><option value="">Select the section</option></select>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="ws-building">Building <span class="req">*</span></label>
+                <select id="ws-building" class="form-select"><option value="">Select the building</option></select>
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="ws-status">Status <span class="req">*</span></label>
+                <select id="ws-status" class="form-select"><option value="">Select the status</option></select>
+              </div>
+              <div class="form-field span-2">
+                <label class="form-label" for="ws-title">Work title <span class="req">*</span></label>
+                <input type="text" id="ws-title" class="form-input" maxlength="120" placeholder="e.g., Swimming Pool Leak Rectification">
+              </div>
+            </div>
+
+            <div style="border-top:1px solid var(--border);padding-top:18px;margin-top:4px;">
+              <div class="form-field">
+                <label class="form-label">Photos <span class="req">*</span> (exactly 2 or 4)</label>
+                <div id="ws-dropzone" class="dropzone">
+                  <input type="file" id="ws-photo-input" accept="image/jpeg,image/png,image/webp" multiple style="display:none;">
+                  <div class="dz-icon">📷</div>
+                  <div class="dz-title">Click to add photos</div>
+                  <div class="dz-sub">Exactly 2 or 4 photos. Add a short caption under any photo if you want one.</div>
+                </div>
+                <div id="ws-count" class="layout-hint"></div>
+                <div id="ws-photo-grid" class="photo-grid"></div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap;">
+              <button id="btn-ws-clear" class="btn btn-ghost">Clear Form</button>
+              <button id="btn-ws-preview" class="btn btn-preview" disabled>👁 Preview Slide</button>
+              <button id="btn-ws-submit" class="btn btn-primary" style="width:auto;" disabled>➕ Add Slide to Report</button>
+            </div>
+
+            <div id="ws-result" class="result-card">
+              <div>
+                <div class="result-title" id="ws-result-title">Slide added</div>
+                <div style="font-size:12px;color:var(--success);margin-top:2px;">You can add another work now.</div>
+              </div>
+              <div class="result-links">
+                <a id="ws-link" href="#" target="_blank" class="btn-link btn-pdf">Open slide</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+          <section id="view-wasl" style="display:none;">
+
+        <!-- PIN screen -->
+        <div id="wl-lock" class="wl-lock">
+          <div style="font-size:34px;">🔒</div>
+          <h2>WASL SAP</h2>
+          <p>Enter your 4-digit PIN</p>
+          <input id="wl-pin" class="wl-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="PIN">
+          <div id="wl-err" class="wl-err"></div>
+          <button id="wl-go" class="btn btn-primary" style="width:100%;">Unlock</button>
+        </div>
+
+        <!-- Dashboard (shown after the PIN) -->
+        <div id="wl-main" style="display:none;">
+          <div class="view-header">
+            <div>
+              <div class="view-title">WASL SAP</div>
+              <div class="view-sub" id="wl-sub">Loading...</div>
+            </div>
+            <div class="view-actions">
+              <button id="wl-refresh" class="btn btn-ghost btn-sm">↻ Refresh</button>
+              <button id="wl-print" class="btn btn-primary btn-sm">🖨 Print summary</button>
+              <button id="wl-csv" class="btn btn-ghost btn-sm">⬇ Download this list (CSV)</button>
+              <button id="wl-lockbtn" class="btn btn-ghost btn-sm">🔒 Lock</button>
+            </div>
+          </div>
+
+          <div id="wl-banner" class="banner wl-banner ok"></div>
+          <div id="wl-error" class="banner banner-err" style="display:none;"></div>
+          <div id="wl-loading" class="loading-box"><div class="spin-dark"></div><span>Reading SAP and the tracker...</span></div>
+
+          <div class="wl-views" id="wl-views">
+            <button data-v="pipe" class="on">📈 Pipeline</button>
+            <button data-v="lpo">📋 LPO details</button>
+          </div>
+
+          <!-- PIPELINE -->
+          <div id="wl-pipe" style="display:none;">
+            <div class="kpi-grid" id="wlp-kpis"></div>
+            <div class="card">
+              <div class="card-header"><span class="card-title">Works pipeline</span><span class="muted" style="font-size:12px;">Every active work sits at the furthest stage it has reached. Click a stage to see the works waiting there.</span></div>
+              <div class="card-body" id="wlp-funnel"></div>
+            </div>
+            <div class="card">
+              <div class="card-header"><span class="card-title" id="wlp-title">Overdue works</span>
+                <label class="wl-over"><input type="checkbox" id="wlp-over" checked> overdue only</label>
+                <button class="btn btn-ghost btn-sm" id="wlp-all" style="margin-left:auto;">Show all stages</button>
+                <button class="btn btn-ghost btn-sm" id="wlp-csv">⬇ CSV</button></div>
+              <div class="wl-search"><input type="search" id="wlp-q" placeholder="Search quote, work, building, assignee..."><span class="muted" id="wlp-count"></span></div>
+              <div class="tbl-wrap"><table class="tbl"><thead id="wlp-thead"></thead><tbody id="wlp-tbody"></tbody></table></div>
+              <div class="more-row" id="wlp-more" style="display:none;"><button class="btn btn-ghost btn-sm" id="wlp-morebtn">Show more</button></div>
+            </div>
+            <div class="wl-note" id="wlp-foot"></div>
+          </div>
+
+          <div id="wl-body" style="display:none;">
+            <div class="kpi-grid" id="wl-kpis"></div>
+
+            <div class="chart-grid">
+              <div class="card"><div class="card-header"><span class="card-title">LPOs released per month</span><span class="muted" style="font-size:12px;">click a bar to filter</span></div><div class="card-body" id="wl-ch-month"></div></div>
+              <div class="card"><div class="card-header"><span class="card-title">Value by building</span></div><div class="card-body" id="wl-ch-bld"></div></div>
+              <div class="card"><div class="card-header"><span class="card-title">By order type</span></div><div class="card-body" id="wl-ch-type"></div></div>
+              <div class="card"><div class="card-header"><span class="card-title">By SAP status code</span></div><div class="card-body" id="wl-ch-st"></div></div>
+            </div>
+
+            <div class="card">
+              <div class="wl-tabs" id="wl-tabs"></div>
+              <div class="wl-chips" id="wl-chips"></div>
+              <div class="wl-search"><input type="search" id="wl-q" placeholder="Search LPO, quote ref, order, description, building..."><span class="muted" id="wl-count"></span></div>
+              <div class="tbl-wrap"><table class="tbl"><thead id="wl-thead"></thead><tbody id="wl-tbody"></tbody></table></div>
+              <div class="more-row" id="wl-more" style="display:none;"><button class="btn btn-ghost btn-sm" id="wl-morebtn">Show more</button></div>
+            </div>
+            <div class="wl-note" id="wl-foot"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!--  ADDED: PROCUREMENT (D365)  RF -> PR -> PO -> GRN        -->
+      <!-- ======================================================= -->
+      <section id="view-proc" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Procurement</div>
+            <div class="view-sub" id="pq-sub">Every RF from request to invoice, and who it is waiting on.</div>
+          </div>
+          <div class="view-actions" id="pq-actions">
+            <button id="pq-refresh" class="btn btn-ghost btn-sm">↻ Refresh</button>
+            <button id="pq-import" class="btn btn-ghost btn-sm">⬆ Import D365 exports</button>
+            <button id="pq-csv" class="btn btn-primary btn-sm" disabled>⬇ Download this list (CSV)</button>
+          </div>
+        </div>
+
+        <div id="pq-error" class="banner banner-err" style="display:none;"></div>
+        <div id="pq-loading" class="loading-box"><div class="spin-dark"></div><span>Reading the D365 lists and the tracker...</span></div>
+
+        <div id="pq-empty" class="card" style="display:none;">
+          <div class="card-body pq-emptybox">
+            <div style="font-size:30px;">📦</div>
+            <h3>No D365 data yet</h3>
+            <p>Export these three lists from D365 (Open in Microsoft Office &gt; Export to Excel) and import them here, or let the PC job (d365_sync.py) send them every evening.</p>
+            <ul><li><b>Request form line inquiry</b> (with the Purchase requisition and PO number columns)</li><li><b>All purchase requisitions</b></li><li><b>All purchase orders</b></li></ul>
+            <button class="btn btn-primary btn-sm" id="pq-import2">⬆ Import D365 exports</button>
+          </div>
+        </div>
+
+        <div id="pq-body" style="display:none;">
+          <div class="pq-fresh" id="pq-fresh"></div>
+          <!-- v28: VW_Tracker compared with Dynamics: the exact cells to update (the hub never writes the tracker) -->
+          <div class="card tv-card" id="tv-card">
+            <div class="tv-top"><div><b>Keep the tracker up to date</b><span>VW_Tracker compared with Dynamics. The hub shows what to change; you change it in the tracker.</span></div></div>
+            <div class="tv-tabs" id="tv-tabs" role="tablist"></div>
+            <div id="tv-list"></div>
+          </div>
+          <!-- v23: attach the documents to draft RFs, done by your PC (d365_rf_docs.py --watch) -->
+          <div class="card rq-card" id="rq-card">
+            <div class="rq-top">
+              <div><b>📎 RF documents</b><span id="rq-pc">Attaches AGFS Quote, Vendor Quote and Email Approval to your draft RFs. Never submits.</span><span class="rq-auto">Draft RFs whose job already has all three PDFs are done by themselves.</span></div>
+              <button type="button" class="btn btn-primary btn-sm" id="rq-all" disabled>Attach documents to drafts</button>
+            </div>
+            <div id="rq-list"></div>
+          </div>
+
+          <div class="section-head"><h2>Who it is waiting on</h2><span>Each RF sits at the furthest step it has reached. Click a step to list those RFs.</span></div>
+          <div class="pq-who" id="pq-who"></div>
+
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title" id="pq-tbl-title">All RFs</span>
+              <label class="pq-late"><input type="checkbox" id="pq-late"> late only</label>
+              <label class="pq-late"><input type="checkbox" id="pq-hidedone" checked> hide done / closed</label>
+            </div>
+            <div class="chips" id="pq-chips"></div>
+            <div class="pq-search"><input type="search" id="pq-q" placeholder="Search RF, PR, PO, vendor, work, CRM, quote..."><span class="muted" id="pq-count"></span></div>
+            <div class="tbl-wrap">
+              <table class="tbl pq-tbl">
+                <thead><tr>
+                  <th data-k="rf">RF</th><th data-k="desc">Work</th><th data-k="stageIdx">Step</th>
+                  <th>PR</th><th>PO</th><th data-k="vendor">Vendor</th>
+                  <th data-k="amount" class="num">RF value</th><th data-k="days">Waiting</th>
+                </tr></thead>
+                <tbody id="pq-tbody"></tbody>
+              </table>
+            </div>
+            <div class="more-row" id="pq-more" style="display:none;"><button class="btn btn-ghost btn-sm" id="pq-morebtn">Show more</button></div>
+          </div>
+          <div class="pq-note" id="pq-foot"></div>
+        </div>
+      </section>
+
+      <!-- Import D365 exports -->
+      <div class="modal-backdrop" id="pq-modal">
+        <div class="modal-box">
+          <div class="modal-header"><div class="modal-title">⬆ Import D365 exports</div><button class="modal-close" id="pq-mclose" aria-label="Close">&times;</button></div>
+          <div class="modal-body">
+            <p class="pq-mtext">Drop the Excel files you exported from D365. Each one is recognised by its columns, so the names do not matter. A list you do not add keeps its current data.</p>
+            <div class="dropzone" id="pq-drop" tabindex="0" role="button">
+              <div class="dz-icon">📄</div>
+              <div class="dz-title">Drop the files here or click to choose</div>
+              <div class="dz-sub">Request form line inquiry · All purchase requisitions · All purchase orders (.xlsx)</div>
+            </div>
+            <input type="file" id="pq-file" accept=".xlsx,.xls,.csv" multiple hidden>
+            <div id="pq-files" class="pq-files"></div>
+            <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:14px;">
+              <button class="btn btn-ghost btn-sm" id="pq-mcancel">Cancel</button>
+              <button class="btn btn-primary btn-sm" id="pq-upload" disabled>Import</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================================================= -->
+      <!--  ADDED: JOB DOCUMENTS (Google Drive)                     -->
+      <!-- ======================================================= -->
+      <section id="view-docs" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Job Documents</div>
+            <div class="view-sub">Quotes, vendor quotes, approval emails and reports, filed in Drive by job. Folders are created by the app.</div>
+          </div>
+          <div class="view-actions">
+            <button id="dc-refresh" class="btn btn-ghost btn-sm">↻ Refresh</button>
+            <button id="dc-prep" class="btn btn-ghost btn-sm" disabled>📁 Create folders for approved works</button>
+            <button id="dc-gear" class="btn btn-ghost btn-sm">⚙ Settings</button>
+          </div>
+        </div>
+
+        <div id="dc-error" class="banner banner-err" style="display:none;"></div>
+
+        <div class="card" id="dc-settings" style="display:none;">
+          <div class="card-header"><span class="card-title">Main Drive folder</span></div>
+          <div class="card-body">
+            <div class="dc-help">All job folders are created inside one main folder of your Google Drive.
+              <ol><li>In Google Drive, create a folder (for example <b>VW Job Documents</b>), or pick an existing one.</li>
+              <li>Open it, then copy the link from the address bar (or just the long ID at its end).</li>
+              <li>Paste it here and press Save. This is needed only once.</li></ol>
+            </div>
+            <div class="dc-set"><input type="text" id="dc-root" placeholder="https://drive.google.com/drive/folders/..." autocomplete="off"><button id="dc-save" class="btn btn-primary btn-sm">Save</button></div>
+            <div class="dc-ok" id="dc-rootinfo"></div>
+            <!-- v20: the same file saved twice in a job -->
+            <div class="dc-dup">
+              <div style="font-weight:700;margin-top:18px;">Duplicate files</div>
+              <div class="dc-help" style="margin-top:4px;">Finds files saved more than once in the same job (same content, any name). The oldest copy stays; the extra copies go to the <b>Duplicates</b> folder in Admin Documentation. Nothing is deleted: empty that folder yourself.</div>
+              <button type="button" id="dc-dupfind" class="btn btn-ghost btn-sm" style="margin-top:8px;">Find duplicate files</button>
+              <div id="dc-duplist"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="dc-loading" class="loading-box"><div class="spin-dark"></div><span>Reading the documents list...</span></div>
+
+        <div id="dc-body" style="display:none;">
+          <div class="dc-kpis" id="dc-kpis"></div>
+          <!-- v38: Drop documents: ONE box for approval e-mails, breakdown reports, quotes, POs ... each goes into its job folder. Server: DropBox.gs -->
+          <div class="card" id="dp-card">
+            <div class="card-header">
+              <span class="card-title">Drop documents</span>
+              <span class="muted" style="font-size:12px;">Approval e-mails, breakdown reports, quotes, WCRs, POs: each goes into its job's folder by itself</span>
+            </div>
+            <div class="card-body">
+              <div class="dp-what"><label for="dp-type">What is it?</label>
+                <select id="dp-type">
+                  <option value="">Sort it for me</option>
+                  <option value="email_approval">Email approval</option>
+                  <option value="breakdown">Breakdown report</option>
+                  <option value="vendor_quote">Supplier quote</option>
+                  <option value="agfs_quote">AGFS quote</option>
+                  <option value="wcr">WCR (completion report)</option>
+                  <option value="photos">Photos</option>
+                  <option value="po">PO (AGFS or WASL)</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <label class="dropzone po-drop" id="dp-drop" for="dp-input">
+                <input type="file" id="dp-input" multiple hidden>
+                <b>Choose files</b> or drop them here
+                <div class="muted" style="font-size:12px;margin-top:4px;">Put the CRM number, quote reference or RF number in the file name, e.g. <b>6005063170 approval.msg</b>, <b>6005063170 supplier quote.pdf</b>, <b>6005063170 breakdown.pdf</b>. E-mails (.msg, .eml), pictures and Word files are turned into PDFs. Anything unclear waits below for you to pick.</div>
+              </label>
+              <input type="file" id="dp-addinput" multiple hidden>
+              <div id="dp-run" style="display:none;">
+                <div class="po-bar"><i id="dp-fill"></i></div>
+                <div class="po-sum" id="dp-sum"></div>
+                <div class="po-list" id="dp-list"></div>
+              </div>
+              <div class="po-foot">
+                <button type="button" class="btn btn-ghost btn-sm" id="dp-sweep">Check the Drive folder</button>
+                <a class="btn btn-ghost btn-sm" id="dp-folder" href="#" target="_blank" rel="noopener" style="display:none;">Open the Drive folder</a>
+                <span class="muted" id="dp-last" style="font-size:12px;"></span>
+              </div>
+              <div class="muted dp-tip">You can also save files from your phone or Outlook into the Drive folder <b>Admin Documentation › Drop documents</b>. It is checked every hour.</div>
+              <datalist id="dp-jobs"></datalist>
+              <div id="dp-status"></div>
+              <div id="dp-rf"></div>
+            </div>
+          </div>
+          <!-- v16: Purchase orders (AGFS from Dynamics + WASL LPOs): upload many PDFs, the hub files each into its job -->
+          <div class="card" id="po-card">
+            <div class="card-header">
+              <span class="card-title">Purchase orders</span>
+              <span class="muted" style="font-size:12px;">AGFS POs (Dynamics) and WASL POs, filed into each job by themselves</span>
+            </div>
+            <div class="card-body">
+              <label class="dropzone po-drop" id="po-drop" for="po-input">
+                <input type="file" id="po-input" accept="application/pdf,.pdf" multiple hidden>
+                <b>Choose PO files</b> or drop them here
+                <div class="muted" style="font-size:12px;margin-top:4px;">Pick as many as you like (Ctrl+A selects all). Names like PO-Confirmation-PO9728-0016126-… or WASL PO PDFs.</div>
+              </label>
+              <div id="po-run" style="display:none;">
+                <div class="po-bar"><i id="po-fill"></i></div>
+                <div class="po-sum" id="po-sum"></div>
+                <div class="po-list" id="po-list"></div>
+              </div>
+              <div class="po-foot">
+                <button type="button" class="btn btn-ghost btn-sm" id="po-sweep">Check the Inbox</button>
+                <a class="btn btn-ghost btn-sm" id="po-folder" href="#" target="_blank" rel="noopener" style="display:none;">Open the POs folder</a>
+                <span class="muted" id="po-last" style="font-size:12px;"></span>
+              </div>
+              <div id="po-status"></div>
+            </div>
+          </div>
+          <!-- v17: Approval e-mails: upload (or drop in the Drive Inbox) the e-mails in which WASL approved a quote; the hub files each into its job. Server: ApprovalMail.gs -->
+          <div class="card" id="am-card">
+            <div class="card-header">
+              <span class="card-title">Approval e-mails</span>
+              <span class="muted" style="font-size:12px;">WASL approval e-mails, filed into each job's "04 Email Approvals"</span>
+            </div>
+            <div class="card-body">
+              <label class="dropzone po-drop" id="am-drop" for="am-input">
+                <input type="file" id="am-input" accept=".pdf,.msg,.eml,.png,.jpg,.jpeg,.heic,.doc,.docx,.txt,application/pdf,image/*" multiple hidden>
+                <b>Choose approval e-mails</b> or drop them here
+                <div class="muted" style="font-size:12px;margin-top:4px;">PDF, .msg, .eml or a picture. Put the CRM number or quote reference in the file name, e.g. <b>6005063170 approval.pdf</b>. Several jobs on one e-mail: put each CRM number in the name. The hub never reads your mailbox.</div>
+              </label>
+              <div id="am-run" style="display:none;">
+                <div class="po-bar"><i id="am-fill"></i></div>
+                <div class="po-sum" id="am-sum"></div>
+                <div class="po-list" id="am-list"></div>
+              </div>
+              <div class="po-foot">
+                <button type="button" class="btn btn-ghost btn-sm" id="am-sweep">Check the Inbox</button>
+                <a class="btn btn-ghost btn-sm" id="am-inbox" href="#" target="_blank" rel="noopener" style="display:none;">Open the Drive Inbox</a>
+                <span class="muted" id="am-last" style="font-size:12px;"></span>
+              </div>
+              <div id="am-status"></div>
+            </div>
+          </div>
+          <div class="card" id="dc-month">
+            <div class="card-header"><span class="card-title">Monthly report deck</span><span class="muted" style="font-size:12px;">Google Slides deck of the Monthly Report page</span></div>
+            <div class="card-body">
+              <div class="dc-help" style="margin-bottom:12px;">The deck is filed in <b>Monthly Reports / year</b> in your Drive automatically when a slide is added. Use these buttons to file it right now, or to keep a PDF copy (for example at month end).</div>
+              <div class="dc-set"><button id="dc-deck" class="btn btn-ghost btn-sm">📁 File this month's deck</button><button id="dc-deckpdf" class="btn btn-ghost btn-sm">📄 Save a PDF copy</button></div>
+              <div class="dc-ok" id="dc-deckinfo"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">All works</span>
+              <label class="pq-late"><input type="checkbox" id="dc-appr" checked> approved by WASL only</label>
+              <label class="pq-late"><input type="checkbox" id="dc-miss"> missing documents only</label>
+            </div>
+            <div class="dc-bar"><input type="search" id="dc-q" placeholder="Search quote, CRM, work, building..."><span class="muted" id="dc-count"></span></div>
+            <div class="tbl-wrap">
+              <table class="tbl dc-tbl">
+                <thead><tr><th>Work</th><th>Documents saved</th><th></th></tr></thead>
+                <tbody id="dc-tbody"></tbody>
+              </table>
+            </div>
+            <div class="more-row" id="dc-more" style="display:none;"><button class="btn btn-ghost btn-sm" id="dc-morebtn">Show more</button></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!--  ADDED: TODAY                                            -->
+      <!-- ======================================================= -->
+      <!-- v31: PROJECT HEALTH (ProjectHealth.gs). Read only. -->
+      <section id="view-desk" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Job Desk</div>
+            <div class="view-sub" id="jd-sub">Every job from quote to RF, PR and PO in one list. Click a job to open it.</div>
+          </div>
+          <div class="view-actions"><button id="jd-mri" class="btn btn-primary btn-sm" type="button">＋ Raise MRI WO</button><button id="jd-refresh" class="btn btn-ghost btn-sm" type="button">↻ Refresh</button></div>
+        </div>
+        <div class="jd-tabs" id="jd-tabs" role="tablist">
+          <button type="button" class="jd-tab" data-tab="today" role="tab">✅ Today</button>
+          <button type="button" class="jd-tab on" data-tab="jobs" role="tab">🧭 Jobs</button>
+        </div>
+        <div id="jd-today-panel" hidden></div>
+        <div id="jd-jobs-panel">
+          <div id="jd-error" class="banner banner-err" style="display:none;"></div>
+          <div class="jd-mach" id="jd-mach">
+            <b>Raise MRI WOs and RFs on</b>
+            <div class="jd-seg" role="radiogroup" aria-label="Computer that raises MRI WOs and RFs">
+              <button type="button" role="radio" data-mach="home">🏠 Home PC</button>
+              <button type="button" role="radio" data-mach="laptop">💻 Laptop</button>
+            </div>
+            <small id="jd-mach-s"></small>
+          </div>
+          <div id="jd-pc" class="banner jd-warn" style="display:none;"></div>
+          <div class="jd-steps" id="jd-steps"></div>
+          <div class="jd-add">
+            <b>Attach documents to an RF</b>
+            <input type="text" id="jd-rf" maxlength="14" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="R-000096843">
+            <button id="jd-rf-go" class="btn btn-primary btn-sm" type="button">📎 Attach documents</button>
+            <button id="jd-all" class="btn btn-ghost btn-sm" type="button" disabled>Attach to all drafts</button>
+          </div>
+          <div class="jd-filters">
+            <select id="jd-f-month" aria-label="Month"></select>
+            <select id="jd-f-building" aria-label="Building"></select>
+            <select id="jd-f-major" aria-label="Category"></select>
+            <select id="jd-f-assignee" aria-label="Assigned to"></select>
+            <select id="jd-sort" aria-label="Sort"><option value="prio">Sort: needs me first</option><option value="new">Sort: newest</option><option value="wait">Sort: waiting longest</option><option value="cost">Sort: highest cost</option></select>
+            <input type="text" id="jd-q" placeholder="Search RF, quote, CRM, building, description" autocomplete="off">
+          </div>
+          <div class="jd-sup" id="jd-sup" role="tablist" aria-label="Supervisor" hidden></div>
+          <div class="jd-chips" id="jd-chips"></div>
+          <div class="jd-chips jd-tchips" id="jd-tchips"></div>
+          <div id="jd-loading" class="loading-box"><div class="spin-dark"></div><span>Putting your jobs together...</span></div>
+          <div id="jd-body" style="display:none;"></div>
+        </div>
+      </section>
+      <section id="view-health" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="ph-kicker">Facility management by AGFS</div>
+            <div class="view-title">Wasl DD Project</div>
+            <div class="view-sub" id="ph-sub">How the project is doing, from VW_Tracker and Dynamics.</div>
+          </div>
+          <div class="view-actions"><button id="ph-refresh" class="btn btn-ghost btn-sm">↻ Refresh</button></div>
+        </div>
+        <div id="ph-error" class="banner banner-err" style="display:none;"></div>
+        <div id="ph-loading" class="loading-box"><div class="spin-dark"></div><span>Working out the project's health...</span></div>
+        <div id="ph-body" style="display:none;"></div>
+      </section>
+
+      <section id="view-today" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Today</div>
+            <div class="view-sub" id="td-sub">What needs you right now.</div>
+          </div>
+          <div class="view-actions">
+            <button id="td-refresh" class="btn btn-ghost btn-sm">↻ Refresh</button>
+          </div>
+        </div>
+        <!-- v29: is each automatic part of the hub working? (SystemStatus.gs) -->
+        <div class="card sys-card" id="sys-card" style="display:none;">
+          <button type="button" class="sys-head" id="sys-head" aria-expanded="false" aria-controls="sys-list"><i class="sys-dot" id="sys-dot"></i><span id="sys-sum">System status</span><span class="sys-chev" aria-hidden="true">›</span></button>
+          <div class="sys-list" id="sys-list" hidden></div>
+        </div>
+        <div id="td-error" class="banner banner-err" style="display:none;"></div>
+        <div id="td-loading" class="loading-box"><div class="spin-dark"></div><span>Working out what needs you...</span></div>
+        <div id="td-body" style="display:none;">
+          <div id="td-note" class="banner banner-warn" style="display:none;"></div>
+          <div class="td-tiles" id="td-tiles"></div>
+          <div id="td-groups"></div>
+          <div class="card" id="td-hidcard" style="display:none;">
+            <div class="card-header"><span class="card-title" id="td-hidtitle">Hidden for now</span><button class="btn btn-ghost btn-sm" id="td-hidtoggle">Show</button></div>
+            <div id="td-hidlist" style="display:none;"></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="modal-backdrop" id="td-modal">
+        <div class="modal-box">
+          <div class="modal-header"><div class="modal-title" id="td-mtitle"></div><button class="modal-close" id="td-mclose" aria-label="Close">&times;</button></div>
+          <div class="modal-body" id="td-mbody"></div>
+        </div>
+      </div>
+
+      <!-- ======================================================= -->
+      <!--  ADDED: SITE MAP                                         -->
+      <!-- ======================================================= -->
+      <section id="view-map" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Site Map</div>
+            <div class="view-sub" id="mp-sub">Every building and villa cluster. Tap a pin to see what needs doing there.</div>
+          </div>
+          <div class="view-actions">
+            <button id="mp-refresh" class="btn btn-ghost btn-sm">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="mp-error" class="banner banner-err" style="display:none;"></div>
+        <div id="mp-loading" class="loading-box"><div class="spin-dark"></div><span>Loading the sites...</span></div>
+        <div id="mp-body" style="display:none;">
+          <div id="mp-note" class="banner banner-warn" style="display:none;"></div>
+          <div class="mp-wrap" id="mp-wrap">
+            <div class="mp-stage" id="mp-stage">
+              <div id="mp-canvas" class="mp-canvas"></div>
+              <div class="mp-msg" id="mp-msg" style="display:none;"></div>
+              <div class="mp-ctl mp-tl" id="mp-tl">
+                <div class="mp-seg" role="group" aria-label="Map type">
+                  <button type="button" id="mp-l-sat" data-layer="sat">Satellite</button>
+                  <button type="button" id="mp-l-street" data-layer="street">Street + 3D</button>
+                </div>
+                <button type="button" class="mp-btn" id="mp-tilt" title="Tilt the map for a 3D view">3D</button>
+                <form class="mp-find" id="mp-findf"><input id="mp-find" type="search" placeholder="Find a place..." autocomplete="off" aria-label="Find a place on the map"></form>
+              </div>
+              <div class="mp-ctl mp-tr">
+                <button type="button" class="mp-btn" id="mp-fit" title="Show every pin">⤢ Fit all</button>
+                <button type="button" class="mp-btn" id="mp-move" title="Drag pins to a new position">✋ Move pins</button>
+              </div>
+              <div class="mp-legend" id="mp-legend">
+                <span><i class="s-late"></i>Late</span><span><i class="s-warn"></i>Needs attention</span><span><i class="s-ok"></i>On track</span><span><i class="s-idle"></i>Nothing open</span>
+              </div>
+              <div class="mp-armed" id="mp-armed" style="display:none;">
+                <div class="mp-armed-t" id="mp-armed-t"></div>
+                <div class="mp-armed-r">
+                  <input id="mp-coord" type="text" placeholder="or paste coordinates / a Google Maps link" autocomplete="off" aria-label="Paste coordinates or a Google Maps link">
+                  <button type="button" class="btn btn-primary btn-sm" id="mp-coord-set">Set</button>
+                  <button type="button" class="btn btn-ghost btn-sm" id="mp-armed-x">Cancel</button>
+                </div>
+              </div>
+            </div>
+            <aside class="mp-panel" id="mp-panel" aria-live="polite"></aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!--  ADDED: JOB JOURNEYS                                     -->
+      <!-- ======================================================= -->
+      <section id="view-journey" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Job Journeys</div>
+            <div class="view-sub" id="jx-sub">Every open job as a line from quote to invoice. The dot shows where it is now.</div>
+          </div>
+          <div class="view-actions">
+            <input id="jx-q" class="jx-search" type="search" placeholder="Search quote, CRM, RF, building..." autocomplete="off" aria-label="Search jobs">
+            <select id="jx-sort" class="jx-sel" aria-label="Sort">
+              <option value="late">Late first</option>
+              <option value="stuck">Stuck longest</option>
+              <option value="new">Newest quote</option>
+              <option value="bld">Building</option>
+            </select>
+            <button id="jx-refresh" class="btn btn-ghost btn-sm">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="jx-error" class="banner banner-err" style="display:none;"></div>
+        <div id="jx-loading" class="loading-box"><div class="spin-dark"></div><span>Tracing every job...</span></div>
+        <div id="jx-body" style="display:none;">
+          <div class="jx-card">
+            <div class="jx-h">Where jobs are waiting right now <small id="jx-barnote">Red = longer than normal. Click a bar to see those jobs.</small></div>
+            <div class="jx-bars" id="jx-bars"></div>
+          </div>
+          <div class="jx-card">
+            <div class="jx-h"><span id="jx-count">Open jobs</span>
+              <span class="jx-legend"><span><i class="lg-d"></i>done</span><span><i class="lg-c"></i>here now</span><span><i class="lg-l"></i>here too long</span><span><i class="lg-u"></i>still to come</span></span>
+            </div>
+            <div id="jx-filter" class="jx-filter" style="display:none;"></div>
+            <div id="jx-list"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!--  ADDED: PDF COMPILER (server: PdfCompiler.gs)             -->
+      <!-- ======================================================= -->
+      <section id="view-pdfc" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title">PDF Compiler</div>
+            <div class="view-sub">Quotation, breakdown report, approval email and any other documents, merged into one A4 PDF per work and named for Tijori. Or start a blank compile with any files.</div>
+          </div>
+          <div class="view-actions">
+            <a id="pc-folder" class="btn btn-ghost btn-sm" href="#" target="_blank" rel="noopener" style="display:none;">📂 Merged PDFs folder</a>
+            <button id="pc-free" class="btn btn-primary btn-sm" title="Merge any PDFs and pictures, not tied to a work">＋ Blank compile</button>
+            <button id="pc-refresh" class="btn btn-ghost btn-sm">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="pc-error" class="banner banner-err" style="display:none;"></div>
+        <div id="pc-loading" class="loading-box"><div class="spin-dark"></div><span>Loading the works...</span></div>
+        <div id="pc-body" style="display:none;">
+          <div class="pc-card">
+            <div class="pc-h">1. Pick the works <small>The quotation and any approval email or breakdown report already in Job Documents are added by themselves.</small></div>
+            <div class="pc-pick">
+              <input id="pc-q" class="pc-search" type="search" placeholder="Search quote, CRM, work, building..." autocomplete="off" aria-label="Search works">
+              <div class="pc-seg" role="group" aria-label="Which works">
+                <button type="button" data-f="todo" class="on">Approved, not merged</button>
+                <button type="button" data-f="merged">Merged</button>
+                <button type="button" data-f="all">All</button>
+              </div>
+            </div>
+            <div id="pc-list" class="pc-list"></div>
+          </div>
+
+          <div class="pc-pile" id="pc-pile" tabindex="0" role="button">
+            <b>Drop a pile of files here</b> for several works at once. Each file is matched to its work by the CRM or quote number in its name.
+            <input type="file" id="pc-pile-file" multiple accept=".pdf,image/*" hidden>
+          </div>
+
+          <div class="pc-card" id="pc-jobs-card" style="display:none;">
+            <div class="pc-h"><span id="pc-jobs-title">2. Check and merge</span>
+              <span class="pc-hact">
+                <label class="pc-chk"><input type="checkbox" id="pc-drive" checked> Save to Drive</label>
+                <button type="button" class="btn btn-primary btn-sm" id="pc-all">Merge all</button>
+                <button type="button" class="btn btn-ghost btn-sm" id="pc-clear">Clear finished</button>
+              </span>
+            </div>
+            <div class="pc-pat" id="pc-pat">
+              <label for="pc-pat-in">Name pattern</label>
+              <input id="pc-pat-in" type="text" value="{crm} - {title} at {loc}" spellcheck="false" autocomplete="off" aria-label="Name pattern for the merged files">
+              <span class="tok"><button type="button" data-tok="{crm}">CRM</button><button type="button" data-tok="{title}">Title</button><button type="button" data-tok="{loc}">Location</button><button type="button" data-tok="{qtn}">Quote</button><button type="button" data-tok="{date}">Date</button></span>
+              <button type="button" class="btn btn-ghost btn-sm" id="pc-pat-go">Apply to all</button>
+              <div class="pv" id="pc-pat-pv"></div>
+            </div>
+            <div id="pc-jobs"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!--  v39 ADDED: BILLS (server: Bills.gs)                     -->
+      <!-- ======================================================= -->
+      <section id="view-bills" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Bills</div>
+            <div class="view-sub">Subcontractor bills, one row per invoice in the Bills tab of Admin Dashboard. VAT is always 5% of the net amount.</div>
+          </div>
+          <div class="view-actions bl-acts">
+            <select id="bl-month" class="bl-in" aria-label="Month"></select>
+            <a id="bl-sheet" class="btn btn-ghost btn-sm" href="#" target="_blank" rel="noopener" style="display:none;">📄 Bills tab</a>
+            <a id="bl-folder" class="btn btn-ghost btn-sm" href="#" target="_blank" rel="noopener" style="display:none;">📂 Bills folder</a>
+            <button id="bl-xlsx" class="btn btn-ghost btn-sm" type="button">⬇ Excel for the month</button>
+            <button id="bl-refresh" class="btn btn-ghost btn-sm" type="button">↻ Refresh</button>
+          </div>
+        </div>
+        <div id="bl-error" class="banner banner-err" style="display:none;"></div>
+        <div id="bl-loading" class="loading-box"><div class="spin-dark"></div><span>Loading the bills...</span></div>
+        <div id="bl-body" style="display:none;">
+          <div class="card" id="bl-add">
+            <div class="card-header">
+              <span class="card-title">Add bills</span>
+              <span class="muted" style="font-size:12px;">Google reads each bill; you check the fields before anything is saved</span>
+            </div>
+            <div class="card-body">
+              <label class="dropzone" id="bl-drop" for="bl-input">
+                <input type="file" id="bl-input" multiple accept=".pdf,image/*" hidden>
+                <b>Choose bills</b> or drop them here
+                <div class="muted" style="font-size:12px;margin-top:4px;">Scans, phone photos or PDFs, one bill per file. You can also save them in Drive in <b>Admin Documentation / Bills / Inbox</b> and press Refresh.</div>
+              </label>
+              <div id="bl-run" class="bl-run" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div class="card" id="bl-check" style="display:none;">
+            <div class="card-header">
+              <span class="card-title">Check before saving <span class="bl-count" id="bl-wn"></span></span>
+              <span class="muted" style="font-size:12px;">Fix anything Google read wrong, then Save. Open the bill to compare.</span>
+            </div>
+            <div class="card-body" id="bl-wait"></div>
+          </div>
+
+          <div class="card" id="bl-list-card">
+            <div class="card-header">
+              <span class="card-title" id="bl-list-title">Bills</span>
+              <input id="bl-q" class="bl-in bl-q" type="search" placeholder="Search subcontractor, invoice, TRN..." autocomplete="off" aria-label="Search bills">
+            </div>
+            <div class="card-body">
+              <div class="bl-kpis" id="bl-kpis"></div>
+              <div id="bl-rows"></div>
+            </div>
+          </div>
+
+          <div class="card" id="bl-bank">
+            <div class="card-header">
+              <span class="card-title">Match the bank statement</span>
+              <span class="muted" style="font-size:12px;">Finds every unpaid bill's total in the manager's PDF statement. You tick, then mark them paid.</span>
+            </div>
+            <div class="card-body">
+              <label class="dropzone" id="bl-sdrop" for="bl-sinput">
+                <input type="file" id="bl-sinput" accept=".pdf,application/pdf" hidden>
+                <b>Choose the statement PDF</b> or drop it here
+                <div class="muted" style="font-size:12px;margin-top:4px;">It is saved in <b>Bills / Bank statements</b>. Nothing is marked paid until you press the button.</div>
+              </label>
+              <div id="bl-sres"></div>
+            </div>
+          </div>
+        </div>
+        <datalist id="bl-subs"></datalist>
+      </section>
+
+      <!-- ======================================================= -->
+      <!--  ADDED: MRI WORK ORDERS (server: MRI.gs mriLive; PC: mri_sync.py) -->
+      <!-- ======================================================= -->
+      <section id="view-mri" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title">MRI Work Orders</div>
+            <div class="view-sub">Raise a WO from anywhere. Your PC makes it in MRI and reports every step back here.</div>
+          </div>
+          <div class="view-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="mrl-raise">＋ Raise MRI WO</button>
+          </div>
+        </div>
+        <div id="mrl-pc" class="mrl-pc"></div>
+        <div id="mrl-error" class="banner banner-err" style="display:none;"></div>
+        <div id="mrl-loading" class="loading-box"><div class="spin-dark"></div><span>Checking MRI requests...</span></div>
+        <div id="mrl-body" style="display:none;">
+          <div id="mrl-g-now"></div>
+          <div id="mrl-g-you"></div>
+          <div id="mrl-g-fail"></div>
+          <div id="mrl-g-hist"></div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!--  ADMIN (v15.1): PIN lock, colour themes, change PIN     -->
+      <!-- ======================================================= -->
+      <section id="view-admin" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="view-title">Admin</div>
+            <div class="view-sub" id="adm-sub">Settings for this app, locked with your PIN.</div>
+          </div>
+          <div class="view-actions">
+            <button type="button" class="btn btn-ghost btn-sm" id="adm-lock-btn" style="display:none;">🔒 Lock now</button>
+          </div>
+        </div>
+
+        <div id="adm-loading" class="adm-center"><div class="adm-spin"></div></div>
+
+        <!-- locked / first PIN -->
+        <div id="adm-gate" class="adm-gate" style="display:none;">
+          <div class="adm-gate-card">
+            <div class="adm-gate-icon" aria-hidden="true">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10.5" rx="2.5"></rect><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"></path></svg>
+            </div>
+            <h2 id="adm-gate-title">Admin is locked</h2>
+            <p id="adm-gate-sub">Enter your PIN to open the admin settings.</p>
+            <form id="adm-gate-form" autocomplete="off">
+              <div class="adm-dots" id="adm-dots" aria-hidden="true"></div>
+              <input id="adm-pin" class="adm-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" aria-label="PIN" placeholder="PIN">
+              <input id="adm-pin2" class="adm-pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" aria-label="Repeat the PIN" placeholder="Repeat the PIN" style="display:none;">
+              <div class="adm-err" id="adm-gate-err" role="alert"></div>
+              <button type="submit" class="btn btn-primary adm-gate-go" id="adm-gate-go">Unlock</button>
+            </form>
+            <div class="adm-hint" id="adm-gate-hint">Forgot the PIN? In the Apps Script editor, run <b>adminResetPin</b> (Admin.gs), then come back here and choose a new one.</div>
+          </div>
+        </div>
+
+        <!-- unlocked -->
+        <div id="adm-body" style="display:none;">
+          <div class="card adm-card">
+            <div class="adm-card-h">
+              <div><h3>Appearance</h3><p>Pick a colour theme. It changes straight away and is saved for every device you open the app on.</p></div>
+              <div class="adm-mode" id="adm-mode" role="radiogroup" aria-label="Light or dark">
+                <button type="button" data-mode="auto" role="radio"><span aria-hidden="true">🖥️</span>Auto</button>
+                <button type="button" data-mode="light" role="radio"><span aria-hidden="true">☀️</span>Light</button>
+                <button type="button" data-mode="dark" role="radio"><span aria-hidden="true">🌙</span>Dark</button>
+              </div>
+            </div>
+            <div class="adm-themes" id="adm-themes" role="radiogroup" aria-label="Colour theme"></div>
+            <div class="adm-foot" id="adm-saved"></div>
+          </div>
+
+          <div class="card adm-card">
+            <div class="adm-card-h">
+              <div><h3>Menu</h3><p>Project health, Job Journeys, Site Map, WASL SAP, MRI Work Orders and Procurement are hidden from the menu to keep it short (Job Desk does their work). They still work; show them here.</p></div>
+              <div class="adm-mode" id="adm-extras" role="radiogroup" aria-label="Extra pages in the menu">
+                <button type="button" data-x="0" role="radio">Hide</button>
+                <button type="button" data-x="1" role="radio">Show</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card adm-card">
+            <div class="adm-card-h"><div><h3>Security</h3><p>Admin locks itself 30 minutes after your last action, and when you close the tab.</p></div></div>
+            <form id="adm-pinform" class="adm-pinform" autocomplete="off">
+              <label><span class="form-label">Current PIN</span><input class="adm-in" id="adm-old" type="password" inputmode="numeric" maxlength="8" autocomplete="off"></label>
+              <label><span class="form-label">New PIN (4 to 8 digits)</span><input class="adm-in" id="adm-new" type="password" inputmode="numeric" maxlength="8" autocomplete="off"></label>
+              <label><span class="form-label">Repeat new PIN</span><input class="adm-in" id="adm-new2" type="password" inputmode="numeric" maxlength="8" autocomplete="off"></label>
+              <button type="submit" class="btn btn-primary btn-sm">Change PIN</button>
+            </form>
+            <div class="adm-err" id="adm-pin-err" role="alert" style="padding:0 20px 16px;"></div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- Work detail panel -->
+<div class="drawer-scrim" id="drawer-scrim"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-head">
+    <div class="dh-main"><div class="dh-ref" id="dh-ref"></div><div class="dh-sub" id="dh-sub"></div></div>
+    <button class="drawer-close" id="drawer-close" aria-label="Close">&times;</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</aside>
+
+<!-- Breakdown preview -->
+<div class="modal-backdrop" id="preview-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">📄 Breakdown Report Preview</div>
+      <button class="modal-close" id="modal-close-btn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="preview-doc-sheet" id="preview-content"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/work/assets/js/04.js?v=3f3d77f7c5"></script>
+<script src="/work/assets/js/05.js?v=5bbae9a889"></script>
+<!-- ======================================================================
+     ADDED: light / dark switch, "Live" indicators, Procurement (D365) page.
+     Uses only public things of the page above (DASH, ST, toast, openDrawer, loadDashboard, buttons by id);
+     nothing above was changed.
+====================================================================== -->
+<script src="/work/assets/js/06.js?v=32d0bd8271"></script>
+<script src="/work/assets/js/07.js?v=742349cdde"></script>
+
+<script src="/work/assets/js/08.js?v=6b66aed198"></script>
+
+<script src="/work/assets/js/09.js?v=dd25890219"></script>
+<script src="/work/assets/js/10.js?v=c184f55528"></script>
+<script src="/work/assets/js/11.js?v=cb64f2dd40"></script>
+<script src="/work/assets/js/12.js?v=6264276e59"></script>
+<script src="/work/assets/js/13.js?v=9eca8f859f"></script>
+<script src="/work/assets/js/14.js?v=8d4a7dcbfa"></script>
+<script src="/work/assets/js/15.js?v=21d2d28511"></script>
+<script src="/work/assets/js/16.js?v=bb64436ffc"></script>
+<script src="/work/assets/js/17.js?v=2569a67f6a"></script>
+<script src="/work/assets/js/18.js?v=99990d4568"></script>
+<script src="/work/assets/js/19.js?v=8a65b093f7"></script>
+<script src="/work/assets/js/20.js?v=a9a05d4e81"></script>
+<!-- ============================================================
+     v15.1 ADDED: colour themes everywhere + Admin page (PIN lock, theme picker, change PIN).  Server side: Admin.gs
+     ============================================================ -->
+<script src="/work/assets/js/21.js?v=258095246e"></script>
+<script src="/work/assets/js/22.js?v=ae0c98b3ae"></script>
+<script src="/work/assets/js/23.js?v=4c43cb64f2"></script>
+<script src="/work/assets/js/24.js?v=962432e283"></script>
+<script src="/work/assets/js/25.js?v=7f76003aa4"></script>
+<script src="/work/assets/js/26.js?v=9dfec9a01d"></script>
+<script src="/work/assets/js/27.js?v=5be3d65825"></script>
+<div class="modal-backdrop" id="vmk-modal" role="dialog" aria-modal="true" aria-labelledby="vmk-title">
+  <div class="modal-box" style="max-width:440px;">
+    <div class="modal-header"><span class="modal-title" id="vmk-title">Quote sent</span><button type="button" class="modal-close" id="vmk-x" aria-label="Close">×</button></div>
+    <div class="modal-body"><div class="vmk-form" id="vmk-body"></div></div>
+  </div>
+</div>
+<script src="/work/assets/js/28.js?v=50c32425f5"></script>
+
+<script src="/work/assets/js/29.js?v=a5c9244a60"></script>
+
+<script>window.__WORK_PAGES = {"today":{"slug":"today","title":"Today"},"health":{"slug":"health","title":"Project health"},"dash":{"slug":"dashboard","title":"Dashboard"},"journey":{"slug":"journeys","title":"Job Journeys"},"map":{"slug":"map","title":"Site Map"},"desk":{"slug":"job-desk","title":"Job Desk"},"mri":{"slug":"mri","title":"MRI Work Orders"},"proc":{"slug":"procurement","title":"Procurement"},"wasl":{"slug":"wasl-sap","title":"WASL SAP"},"docs":{"slug":"documents","title":"Job Documents"},"pdfc":{"slug":"pdf-compiler","title":"PDF Compiler"},"breakdown":{"slug":"breakdown","title":"Breakdown Report"},"work":{"slug":"monthly-report","title":"Monthly Report"},"bills":{"slug":"bills","title":"Bills"},"admin":{"slug":"admin","title":"Admin"}};</script>
+<script src="/work/assets/router.js?v=b5ce162bf4"></script>
+</body>
+</html>
