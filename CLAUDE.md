@@ -18,6 +18,7 @@ Personal site of Ibad Hasan. The owner is not a developer: keep explanations pla
 ## Work hub copy (ibadhasan.com/work)
 - His backup of the work hub, in case the company one is ever deleted. The company hub stays where it is and is not changed.
 - `work/` is GENERATED from `hub/Index.html` in admin-dashboard: `node tools/make-work-site.js ../cryeteria16.github.io/work`. Never edit it by hand; rebuild after hub changes.
+- The copy never opens company files: its works list comes from the tracker Excel he uploads on the Dashboard ("Upload tracker").
 - Each hub page has its own address (/work/mri/, /work/bills/, ...). Calls go to `api.ibadhasan.com/work/call` (owner sign-in), which passes them to his personal Apps Script copy (`WORK_HUB_URL` / `WORK_HUB_KEY` secrets in lair-edge). No file IDs, keys or script addresses ever go in this repo.
 
 ## What works with the PC off
