@@ -31,7 +31,7 @@ a { color: inherit; text-decoration: none; cursor: pointer; }
 .pub-hero p { font-size: 16px; color: var(--ink-soft); }
 
 .view-container { display: none; opacity: 0; }
-.view-container.active { display: block; animation: smoothFadeIn 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards; }
+.view-container.active { display: block; opacity: 1; animation: smoothFadeIn 0.5s cubic-bezier(0.32, 0.72, 0, 1); }
 @keyframes smoothFadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
 /* Spatial Cloud CSS */
@@ -43,6 +43,16 @@ a { color: inherit; text-decoration: none; cursor: pointer; }
 .floating-photo-card { position: absolute; width: 240px; height: 320px; background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.15); border-radius: var(--radius-sm); padding: 8px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.9), inset 0 1px 1px rgba(255,255,255,0.3); transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.6s ease; transform-origin: center; display:flex; flex-direction:column; gap:8px;}
 .floating-photo-card:hover { z-index:50; transform: scale(1.15) translateZ(80px) !important; box-shadow: 0 40px 80px -10px rgba(0,0,0,1), inset 0 1px 1px rgba(255,255,255,0.6); }
 .floating-photo-card img { width: 100%; flex:1; object-fit: cover; border-radius: 12px; }
+/* Gentle bob. "translate" adds to each card's own tilt, and stays on the graphics chip */
+.floating-photo-card { animation: photoBob 6.3s ease-in-out infinite alternate; }
+@keyframes photoBob { from { translate: 0 -15px; } to { translate: 0 15px; } }
+@media (prefers-reduced-motion: reduce) { .floating-photo-card { animation: none; } }
+/* Phones: smaller cards, and no blur behind each card (keeps the iPhone cool) */
+@media (max-width: 760px) {
+  .floating-photo-card { width: 130px; height: 175px; padding: 6px; gap: 6px; backdrop-filter: none; background: rgba(255,255,255,0.06); }
+  .floating-photo-card img { border-radius: 9px; }
+  .portal-window { height: 60vh; }
+}
 
 #btn-exit-spatial { position:absolute; top:40px; right:40px; display:none; background:rgba(255,255,255,0.1); border:var(--glass-border); padding:10px 20px; border-radius:30px; color:#fff; font-family:var(--font-mono); font-size:12px; cursor:pointer; backdrop-filter:var(--glass-blur); z-index:200;}
 .portal-window.expanded #btn-exit-spatial { display:block; }

@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
 <meta name="robots" content="noindex, nofollow">
 <title>The Lair</title>
-<link rel="stylesheet" href="/css/lair.css?v=11">
+<link rel="stylesheet" href="/css/lair.css?v=12">
 </head>
 <body class="auth-pending signed-out">
 
@@ -180,6 +180,7 @@
       <button role="tab" class="seg active" data-seg="all" aria-selected="true">Library</button>
       <button role="tab" class="seg" data-seg="albums" aria-selected="false">Albums</button>
       <button role="tab" class="seg" data-seg="favs" aria-selected="false">Favourites</button>
+      <button role="tab" class="seg" data-seg="site" aria-selected="false">Homepage</button>
     </div>
     <p class="soft page-sub" id="photos-sub"></p>
 
@@ -190,8 +191,13 @@
 
     <div id="photos-grid" class="ph-wrap"></div>
     <div id="albums-grid" class="albums" hidden></div>
+    <div id="site-photos" hidden>
+      <button class="btn btn-primary site-add" id="site-add"><svg class="ic"><use href="#i-plus"/></svg>Add from this phone</button>
+      <div id="site-grid" class="ph-grid site-grid"></div>
+    </div>
     <div id="photos-more" class="ph-more" aria-hidden="true"></div>
     <input type="file" id="backup-input" accept="image/*,video/*" multiple hidden>
+    <input type="file" id="site-input" accept="image/*" multiple hidden>
   </section>
 
   <!-- ================= VAULT ================= -->
@@ -308,6 +314,7 @@
   <div class="select-actions">
     <button class="round" id="sel-fav" aria-label="Favourite"><svg class="ic"><use href="#i-heart"/></svg></button>
     <button class="round" id="sel-album" aria-label="Add to album"><svg class="ic"><use href="#i-album"/></svg></button>
+    <button class="round" id="sel-site" aria-label="Show on homepage"><svg class="ic"><use href="#i-star"/></svg></button>
     <button class="round danger" id="sel-delete" aria-label="Delete"><svg class="ic"><use href="#i-x"/></svg></button>
   </div>
 </div>
@@ -371,6 +378,6 @@
   </div>
 </div>
 
-<script type="module" src="/js/lair.js?v=11"></script>
+<script type="module" src="/js/lair.js?v=12"></script>
 </body>
 </html>

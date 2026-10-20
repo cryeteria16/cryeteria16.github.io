@@ -18,6 +18,7 @@ document.querySelectorAll('.pub-nav-link').forEach(link => {
     e.currentTarget.classList.add('active');
     document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
     document.getElementById(`pub-view-${e.currentTarget.getAttribute('data-pubtarget')}`).classList.add('active'); 
+    layoutCloud();
     if(navigator.vibrate) navigator.vibrate(10);
   });
 });
@@ -54,74 +55,86 @@ const spatialCloud = document.getElementById('spatial-cloud');
 const exitBtn = document.getElementById('btn-exit-spatial');
 
 
+// The photos float on the page as soon as it opens, no tap needed. "Enter Exhibition" still
+// takes them full screen. The gentle bob is a CSS animation (cheap for the phone), not a script loop.
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 function renderSpatialCloud() {
     spatialCloud.innerHTML = '';
     if (!publicPhotos.length) {
         spatialCloud.innerHTML = '<p style="font-family:var(--font-mono); font-size:13px; color:var(--ink-soft); text-align:center; padding-top:200px;">New work is on its way.</p>';
+        spatialViewport.classList.add('active');
         return;
     }
 
-    const count = publicPhotos.length;
     publicPhotos.forEach((photo, idx) => {
         const card = document.createElement('div');
         card.className = 'floating-photo-card';
 
-        // Organic 3D coordinate distribution algorithm
-        const angle = (idx / count) * Math.PI * 2;
-        const radius = Math.min(window.innerWidth * 0.4, 600); 
-        
-        // Randomizing drift and depth
-        const x = Math.cos(angle) * radius + (Math.random() * 100 - 50);
-        const y = Math.sin(angle) * (radius * 0.5) + (Math.random() * 100 - 50);
-        const z = (idx % 4) * 150 - 300; 
+        // Randomizing drift and depth (picked once, so a resize doesn't make them jump)
+        card.dataset.jx = Math.random() * 2 - 1;
+        card.dataset.jy = Math.random() * 2 - 1;
+        const z = (idx % 4) * 150 - 300;
         const rotY = (Math.random() * 20 - 10);
         const rotZ = (Math.random() * 6 - 3);
-
-        card.style.left = `calc(50% + ${x - 120}px)`;
-        card.style.top = `calc(50% + ${y - 160}px)`;
-        
-        // Store base transform so hover can return to it
-        const baseTransform = `translateZ(${z}px) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`;
-        card.style.transform = baseTransform;
-        card.dataset.baseTransform = baseTransform;
+        card.style.transform = `translateZ(${z}px) rotateY(${rotY}deg) rotateZ(${rotZ}deg)`;
+        if (!reduceMotion) card.style.animationDelay = `${-idx * 2.1}s`;
 
         // Render the image
         card.innerHTML = `<img src="${esc(photo.url)}" alt="Photograph by Ibad Hasan" loading="lazy" decoding="async">
                           <span style="font-family:var(--font-mono); font-size:10px; color:var(--ink-soft); text-align:center;">${esc(photo.dateFormatted || 'Archive')}</span>`;
-        
+
         spatialCloud.appendChild(card);
     });
+    layoutCloud();
+    spatialViewport.classList.add('active');
 }
 
-// Magnetic drift: one animation loop for all cards, running only while the exhibition is open
-let driftFrame = null;
-function drift() {
-    const t = Date.now() / 2000;
-    spatialCloud.querySelectorAll('.floating-photo-card').forEach((card, idx) => {
-        card.style.transform = `${card.dataset.baseTransform} translateY(${Math.sin(t + idx) * 15}px)`;
+// Organic distribution on an ellipse that fits the window the photos are in (inline or full screen)
+function layoutCloud() {
+    const cards = spatialCloud.querySelectorAll('.floating-photo-card');
+    if (!cards.length) return;
+    const expanded = portalWindow.classList.contains('expanded');
+    const w = expanded ? window.innerWidth : portalWindow.clientWidth;
+    const h = expanded ? window.innerHeight : portalWindow.clientHeight;
+    if (!w || !h) return; // not on screen (another section is open)
+    const cw = cards[0].offsetWidth, ch = cards[0].offsetHeight;
+    const rx = Math.max(0, Math.min(w * 0.4, 600, w / 2 - cw * 0.35));
+    const ry = Math.max(0, Math.min(h / 2 - ch * 0.45, Math.max(rx * 0.5, h * 0.3)));
+    const jitter = Math.min(50, w * 0.05);
+    cards.forEach((card, idx) => {
+        const angle = (idx / cards.length) * Math.PI * 2;
+        const x = Math.cos(angle) * rx + card.dataset.jx * jitter;
+        const y = Math.sin(angle) * ry + card.dataset.jy * jitter;
+        card.style.left = `calc(50% + ${x - cw / 2}px)`;
+        card.style.top = `calc(50% + ${y - ch / 2}px)`;
     });
-    driftFrame = requestAnimationFrame(drift);
 }
+let layoutQueued = false;
+window.addEventListener('resize', () => {
+    if (layoutQueued) return;
+    layoutQueued = true;
+    requestAnimationFrame(() => { layoutQueued = false; layoutCloud(); });
+});
 
 // Handle Portal Expansion
 portalBtn.addEventListener('click', () => {
-    if (!driftFrame) driftFrame = requestAnimationFrame(drift);
     portalWindow.classList.add('expanded');
-    spatialViewport.classList.add('active');
+    layoutCloud();
     if (navigator.vibrate) navigator.vibrate(15);
     document.body.style.overflow = 'hidden'; // Lock background scrolling
 });
 
 exitBtn.addEventListener('click', () => {
-    cancelAnimationFrame(driftFrame); driftFrame = null;
     portalWindow.classList.remove('expanded');
-    spatialViewport.classList.remove('active');
+    layoutCloud();
+    spatialCloud.style.transform = '';
     document.body.style.overflow = 'auto';
 });
 
 // Spatial Parallax Tilt (Mouse Tracking)
 window.addEventListener('mousemove', (e) => {
-    if (!spatialViewport.classList.contains('active')) return;
+    if (!portalWindow.classList.contains('expanded') && !portalWindow.matches(':hover')) return;
     
     const xPct = (e.clientX / window.innerWidth) - 0.5;
     const yPct = (e.clientY / window.innerHeight) - 0.5;

@@ -666,6 +666,9 @@ function initPhotos() {
   $('sel-fav').addEventListener('click', async () => { const items = selItems(); if (!items.length) return; const on = !items.every(i => i.fav); try { await setFavourite(items, on); showToast(on ? 'Added to Favourites' : 'Removed from Favourites', 'success'); setSelecting(false); } catch (e) { showToast(e.message, 'error'); } });
   $('sel-album').addEventListener('click', () => { const items = selItems(); if (items.length) pickAlbum(items, () => setSelecting(false)); });
   $('sel-delete').addEventListener('click', deleteSelected);
+  $('sel-site').addEventListener('click', addSelectedToSite);
+  $('site-add').addEventListener('click', () => $('site-input').click());
+  $('site-input').addEventListener('change', (e) => { uploadToSite([...e.target.files]); e.target.value = ''; });
   // Load more as you scroll near the bottom
   new IntersectionObserver((es) => { if (es[0].isIntersecting && phNext && !phLoading && current === 'photos') loadPhotos(true); }, { rootMargin: '600px' }).observe($('photos-more'));
   setSeg('all');
@@ -677,6 +680,8 @@ function setSeg(seg) {
   $('photos-seg').hidden = false; $('album-back').hidden = true; $('album-menu').hidden = true;
   $('photos-title').textContent = 'Photos';
   setSelecting(false);
+  $('site-photos').hidden = seg !== 'site';
+  if (seg === 'site') { $('photos-grid').hidden = true; $('albums-grid').hidden = true; $('photos-memories').hidden = true; $('photos-select').hidden = true; loadSitePhotos(); return; }
   if (seg === 'albums') { $('photos-grid').hidden = true; $('albums-grid').hidden = false; $('photos-memories').hidden = true; $('photos-select').hidden = true; $('photos-sub').textContent = ''; loadAlbums(); return; }
   $('photos-grid').hidden = false; $('albums-grid').hidden = true; $('photos-select').hidden = false;
   phView = seg; loadPhotos(false);
@@ -687,7 +692,7 @@ function openAlbum(a) {
   phSeg = 'albums'; phAlbum = { id: a.id, name: a.name }; phView = `album:${a.id}`;
   $('photos-seg').hidden = true; $('album-back').hidden = false; $('album-menu').hidden = false; $('photos-select').hidden = false;
   $('photos-title').textContent = a.name;
-  $('photos-grid').hidden = false; $('albums-grid').hidden = true; $('photos-memories').hidden = true;
+  $('photos-grid').hidden = false; $('albums-grid').hidden = true; $('photos-memories').hidden = true; $('site-photos').hidden = true;
   setSelecting(false); loadPhotos(false); window.scrollTo(0, 0);
 }
 
@@ -781,7 +786,7 @@ function toggleSelect(p, el) { selected.has(p) ? selected.delete(p) : selected.a
 function paintSelectBar() {
   const n = selected.size;
   $('select-count').textContent = n ? `${n} selected` : 'Tap photos to select';
-  ['sel-fav', 'sel-album', 'sel-delete'].forEach(id => { $(id).disabled = !n; });
+  ['sel-fav', 'sel-album', 'sel-site', 'sel-delete'].forEach(id => { $(id).disabled = !n; });
 }
 const selItems = () => phItems.filter(i => selected.has(i.path));
 async function deleteSelected() {
@@ -791,6 +796,77 @@ async function deleteSelected() {
   for (const it of items) { try { await postJSON('/api/drive/delete', { path: it.path }); done.push(it.path); } catch {} }
   photosRemoved(done); setSelecting(false);
   showToast(done.length === items.length ? 'Moved to the recycle bin' : `${done.length} of ${items.length} deleted`, done.length === items.length ? 'success' : 'error');
+}
+
+// ---- Homepage: the photos that float on ibadhasan.com ----
+// They live in the always-on helper, so this works with the PC off. Photos added from this phone
+// are shrunk here first (long side 1400 px), so only a light copy goes up and the original stays put.
+const sitePhotoUrl = (it) => `${EDGE}/public/photo/${encodeURIComponent(it.id)}?v=${it.added}`;
+async function loadSitePhotos() {
+  const grid = $('site-grid');
+  grid.innerHTML = '<p class="ph-empty">Loading…</p>';
+  let items;
+  try { items = (await edge('/exhibition')).items || []; }
+  catch (e) { grid.innerHTML = `<p class="ph-empty">${esc(e.message)}</p>`; return; }
+  exhibitionCache = Promise.resolve(new Set(items.map(i => i.id)));
+  $('photos-sub').textContent = items.length ? `${items.length} on ibadhasan.com · tap one to take it off` : '';
+  if (!items.length) { grid.innerHTML = `<div class="ph-empty"><span class="tile-icon amber">${icon('star')}</span><strong>Nothing on the homepage yet</strong>Add photos from this phone, or pick some in Library with Select and the star.</div>`; return; }
+  grid.innerHTML = '';
+  for (const it of items) {
+    const b = document.createElement('button');
+    b.className = 'ph'; b.setAttribute('aria-label', `Homepage photo, ${it.date || ''}`);
+    b.innerHTML = `<img src="${esc(sitePhotoUrl(it))}" alt="" loading="lazy" decoding="async">`;
+    b.addEventListener('click', () => actionSheet(it.date || 'Homepage photo', [
+      { label: 'Take off the homepage', icon: 'x', danger: true, run: async () => {
+        try { await edge(`/exhibition/${encodeURIComponent(it.id)}`, { method: 'DELETE' }); exhibitionCache = null; showToast('Removed from the homepage'); loadSitePhotos(); }
+        catch (e) { showToast(e.message, 'error'); }
+      } },
+    ]));
+    grid.appendChild(b);
+  }
+}
+async function shrinkForSite(file) {
+  const img = await createImageBitmap(file, { imageOrientation: 'from-image' }).catch(() => null);
+  if (!img) throw new Error(`${file.name} isn't a photo this browser can read.`);
+  for (const side of [1400, 1100, 800]) {
+    const k = Math.min(1, side / Math.max(img.width, img.height));
+    const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    let blob = await new Promise(r => c.toBlob(r, 'image/webp', 0.82));
+    if (!blob || blob.type !== 'image/webp') blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.84)); // Safari can't make webp
+    if (blob && blob.size < 1_800_000) { img.close?.(); return blob; }
+  }
+  img.close?.();
+  throw new Error(`${file.name} is too big for the homepage.`);
+}
+async function uploadToSite(files) {
+  files = files.filter(f => f.type.startsWith('image/') || /\.(heic|heif)$/i.test(f.name));
+  if (!files.length) return;
+  const btn = $('site-add'); btn.disabled = true;
+  let done = 0; const failed = [];
+  for (const f of files) {
+    btn.lastChild.textContent = `Adding ${done + failed.length + 1} of ${files.length}…`;
+    try {
+      const blob = await shrinkForSite(f);
+      const date = new Date(f.lastModified || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: tz });
+      const id = `phone-${Date.now().toString(36)}-${f.name}`.slice(0, 200);
+      await edge(`/exhibition?name=${encodeURIComponent(id)}&date=${encodeURIComponent(date)}`, { method: 'POST', headers: { 'Content-Type': blob.type }, body: blob });
+      done++;
+    } catch (e) { failed.push(e.message); }
+  }
+  btn.disabled = false; btn.lastChild.textContent = 'Add from this phone';
+  exhibitionCache = null;
+  if (failed.length) showToast(done ? `${done} added, ${failed.length} didn't go: ${failed[0]}` : failed[0], 'error');
+  else showToast(done === 1 ? 'On the homepage now' : `${done} photos on the homepage now`, 'success');
+  if (phSeg === 'site') loadSitePhotos();
+}
+async function addSelectedToSite() {
+  const items = selItems().filter(i => i.kind === 'image'); if (!items.length) return showToast('Only photos can go on the homepage.', 'error');
+  let done = 0; let err = null;
+  for (const it of items) { try { await postJSON('/api/exhibition/add', { path: it.path }); done++; } catch (e) { err = e; } }
+  exhibitionCache = null; setSelecting(false);
+  if (err && !done) return showToast(err.offline ? 'Your PC needs to be on for this. Or use Homepage › Add from this phone.' : err.message, 'error');
+  showToast(err ? `${done} of ${items.length} on the homepage` : `${done === 1 ? 'It\'s' : `${done} photos are`} on the homepage now`, err ? 'error' : 'success');
 }
 
 // ---- favourites and albums ----
